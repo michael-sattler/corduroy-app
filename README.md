@@ -26,7 +26,7 @@ corduroy/
 ## Local development (npm)
 
 ```bash
-# From repo root
+# From repo root — required after clone or pull
 npm install
 cp apps/web/.env.example apps/web/.env.local   # fill in after Supabase setup (A2)
 
@@ -52,7 +52,7 @@ Modern browsers resolve `*.localhost` to `127.0.0.1` without editing your hosts 
 docker compose up --build
 ```
 
-Dependencies are baked into the image at build time (avoids a slow `npm ci` on every start). Only `apps/web/src` is mounted for hot reload.
+Use `--build` after dependency changes (e.g. adding Bootstrap). Dependencies are baked into the image at build time.
 
 - http://localhost:3000
 - http://app.localhost:3000/dashboard
