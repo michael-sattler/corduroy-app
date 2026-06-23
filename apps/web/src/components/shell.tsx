@@ -1,8 +1,10 @@
 import Link from "next/link";
+import { signOut } from "@/app/actions/auth";
 
 type ShellProps = {
   surface: "client" | "staff";
   title: string;
+  signedIn?: boolean;
   children: React.ReactNode;
 };
 
@@ -17,7 +19,7 @@ const surfaceConfig = {
   },
 } as const;
 
-export function Shell({ surface, title, children }: ShellProps) {
+export function Shell({ surface, title, signedIn = false, children }: ShellProps) {
   const config = surfaceConfig[surface];
 
   return (
@@ -31,17 +33,29 @@ export function Shell({ surface, title, children }: ShellProps) {
               <div className="small text-uppercase opacity-75">Corduroy</div>
               <div className="fw-semibold">{config.label}</div>
             </div>
-            <ul className="navbar-nav ms-auto flex-row gap-3">
-              <li className="nav-item">
-                <Link href="/dashboard" className="nav-link">
-                  Dashboard
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link href="/login" className="nav-link">
-                  Sign in
-                </Link>
-              </li>
+            <ul className="navbar-nav ms-auto flex-row gap-3 align-items-center">
+              {signedIn ? (
+                <>
+                  <li className="nav-item">
+                    <Link href="/dashboard" className="nav-link">
+                      Dashboard
+                    </Link>
+                  </li>
+                  <li className="nav-item">
+                    <form action={signOut}>
+                      <button type="submit" className="btn btn-sm btn-outline-light">
+                        Sign out
+                      </button>
+                    </form>
+                  </li>
+                </>
+              ) : (
+                <li className="nav-item">
+                  <Link href="/login" className="nav-link">
+                    Sign in
+                  </Link>
+                </li>
+              )}
             </ul>
           </div>
         </nav>

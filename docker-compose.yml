@@ -6,8 +6,13 @@ services:
     ports:
       - "3000:3000"
     volumes:
-      # Mount source only — node_modules stay in the image (Linux binaries).
+      # Source + manifests (entrypoint re-runs npm ci when lockfile changes).
       - ./apps/web/src:/app/apps/web/src
+      - ./package.json:/app/package.json:ro
+      - ./package-lock.json:/app/package-lock.json:ro
+      - ./apps/web/package.json:/app/apps/web/package.json:ro
+    env_file:
+      - apps/web/.env
     environment:
       NODE_ENV: development
 

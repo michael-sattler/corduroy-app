@@ -40,34 +40,33 @@
 
 ### A2. Supabase (identity)
 
-- [ ] Create/link Supabase project `corduroy-app` (see creds-platform.md)
-- [ ] Enable Supabase Auth (email/password for v1; magic link optional)
-- [ ] Define roles in `app_metadata` or a `profiles` table: `client` | `staff` (staff sub-roles `principal` | `advisor` | `admin` can wait)
-- [ ] Staff sign-in path:
-  - **v1 pragmatic:** email/password restricted to `@corduroytech.ai` domain + manual staff row approval
-  - **v1 target (TDD §4.2):** SAML SSO + mandatory MFA via email-domain routing — confirm Supabase Pro SAML tier, then swap login UI
-- [ ] Seed data: 1 `clients` row, 1 `client_users` mapping, 1 `staff` row, 1 `staff_assignments` row
+- [DONE] Create/link Supabase project `corduroy-app` — ref `iggvqbqqzujixshiffqe` (see [supabase-setup.md](./supabase-setup.md); run `npx supabase login` + `npx supabase link` locally)
+- [ ] Enable Supabase Auth (email/password for v1; magic link optional) — **Dashboard step** (documented in supabase-setup.md)
+- [DONE] Define roles in `app_metadata`: `client` | `staff` (`staff_role` for sub-roles)
+- [DONE] Staff sign-in path (v1 pragmatic): `@corduroytech.ai` + `staff.approved` — enforced in A4 login UI
+- [DONE] Seed script: `npm run db:seed` → Acme Corp, client user, staff user, assignment
 
 ### A3. Core schema (minimal for auth)
 
 Run as version-controlled SQL migrations in `supabase/migrations/`:
 
-- [ ] `clients` — id, name, created_at
-- [ ] `client_users` — user_id (auth.users), client_id, display_name
-- [ ] `staff` — user_id, role, approved (boolean gate for new staff)
-- [ ] `staff_assignments` — staff_id, client_id (needed before staff can "select a client" later)
-- [ ] Enable RLS on all tables; policies:
+- [DONE] `clients` — id, name, created_at
+- [DONE] `client_users` — user_id (auth.users), client_id, display_name
+- [DONE] `staff` — user_id, role, approved (boolean gate for new staff)
+- [DONE] `staff_assignments` — staff_id, client_id (needed before staff can "select a client" later)
+- [DONE] Enable RLS on all tables; policies:
   - Client users: read own `client_users` row and own `clients` row only
   - Staff: read assigned clients via `staff_assignments` (broader staff policies come with Vault)
-- [ ] Defer for now: `audit_events`, `vault_objects`, `plans`, `milestones`, `tasks`
+- [ ] Apply migration to remote: `npm run db:push` (after `supabase link`)
+- [DONE] Defer for now: `audit_events`, `vault_objects`, `plans`, `milestones`, `tasks`
 
 ### A4. Auth integration in Next.js
 
-- [ ] `@supabase/ssr` — server and browser clients, cookie-based sessions
-- [ ] `/login` on each subdomain (shared component, different branding/copy)
-- [ ] Post-login redirect to `/dashboard`; unauthenticated users redirected to `/login`
-- [ ] Middleware: read JWT, check `role` claim, reject wrong surface (client token on `staff.*` → sign out or 403)
-- [ ] Logout flow
+- [DONE] `@supabase/ssr` — server and browser clients, cookie-based sessions
+- [DONE] `/login` on each subdomain (shared component, different branding/copy)
+- [DONE] Post-login redirect to `/dashboard`; unauthenticated users redirected to `/login`
+- [DONE] Middleware: read JWT, check `role` claim, reject wrong surface (client token on `staff.*` → sign out or 403)
+- [DONE] Logout flow
 
 ### A5. Vercel & DNS
 

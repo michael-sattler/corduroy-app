@@ -6,7 +6,10 @@ COPY apps/web/package.json apps/web/
 RUN npm ci
 
 COPY apps/web ./apps/web
+COPY scripts/docker-dev-entrypoint.sh /usr/local/bin/docker-dev-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-dev-entrypoint.sh
 
 EXPOSE 3000
 ENV NODE_ENV=development
+ENTRYPOINT ["docker-dev-entrypoint.sh"]
 CMD ["npm", "run", "dev"]

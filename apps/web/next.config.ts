@@ -5,10 +5,6 @@ const monorepoRoot = path.join(__dirname, "../..");
 
 const nextConfig: NextConfig = {
   output: "standalone",
-  // Resolve hoisted workspace deps (e.g. bootstrap) from the repo root.
-  turbopack: {
-    root: monorepoRoot,
-  },
   outputFileTracingRoot: monorepoRoot,
 };
 

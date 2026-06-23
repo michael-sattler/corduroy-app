@@ -1,24 +1,98 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getSurfaceFromHost, surfaceBasePath } from "@/lib/subdomain";
+import { createServerClient } from "@supabase/ssr";
+import { type NextRequest, NextResponse } from "next/server";
+import { readUserRole, roleForSurface } from "@/lib/auth/roles";
+import { getSurfaceFromHost } from "@/lib/subdomain";
 
-export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+function nextWithSurface(request: NextRequest, surface: "client" | "staff") {
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-corduroy-surface", surface);
+  return NextResponse.next({
+    request: { headers: requestHeaders },
+  });
+}
+
+function copyCookies(from: NextResponse, to: NextResponse) {
+  from.cookies.getAll().forEach((cookie) => {
+    to.cookies.set(cookie.name, cookie.value);
+  });
+}
+
+export async function middleware(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const surface = getSurfaceFromHost(host);
-  const basePath = surfaceBasePath(surface);
 
-  if (!basePath) {
+  if (surface !== "client" && surface !== "staff") {
     return NextResponse.next();
   }
 
-  if (pathname.startsWith(basePath)) {
-    return NextResponse.next();
+  const pathname = request.nextUrl.pathname;
+
+  if (pathname === "/") {
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
-  const destination =
-    pathname === "/" ? `${basePath}/dashboard` : `${basePath}${pathname}`;
+  const isLoginPage = pathname === "/login";
+  const isDashboard = pathname === "/dashboard";
 
-  return NextResponse.rewrite(new URL(destination, request.url));
+  if (!isLoginPage && !isDashboard) {
+    return nextWithSurface(request, surface);
+  }
+
+  let response = nextWithSurface(request, surface);
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    },
+  );
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const expectedRole = roleForSurface(surface);
+
+  if (user) {
+    const role = readUserRole(user.app_metadata);
+
+    if (role !== expectedRole && !isLoginPage) {
+      await supabase.auth.signOut();
+      const loginUrl = request.nextUrl.clone();
+      loginUrl.pathname = "/login";
+      loginUrl.searchParams.set("error", "wrong_surface");
+      const redirectResponse = NextResponse.redirect(loginUrl);
+      copyCookies(response, redirectResponse);
+      return redirectResponse;
+    }
+
+    if (isLoginPage) {
+      const dashboardUrl = request.nextUrl.clone();
+      dashboardUrl.pathname = "/dashboard";
+      dashboardUrl.search = "";
+      const redirectResponse = NextResponse.redirect(dashboardUrl);
+      copyCookies(response, redirectResponse);
+      return redirectResponse;
+    }
+  } else if (isDashboard) {
+    const loginUrl = request.nextUrl.clone();
+    loginUrl.pathname = "/login";
+    const redirectResponse = NextResponse.redirect(loginUrl);
+    copyCookies(response, redirectResponse);
+    return redirectResponse;
+  }
+
+  return response;
 }
 
 export const config = {

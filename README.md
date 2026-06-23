@@ -23,15 +23,17 @@ corduroy/
 - npm 10+
 - Docker (optional, for containerized runs)
 
-## Local development (npm)
+## Local development (npm) — recommended
 
 ```bash
-# From repo root — required after clone or pull
+# From repo root — required after clone, pull, or when package-lock.json changes
 npm install
-cp apps/web/.env.example apps/web/.env.local   # fill in after Supabase setup (A2)
+cp apps/web/.env.example apps/web/.env   # fill in after Supabase setup (A2)
 
 npm run dev
 ```
+
+**When do you need `npm install`?** Whenever `package.json` or `package-lock.json` changes — after `git pull`, or when a commit touches those files. If the app errors on a missing module (e.g. `@supabase/ssr`), run `npm install` and restart the dev server.
 
 Open:
 
@@ -46,19 +48,21 @@ Modern browsers resolve `*.localhost` to `127.0.0.1` without editing your hosts 
 127.0.0.1 staff.localhost
 ```
 
-## Docker (local dev container)
+## Docker (optional)
 
 ```bash
-docker compose up --build
+npm run docker:dev
 ```
 
-Use `--build` after dependency changes (e.g. adding Bootstrap). Dependencies are baked into the image at build time.
+On container start, the entrypoint checks `package-lock.json`. If dependencies changed since the last run, it runs `npm ci` automatically — you do not need to remember `--build` for new packages.
 
 - http://localhost:3000
 - http://app.localhost:3000/dashboard
 - http://staff.localhost:3000/dashboard
 
-For day-to-day dev on Windows, `npm run dev` is faster — no container needed until you want to test the Linux deploy path.
+Stop: `npm run docker:down`
+
+For day-to-day dev on Windows, `npm run dev` is faster. Use Docker when you want to test the Linux container path.
 
 Production image: `docker compose --profile prod up --build`
 
@@ -66,7 +70,9 @@ Production image: `docker compose --profile prod up --build`
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start Next.js dev server |
+| `npm run dev` | Start Next.js dev server (recommended) |
+| `npm run docker:dev` | Start dev server in Docker (auto-syncs deps) |
+| `npm run docker:down` | Stop Docker dev container |
 | `npm run build` | Production build |
 | `npm run start` | Start production server |
 | `npm run lint` | ESLint |
@@ -75,6 +81,7 @@ Production image: `docker compose --profile prod up --build`
 
 - [Build plan](./docs/buildplan.md) — milestone checklist
 - [TDD](./docs/tdd-platform.md) — platform architecture
+- [Supabase setup](./docs/supabase-setup.md) — migrations, roles, dev seed users
 - [Credentials](./docs/creds-platform.md) — vendor accounts (not committed)
 
 ## Current milestone
