@@ -5,12 +5,12 @@ type PlaceholderCardProps = {
 
 export function PlaceholderCard({ title, description }: PlaceholderCardProps) {
   return (
-    <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
-      <h2 className="text-lg font-medium text-stone-900">{title}</h2>
-      <p className="mt-2 text-sm leading-relaxed text-stone-600">{description}</p>
-      <span className="mt-4 inline-block rounded-full bg-stone-100 px-3 py-1 text-xs font-medium text-stone-500">
-        Coming soon
-      </span>
+    <div className="card h-100 shadow-sm">
+      <div className="card-body">
+        <h2 className="card-title h5">{title}</h2>
+        <p className="card-text text-body-secondary">{description}</p>
+        <span className="badge text-bg-secondary">Coming soon</span>
+      </div>
     </div>
   );
 }

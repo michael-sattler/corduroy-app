@@ -7,16 +7,20 @@ export default function StaffDashboardPage() {
 
   return (
     <Shell surface="staff" title={`Welcome, ${displayName}`}>
-      <p className="-mt-4 mb-8 capitalize text-stone-600">Role: {role}</p>
-      <div className="grid gap-6 sm:grid-cols-2">
-        <PlaceholderCard
-          title="Client list"
-          description="View assigned clients sorted by needs attention vs. on track."
-        />
-        <PlaceholderCard
-          title="Review queue"
-          description="Plans and deliverables awaiting advisor review before client delivery."
-        />
+      <p className="text-body-secondary mb-4 text-capitalize">Role: {role}</p>
+      <div className="row g-4">
+        <div className="col-md-6">
+          <PlaceholderCard
+            title="Client list"
+            description="View assigned clients sorted by needs attention vs. on track."
+          />
+        </div>
+        <div className="col-md-6">
+          <PlaceholderCard
+            title="Review queue"
+            description="Plans and deliverables awaiting advisor review before client delivery."
+          />
+        </div>
       </div>
     </Shell>
   );

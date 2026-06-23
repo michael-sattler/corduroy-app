@@ -29,7 +29,7 @@
 - [DONE] **Docker Compose:** `docker-compose.yml` for local dev — web service on port 3000, env via `.env.local`; optional `docker-compose.override.yml` for subdomain host mapping notes
 - [DONE] `.dockerignore` aligned with `.gitignore`
 - [DONE] Document `docker compose up` and `npm run dev` paths in README (both should work for local dev)
-- [DONE] Initialize monorepo: Next.js 15 (App Router), TypeScript, Tailwind, shared `components/` and `lib/`
+- [DONE] Initialize monorepo: Next.js (App Router), TypeScript, Bootstrap, shared `components/` and `lib/`
 - [DONE] Subdomain-aware routing via Next.js middleware:
   - `app.*` → client surface (`/dashboard`, `/login`, …)
   - `staff.*` → staff surface (`/dashboard`, `/login`, …)

@@ -1,9 +1,22 @@
 services:
   web:
     build:
-      context: ./apps/web
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/web/Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      # Mount source only — node_modules stay in the image (Linux binaries).
+      - ./apps/web/src:/app/apps/web/src
+    environment:
+      NODE_ENV: development
+
+  web-prod:
+    profiles: ["prod"]
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
+      NODE_ENV: production

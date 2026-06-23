@@ -7,16 +7,20 @@ export default function ClientDashboardPage() {
 
   return (
     <Shell surface="client" title={`Welcome, ${displayName}`}>
-      <p className="-mt-4 mb-8 text-stone-600">{organization}</p>
-      <div className="grid gap-6 sm:grid-cols-2">
-        <PlaceholderCard
-          title="The Vault"
-          description="Secure storage for your business documents and data sources. Upload and browse files from one place."
-        />
-        <PlaceholderCard
-          title="90-Day Plan"
-          description="Your advisor-reviewed action plan with milestones and weekly priorities."
-        />
+      <p className="text-body-secondary mb-4">{organization}</p>
+      <div className="row g-4">
+        <div className="col-md-6">
+          <PlaceholderCard
+            title="The Vault"
+            description="Secure storage for your business documents and data sources. Upload and browse files from one place."
+          />
+        </div>
+        <div className="col-md-6">
+          <PlaceholderCard
+            title="90-Day Plan"
+            description="Your advisor-reviewed action plan with milestones and weekly priorities."
+          />
+        </div>
       </div>
     </Shell>
   );

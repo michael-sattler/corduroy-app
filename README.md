@@ -46,20 +46,21 @@ Modern browsers resolve `*.localhost` to `127.0.0.1` without editing your hosts 
 127.0.0.1 staff.localhost
 ```
 
-## Docker (production image)
-
-Build and run the production image locally:
+## Docker (local dev container)
 
 ```bash
-# Create env file first (Supabase keys added in A2)
-cp apps/web/.env.example apps/web/.env.local
-
 docker compose up --build
 ```
 
-The app listens on http://localhost:3000. Subdomain routing still applies — use `app.localhost:3000` and `staff.localhost:3000`.
+Dependencies are baked into the image at build time (avoids a slow `npm ci` on every start). Only `apps/web/src` is mounted for hot reload.
 
-For hot-reload development, use `npm run dev` instead of Docker.
+- http://localhost:3000
+- http://app.localhost:3000/dashboard
+- http://staff.localhost:3000/dashboard
+
+For day-to-day dev on Windows, `npm run dev` is faster — no container needed until you want to test the Linux deploy path.
+
+Production image: `docker compose --profile prod up --build`
 
 ## Scripts
 
