@@ -1,0 +1,13 @@
+# Optional local overrides (not committed).
+# Copy to docker-compose.override.yml and adjust as needed.
+#
+# services:
+#   web:
+#     build:
+#       target: builder
+#     command: npm run dev
+#     volumes:
+#       - ./apps/web:/app
+#       - /app/node_modules
+#     environment:
+#       - NODE_ENV=development

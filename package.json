@@ -1,0 +1,14 @@
+{
+  "name": "corduroy",
+  "version": "0.1.0",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=@corduroy/web",
+    "build": "npm run build --workspace=@corduroy/web",
+    "start": "npm run start --workspace=@corduroy/web",
+    "lint": "npm run lint --workspace=@corduroy/web"
+  }
+}
