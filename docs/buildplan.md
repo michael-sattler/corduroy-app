@@ -23,18 +23,18 @@
 
 ### A1. Repository & app scaffold
 
-- [ ] **Git repo:** `git init` in `corduroy`, add `.gitignore` (node_modules, `.env*`, `.next`, etc.), initial commit with `docs/`
+- [DONE] **Git repo:** `git init` in `corduroy`, add `.gitignore` (node_modules, `.env*`, `.next`, etc.), initial commit with `docs/`
 - [DONE] **Remote:** create GitHub repo `corduroy` (org: Corduroy), push `main`, enable branch protection on `main` when ready
-- [ ] **Docker:** `Dockerfile` for the Next.js web app (multi-stage: deps → build → production runner)
-- [ ] **Docker Compose:** `docker-compose.yml` for local dev — web service on port 3000, env via `.env.local`; optional `docker-compose.override.yml` for subdomain host mapping notes
-- [ ] `.dockerignore` aligned with `.gitignore`
-- [ ] Document `docker compose up` and `npm run dev` paths in README (both should work for local dev)
-- [ ] Initialize monorepo: Next.js 15 (App Router), TypeScript, Tailwind, shared `components/` and `lib/`
-- [ ] Subdomain-aware routing via Next.js middleware:
+- [DONE] **Docker:** `Dockerfile` for the Next.js web app (multi-stage: deps → build → production runner)
+- [DONE] **Docker Compose:** `docker-compose.yml` for local dev — web service on port 3000, env via `.env.local`; optional `docker-compose.override.yml` for subdomain host mapping notes
+- [DONE] `.dockerignore` aligned with `.gitignore`
+- [DONE] Document `docker compose up` and `npm run dev` paths in README (both should work for local dev)
+- [DONE] Initialize monorepo: Next.js 15 (App Router), TypeScript, Tailwind, shared `components/` and `lib/`
+- [DONE] Subdomain-aware routing via Next.js middleware:
   - `app.*` → client surface (`/dashboard`, `/login`, …)
   - `staff.*` → staff surface (`/dashboard`, `/login`, …)
-- [ ] Local dev: document how to simulate subdomains (`app.localhost`, `staff.localhost` or hosts file)
-- [ ] Placeholder pages only — no Vault/Planner UI yet:
+- [DONE] Local dev: document how to simulate subdomains (`app.localhost`, `staff.localhost` or hosts file)
+- [DONE] Placeholder pages only — no Vault/Planner UI yet:
   - Client dashboard: welcome, client name, "Vault and 90-Day Plan coming soon"
   - Staff dashboard: welcome, staff name/role, "Client list and review queue coming soon"
 
