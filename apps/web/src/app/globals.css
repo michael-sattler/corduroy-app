@@ -38,6 +38,8 @@ body {
 .app-shell {
   min-height: 100vh;
   background: var(--app-bg);
+  display: flex;
+  flex-direction: column;
 }
 
 .app-topbar {
@@ -164,6 +166,13 @@ body {
 
 .app-main {
   flex: 1;
+}
+
+.app-main-guest {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
 }
 
 .app-card {

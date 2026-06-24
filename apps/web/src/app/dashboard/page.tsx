@@ -10,8 +10,8 @@ export default async function DashboardPage() {
 
   if (surface === "client") {
     const { organization, displayName, user } = await requireClientSession();
-    const vaultHref = await resolveAppHref("/vault");
-    const planHref = await resolveAppHref("/plan");
+    const vaultHref = await resolveAppHref("/vault", "client");
+    const planHref = await resolveAppHref("/plan", "client");
 
     return (
       <ClientLayout

@@ -16,6 +16,7 @@ type AppHeaderProps = {
   email?: string;
   role?: string;
   active: ClientNavKey | StaffNavKey;
+  guest?: boolean;
 };
 
 export async function AppHeader({
@@ -25,6 +26,7 @@ export async function AppHeader({
   email,
   role,
   active,
+  guest = false,
 }: AppHeaderProps) {
   const pathPrefix = await getSurfacePathPrefix();
   const topbarClass =
@@ -43,12 +45,14 @@ export async function AppHeader({
         ) : (
           <TopNav surface="staff" active={active as StaffNavKey} pathPrefix={pathPrefix} />
         )}
-        <LoggedInUser
-          surface={surface}
-          displayName={displayName}
-          email={email}
-          role={role}
-        />
+        {guest ? null : (
+          <LoggedInUser
+            surface={surface}
+            displayName={displayName}
+            email={email}
+            role={role}
+          />
+        )}
       </div>
     </header>
   );

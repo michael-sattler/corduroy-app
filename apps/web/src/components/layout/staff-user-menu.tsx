@@ -75,7 +75,7 @@ export function StaffUserMenu({ displayName, email, role }: StaffUserMenuProps) 
               Preferences
             </button>
             <hr className="dropdown-divider my-1" />
-            <form action={signOut}>
+            <form action={signOut.bind(null, "staff")}>
               <button type="submit" className="staff-user-dropdown-item" role="menuitem">
                 Sign out
               </button>

@@ -30,7 +30,7 @@ export async function requireClientSession(): Promise<ClientContext> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(await resolveAppHref("/login"));
+    redirect(await resolveAppHref("/login", "client"));
   }
 
   const { data: profile } = await supabase
@@ -72,7 +72,7 @@ export async function requireStaffSession(): Promise<StaffContext> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect(await resolveAppHref("/login"));
+    redirect(await resolveAppHref("/login", "staff"));
   }
 
   const { data: staff } = await supabase

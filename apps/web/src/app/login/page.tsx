@@ -1,5 +1,5 @@
 import { LoginForm } from "@/components/login-form";
-import { Shell } from "@/components/shell";
+import { ClientLayout, StaffLayout } from "@/components/layout";
 import { requireSurface } from "@/lib/require-surface";
 
 const ERROR_MESSAGES: Record<string, string> = {
@@ -20,9 +20,23 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
 
   const title = surface === "client" ? "Sign in" : "Staff sign in";
 
+  if (surface === "client") {
+    return (
+      <ClientLayout guest>
+        <div className="w-100" style={{ maxWidth: "28rem" }}>
+          <h1 className="h4 mb-4">{title}</h1>
+          <LoginForm surface={surface} errorFromQuery={errorFromQuery} />
+        </div>
+      </ClientLayout>
+    );
+  }
+
   return (
-    <Shell surface={surface} title={title}>
-      <LoginForm surface={surface} errorFromQuery={errorFromQuery} />
-    </Shell>
+    <StaffLayout guest>
+      <div className="w-100" style={{ maxWidth: "28rem" }}>
+        <h1 className="h4 mb-4">{title}</h1>
+        <LoginForm surface={surface} errorFromQuery={errorFromQuery} />
+      </div>
+    </StaffLayout>
   );
 }

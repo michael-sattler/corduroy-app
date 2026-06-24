@@ -2,22 +2,35 @@ import { AppHeader } from "@/components/layout/app-header";
 import type { StaffNavKey } from "@/components/layout/nav-config";
 
 type StaffLayoutProps = {
-  displayName: string;
-  email: string;
-  role: string;
   active?: StaffNavKey;
   subtitle?: string;
   children: React.ReactNode;
-};
+} & (
+  | {
+      guest: true;
+      displayName?: never;
+      email?: never;
+      role?: never;
+    }
+  | {
+      guest?: false;
+      displayName: string;
+      email: string;
+      role: string;
+    }
+);
 
-export function StaffLayout({
-  displayName,
-  email,
-  role,
-  active = "portfolio",
-  subtitle = "Staff Console",
-  children,
-}: StaffLayoutProps) {
+export function StaffLayout(props: StaffLayoutProps) {
+  const {
+    active = "portfolio",
+    subtitle = "Staff Console",
+    children,
+  } = props;
+  const guest = props.guest === true;
+  const displayName = guest ? "" : props.displayName;
+  const email = guest ? "" : props.email;
+  const role = guest ? "" : props.role;
+
   return (
     <div className="app-shell app-shell-staff">
       <AppHeader
@@ -27,8 +40,11 @@ export function StaffLayout({
         email={email}
         role={role}
         active={active}
+        guest={guest}
       />
-      <main className="app-main app-main-staff">{children}</main>
+      <main className={`app-main app-main-staff${guest ? " app-main-guest" : ""}`}>
+        {children}
+      </main>
     </div>
   );
 }

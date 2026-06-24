@@ -65,11 +65,11 @@ export async function signIn(
     }
   }
 
-  redirect(await resolveAppHref("/dashboard"));
+  redirect(await resolveAppHref("/dashboard", surface));
 }
 
-export async function signOut() {
+export async function signOut(surface: "client" | "staff") {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect(await resolveAppHref("/login"));
+  redirect(await resolveAppHref("/login", surface));
 }

@@ -71,7 +71,7 @@ export function ClientUserMenu({ displayName, email }: ClientUserMenuProps) {
               Preferences
             </button>
             <hr className="dropdown-divider my-1" />
-            <form action={signOut}>
+            <form action={signOut.bind(null, "client")}>
               <button type="submit" className="client-user-dropdown-item" role="menuitem">
                 Sign out
               </button>
