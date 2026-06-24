@@ -25,9 +25,11 @@ In **Project → Settings → Environment Variables**, add for **Production** (a
 | Name | Value |
 |------|--------|
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://iggvqbqqzujixshiffqe.supabase.co` |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Current publishable key from [Supabase API settings](https://supabase.com/dashboard/project/iggvqbqqzujixshiffqe/settings/api) |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Current publishable key from [Supabase API settings](https://supabase.com/dashboard/project/iggvqbqqzujixshiffqe/settings/api) — must match `apps/web/.env` locally |
 
 Do **not** add `SUPABASE_SERVICE_ROLE_KEY` to Vercel — seeding runs locally only.
+
+**Important:** Supabase publishable keys can be rotated. If login works locally but not on Vercel, compare keys character-for-character. An old/revoked key returns auth failures on Vercel (often shown as "Invalid email or password" or "Unregistered API key" in logs).
 
 Redeploy after adding or changing env vars.
 

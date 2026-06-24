@@ -28,6 +28,16 @@ export async function signIn(
   });
 
   if (error) {
+    if (
+      error.message.includes("API key") ||
+      error.message.includes("Invalid API key")
+    ) {
+      console.error("Supabase auth configuration error:", error.message);
+      return {
+        error:
+          "Sign-in is temporarily unavailable (API key misconfiguration).",
+      };
+    }
     return { error: "Invalid email or password." };
   }
 
