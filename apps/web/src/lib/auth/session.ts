@@ -1,4 +1,5 @@
 import { requireSurface } from "@/lib/require-surface";
+import { resolveAppHref } from "@/lib/surface-path";
 import { createClient } from "@/lib/supabase/server";
 import type { User } from "@supabase/supabase-js";
 import { notFound, redirect } from "next/navigation";
@@ -29,7 +30,7 @@ export async function requireClientSession(): Promise<ClientContext> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(await resolveAppHref("/login"));
   }
 
   const { data: profile } = await supabase
@@ -71,7 +72,7 @@ export async function requireStaffSession(): Promise<StaffContext> {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect(await resolveAppHref("/login"));
   }
 
   const { data: staff } = await supabase

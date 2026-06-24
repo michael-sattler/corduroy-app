@@ -118,6 +118,16 @@ Complete after Milestone A is live. Unblocks Vault and Planner work.
 - [ ] JWT validation middleware (same Supabase JWT; separate route groups `/client/*` and `/staff/*`)
 - [ ] CORS locked to `app.corduroytech.ai` and `staff.corduroytech.ai`
 
+### B1 Supplemental. Non-Vault API interactions
+- [ ] staff admin CRUD
+  - [ ] prompt library
+  - [ ] wait list
+  - [ ] client user management
+  - [ ] client organization/account management
+  - [ ] staff user management
+  - [ ] healthchecks: API, Supabase, S3 VPC endpoint, Landbdas
+  - [ ] image upload (organization logos, user and admin use avatars)
+
 ### B2. CI/CD
 
 - [ ] GitHub Actions: lint + typecheck on PR

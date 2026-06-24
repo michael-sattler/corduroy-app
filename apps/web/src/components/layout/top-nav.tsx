@@ -6,15 +6,18 @@ import {
   type ClientNavKey,
   type StaffNavKey,
 } from "@/components/layout/nav-config";
+import { withAppPath } from "@/lib/path-routing";
 
 type TopNavProps =
   | {
       surface: "client";
       active: ClientNavKey;
+      pathPrefix: string;
     }
   | {
       surface: "staff";
       active: StaffNavKey;
+      pathPrefix: string;
     };
 
 export function TopNav(props: TopNavProps) {
@@ -24,7 +27,7 @@ export function TopNav(props: TopNavProps) {
         {clientNavItems.map((item) => (
           <Link
             key={item.key}
-            href={item.href}
+            href={withAppPath(item.href, props.pathPrefix)}
             className={navPillClass("client", item.key === props.active, item.disabled)}
             aria-current={item.key === props.active ? "page" : undefined}
           >
@@ -42,6 +45,7 @@ export function TopNav(props: TopNavProps) {
           key={item.key}
           item={item}
           active={item.key === props.active}
+          pathPrefix={props.pathPrefix}
         />
       ))}
     </nav>
@@ -51,9 +55,11 @@ export function TopNav(props: TopNavProps) {
 function NavItemStaff({
   item,
   active,
+  pathPrefix,
 }: {
   item: (typeof staffNavItems)[number];
   active: boolean;
+  pathPrefix: string;
 }) {
   const className = navPillClass("staff", active, item.disabled);
 
@@ -63,7 +69,7 @@ function NavItemStaff({
 
   return (
     <Link
-      href={item.href}
+      href={withAppPath(item.href, pathPrefix)}
       className={className}
       aria-current={active ? "page" : undefined}
     >

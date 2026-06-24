@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { adminWaitlist } from "@/lib/placeholder-admin-data";
+import { withAppPath } from "@/lib/path-routing";
+import { getSurfacePathPrefix } from "@/lib/surface-path";
 
 const statusClass: Record<string, string> = {
   New: "admin-waitlist-new",
@@ -8,7 +10,9 @@ const statusClass: Record<string, string> = {
   Declined: "admin-waitlist-declined",
 };
 
-export function AdminWaitlistView() {
+export async function AdminWaitlistView() {
+  const pathPrefix = await getSurfacePathPrefix();
+
   return (
     <div className="d-flex flex-column gap-4">
       <div>
@@ -34,7 +38,7 @@ export function AdminWaitlistView() {
               <tr key={entry.id}>
                 <td>
                   <Link
-                    href={`/admin/waitlist/${entry.id}`}
+                    href={withAppPath(`/admin/waitlist/${entry.id}`, pathPrefix)}
                     className="fw-medium text-decoration-none"
                   >
                     {entry.name}

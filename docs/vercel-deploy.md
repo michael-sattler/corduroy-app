@@ -88,3 +88,21 @@ Also verify:
 | Login works locally, not on Vercel | Check Vercel env vars; redeploy; verify Supabase redirect URLs |
 | 404 on `/dashboard` | Should not happen — same routes as local; check domain points to this project |
 | Wrong portal branding | You may be on the wrong subdomain — client = `app.*`, staff = `staff.*` |
+
+## Vercel preview without custom DNS
+
+On `*.vercel.app` hosts, subdomain routing is not available. The app automatically uses path prefixes instead:
+
+| Portal | URL |
+|--------|-----|
+| Landing | `https://<project>.vercel.app/` |
+| Client | `https://<project>.vercel.app/app/dashboard` |
+| Staff | `https://<project>.vercel.app/staff/dashboard` |
+
+Add these to Supabase **Redirect URLs** (in addition to production domains when ready):
+
+```
+https://<project>.vercel.app/**
+```
+
+Share `/app` and `/staff` links with reviewers until `app.corduroytech.ai` / `staff.corduroytech.ai` DNS is configured. Production subdomains take precedence when custom domains are added — path routing only applies on bare `*.vercel.app` hosts.

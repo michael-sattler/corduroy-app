@@ -19,12 +19,26 @@ export default async function Home() {
             Corduroy Behavioral Intelligence Platform
           </p>
           <h1 className="h3 mb-3">
-            {links.isLocal ? "Local development" : "Choose a portal"}
+            {links.isLocal
+              ? "Local development"
+              : links.isPathBased
+                ? "Preview deployment"
+                : "Choose a portal"}
           </h1>
           <p className="text-body-secondary">
-            This app serves two surfaces from one codebase. Use the client or
-            staff subdomain for your environment — plain{" "}
-            <code>{host.split(":")[0]}</code> shows this landing page.
+            {links.isPathBased ? (
+              <>
+                This Vercel preview uses path prefixes instead of subdomains. Share{" "}
+                <code>/app</code> for the client portal and <code>/staff</code> for
+                the staff console.
+              </>
+            ) : (
+              <>
+                This app serves two surfaces from one codebase. Use the client or
+                staff subdomain for your environment — plain{" "}
+                <code>{host.split(":")[0]}</code> shows this landing page.
+              </>
+            )}
           </p>
           <ul className="list-unstyled mt-4 mb-0">
             <li className="mb-2">

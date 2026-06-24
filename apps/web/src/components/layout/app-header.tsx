@@ -1,3 +1,5 @@
+import { getSurfacePathPrefix } from "@/lib/surface-path";
+import { withAppPath } from "@/lib/path-routing";
 import { LoggedInUser } from "@/components/layout/logged-in-user";
 import type {
   AppSurface,
@@ -16,7 +18,7 @@ type AppHeaderProps = {
   active: ClientNavKey | StaffNavKey;
 };
 
-export function AppHeader({
+export async function AppHeader({
   surface,
   subtitle,
   displayName,
@@ -24,17 +26,22 @@ export function AppHeader({
   role,
   active,
 }: AppHeaderProps) {
+  const pathPrefix = await getSurfacePathPrefix();
   const topbarClass =
     surface === "staff" ? "app-topbar app-topbar-staff" : "app-topbar";
 
   return (
     <header className={topbarClass}>
       <div className="container-fluid app-topbar-inner">
-        <PageHead surface={surface} subtitle={subtitle} />
+        <PageHead
+          surface={surface}
+          subtitle={subtitle}
+          homeHref={withAppPath("/dashboard", pathPrefix)}
+        />
         {surface === "client" ? (
-          <TopNav surface="client" active={active as ClientNavKey} />
+          <TopNav surface="client" active={active as ClientNavKey} pathPrefix={pathPrefix} />
         ) : (
-          <TopNav surface="staff" active={active as StaffNavKey} />
+          <TopNav surface="staff" active={active as StaffNavKey} pathPrefix={pathPrefix} />
         )}
         <LoggedInUser
           surface={surface}

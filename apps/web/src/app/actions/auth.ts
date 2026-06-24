@@ -1,6 +1,7 @@
 "use server";
 
 import { isStaffEmail, readUserRole, roleForSurface } from "@/lib/auth/roles";
+import { resolveAppHref } from "@/lib/surface-path";
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 
@@ -64,11 +65,11 @@ export async function signIn(
     }
   }
 
-  redirect("/dashboard");
+  redirect(await resolveAppHref("/dashboard"));
 }
 
 export async function signOut() {
   const supabase = await createClient();
   await supabase.auth.signOut();
-  redirect("/login");
+  redirect(await resolveAppHref("/login"));
 }

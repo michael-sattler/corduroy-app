@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { adminActivityStats, adminHealthChecks } from "@/lib/placeholder-admin-data";
+import { withAppPath } from "@/lib/path-routing";
+import { getSurfacePathPrefix } from "@/lib/surface-path";
 
-export function AdminDashboardView() {
+export async function AdminDashboardView() {
+  const pathPrefix = await getSurfacePathPrefix();
+
   return (
     <div className="d-flex flex-column gap-4">
       <div>
@@ -58,7 +62,7 @@ export function AdminDashboardView() {
         <h2 className="h6 mb-3">Tools</h2>
         <div className="row g-3">
           <div className="col-md-6">
-            <Link href="/admin/prompts" className="admin-tool-card">
+            <Link href={withAppPath("/admin/prompts", pathPrefix)} className="admin-tool-card">
               <div className="fw-semibold">Prompt library</div>
               <p className="small text-body-secondary mb-0">
                 Edit system prompts stored in the database for plan generation,
@@ -67,7 +71,7 @@ export function AdminDashboardView() {
             </Link>
           </div>
           <div className="col-md-6">
-            <Link href="/admin/waitlist" className="admin-tool-card">
+            <Link href={withAppPath("/admin/waitlist", pathPrefix)} className="admin-tool-card">
               <div className="fw-semibold">Wait list</div>
               <p className="small text-body-secondary mb-0">
                 Review consultation requests from the main marketing site.

@@ -1,3 +1,9 @@
+import {
+  isPathBasedHost,
+  pathPrefixForSurface,
+  withAppPath,
+} from "@/lib/path-routing";
+
 export type SurfaceDashboardLink = {
   href: string;
   label: string;
@@ -7,6 +13,7 @@ export type SurfaceDashboardLinks = {
   client: SurfaceDashboardLink;
   staff: SurfaceDashboardLink;
   isLocal: boolean;
+  isPathBased: boolean;
 };
 
 function splitHost(host: string): { hostname: string; port: string | null } {
@@ -89,6 +96,22 @@ export function getSurfaceDashboardLinks(
   const normalizedProto = protocol === "https" ? "https" : "http";
   const { hostname, port } = splitHost(host);
 
+  if (isPathBasedHost(host)) {
+    const portSuffix = port ? `:${port}` : "";
+    return {
+      client: {
+        href: withAppPath("/dashboard", pathPrefixForSurface("client")),
+        label: `${hostname}${portSuffix}/app`,
+      },
+      staff: {
+        href: withAppPath("/dashboard", pathPrefixForSurface("staff")),
+        label: `${hostname}${portSuffix}/staff`,
+      },
+      isLocal: false,
+      isPathBased: true,
+    };
+  }
+
   const clientOrigin =
     process.env.NEXT_PUBLIC_CLIENT_ORIGIN?.replace(/\/$/, "") ??
     originFor("client", hostname, port, normalizedProto);
@@ -101,5 +124,6 @@ export function getSurfaceDashboardLinks(
     client: toDashboardLink(clientOrigin),
     staff: toDashboardLink(staffOrigin),
     isLocal: isLocalHostname(hostname),
+    isPathBased: false,
   };
 }

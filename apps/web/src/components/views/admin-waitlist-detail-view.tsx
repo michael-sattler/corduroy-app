@@ -1,15 +1,19 @@
 import Link from "next/link";
 import type { WaitlistEntry } from "@/lib/placeholder-admin-data";
+import { withAppPath } from "@/lib/path-routing";
+import { getSurfacePathPrefix } from "@/lib/surface-path";
 
 type AdminWaitlistDetailViewProps = {
   entry: WaitlistEntry;
 };
 
-export function AdminWaitlistDetailView({ entry }: AdminWaitlistDetailViewProps) {
+export async function AdminWaitlistDetailView({ entry }: AdminWaitlistDetailViewProps) {
+  const pathPrefix = await getSurfacePathPrefix();
+
   return (
     <div className="d-flex flex-column gap-4">
       <div>
-        <Link href="/admin/waitlist" className="small admin-back-link">
+        <Link href={withAppPath("/admin/waitlist", pathPrefix)} className="small admin-back-link">
           ← Back to wait list
         </Link>
         <h1 className="h4 mb-1 mt-2">{entry.name}</h1>
