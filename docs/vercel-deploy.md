@@ -86,6 +86,7 @@ Also verify:
 |---------|-----|
 | Build fails on monorepo imports | Confirm Root Directory = `apps/web` and outside-root include is on |
 | Login works locally, not on Vercel | Check Vercel env vars; redeploy; verify Supabase redirect URLs |
+| `Your project's URL and Key are required` after sign-in | `NEXT_PUBLIC_*` vars missing at **build** time — add in Vercel env (Production + Preview), then **Redeploy** (not just promote) |
 | 404 on `/dashboard` | Should not happen — same routes as local; check domain points to this project |
 | Wrong portal branding | You may be on the wrong subdomain — client = `app.*`, staff = `staff.*` |
 
