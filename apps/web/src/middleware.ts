@@ -12,7 +12,7 @@ type ResolvedRouting = {
   surface: "client" | "staff";
   pathPrefix: string;
   internalPath: string;
-  rewrite: boolean;
+  pathBased: boolean;
 };
 
 function resolveRouting(host: string, pathname: string): ResolvedRouting | null {
@@ -23,7 +23,7 @@ function resolveRouting(host: string, pathname: string): ResolvedRouting | null 
       surface: subdomainSurface,
       pathPrefix: "",
       internalPath: pathname,
-      rewrite: false,
+      pathBased: false,
     };
   }
 
@@ -40,7 +40,7 @@ function resolveRouting(host: string, pathname: string): ResolvedRouting | null 
     surface: parsed.surface,
     pathPrefix: parsed.prefix,
     internalPath: parsed.internalPath,
-    rewrite: true,
+    pathBased: true,
   };
 }
 
@@ -55,14 +55,6 @@ function continueWithSurface(
     requestHeaders.set("x-corduroy-path-prefix", routing.pathPrefix);
   }
 
-  if (routing.rewrite) {
-    const url = request.nextUrl.clone();
-    url.pathname = routing.internalPath;
-    return NextResponse.rewrite(url, {
-      request: { headers: requestHeaders },
-    });
-  }
-
   return NextResponse.next({
     request: { headers: requestHeaders },
   });
@@ -70,7 +62,7 @@ function continueWithSurface(
 
 function copyCookies(from: NextResponse, to: NextResponse) {
   from.cookies.getAll().forEach((cookie) => {
-    to.cookies.set(cookie.name, cookie.value);
+    to.cookies.set(cookie.name, cookie.value, cookie);
   });
 }
 
@@ -120,13 +112,13 @@ export async function middleware(request: NextRequest) {
 
   const { pathPrefix, internalPath, surface } = routing;
 
-  if (routing.rewrite && pathname === pathPrefix) {
+  if (routing.pathBased && pathname === pathPrefix) {
     return NextResponse.redirect(
       new URL(withAppPath("/dashboard", pathPrefix), request.url),
     );
   }
 
-  if (!routing.rewrite && pathname === "/") {
+  if (!routing.pathBased && pathname === "/") {
     return NextResponse.redirect(new URL("/dashboard", request.url));
   }
 
@@ -137,24 +129,30 @@ export async function middleware(request: NextRequest) {
     return continueWithSurface(request, routing);
   }
 
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    if (isProtected) {
+      return redirectTo(request, "/login", pathPrefix);
+    }
+    return continueWithSurface(request, routing);
+  }
+
   let response = continueWithSurface(request, routing);
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options);
-          });
-        },
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options);
+        });
       },
     },
-  );
+  });
 
   const {
     data: { user },
