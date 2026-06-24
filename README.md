@@ -86,4 +86,4 @@ Production image: `docker compose --profile prod up --build`
 
 ## Current milestone
 
-**A1** — Repository scaffold, Docker, subdomain routing, placeholder dashboards. Authentication (Supabase) follows in **A2–A4**.
+**A5** — Vercel deploy + DNS for `app.corduroytech.ai` and `staff.corduroytech.ai`. See [vercel-deploy.md](./docs/vercel-deploy.md).

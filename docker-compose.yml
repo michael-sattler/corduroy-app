@@ -8,6 +8,7 @@ services:
     volumes:
       # Source + manifests (entrypoint re-runs npm ci when lockfile changes).
       - ./apps/web/src:/app/apps/web/src
+      - ./apps/web/public:/app/apps/web/public
       - ./package.json:/app/package.json:ro
       - ./package-lock.json:/app/package-lock.json:ro
       - ./apps/web/package.json:/app/apps/web/package.json:ro

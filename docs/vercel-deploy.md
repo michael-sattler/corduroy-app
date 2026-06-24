@@ -1,0 +1,90 @@
+# Vercel deploy — Milestone A5
+
+Deploy the single Next.js app to both production subdomains.
+
+## 1. Import project (Vercel dashboard)
+
+1. Log in at [vercel.com](https://vercel.com) (`msattler@corduroytech.ai`)
+2. **Add New → Project** → import `michael-sattler/corduroy-app`
+3. **Root Directory:** `apps/web` → Edit → set to `apps/web`, confirm
+4. Enable **Include source files outside of the Root Directory** (required for npm workspaces)
+5. Framework: **Next.js** (auto-detected)
+
+Build settings (should default correctly):
+
+| Setting | Value |
+|---------|--------|
+| Install Command | `npm ci` (runs from repo root when outside-root is enabled) |
+| Build Command | `npm run build` |
+| Output Directory | *(leave default — Vercel handles Next.js)* |
+
+## 2. Environment variables
+
+In **Project → Settings → Environment Variables**, add for **Production** (and Preview if you want PR deploys):
+
+| Name | Value |
+|------|--------|
+| `NEXT_PUBLIC_SUPABASE_URL` | `https://iggvqbqqzujixshiffqe.supabase.co` |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Current publishable key from [Supabase API settings](https://supabase.com/dashboard/project/iggvqbqqzujixshiffqe/settings/api) |
+
+Do **not** add `SUPABASE_SERVICE_ROLE_KEY` to Vercel — seeding runs locally only.
+
+Redeploy after adding or changing env vars.
+
+## 3. Custom domains
+
+In **Project → Settings → Domains**, add both:
+
+- `app.corduroytech.ai`
+- `staff.corduroytech.ai`
+
+Vercel shows DNS records (usually `CNAME` → `cname.vercel-dns.com`). Add them at your DNS host for `corduroytech.ai`.
+
+Wait for SSL provisioning (automatic once DNS propagates).
+
+## 4. Supabase Auth URLs (required for login on production)
+
+In [Supabase → Authentication → URL Configuration](https://supabase.com/dashboard/project/iggvqbqqzujixshiffqe/auth/url-configuration):
+
+**Site URL:**
+
+```
+https://app.corduroytech.ai
+```
+
+**Redirect URLs** (add each):
+
+```
+https://app.corduroytech.ai/**
+https://staff.corduroytech.ai/**
+```
+
+Save. Without this, production sign-in may fail or redirect incorrectly.
+
+## 5. Deploy
+
+Push to `main` (or click **Deploy** in Vercel). First production deploy may take a few minutes.
+
+## 6. Smoke test (A6)
+
+| Check | URL | User |
+|-------|-----|------|
+| Client login | https://app.corduroytech.ai/login | `client@acmecorp.test` |
+| Staff login | https://staff.corduroytech.ai/login | `advisor@corduroytech.ai` |
+
+Password: see [supabase-setup.md](./supabase-setup.md) (dev seed users).
+
+Also verify:
+
+- Refresh on `/dashboard` keeps you signed in
+- Client user on `staff.*` is rejected
+- Staff user on `app.*` is rejected
+
+## Troubleshooting
+
+| Symptom | Fix |
+|---------|-----|
+| Build fails on monorepo imports | Confirm Root Directory = `apps/web` and outside-root include is on |
+| Login works locally, not on Vercel | Check Vercel env vars; redeploy; verify Supabase redirect URLs |
+| 404 on `/dashboard` | Should not happen — same routes as local; check domain points to this project |
+| Wrong portal branding | You may be on the wrong subdomain — client = `app.*`, staff = `staff.*` |

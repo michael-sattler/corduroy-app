@@ -3,8 +3,17 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Corduroy Platform",
+  title: "Corduroy Behavioral Intelligence Platform",
   description: "Corduroy business advisory platform",
+  icons: {
+    icon: [
+      { url: "/brand/favicon.ico" },
+      { url: "/brand/favicon-16x16.png", sizes: "16x16", type: "image/png" },
+      { url: "/brand/favicon-32x32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: "/brand/apple-touch-icon.png",
+  },
+  manifest: "/brand/site.webmanifest",
 };
 
 export default function RootLayout({

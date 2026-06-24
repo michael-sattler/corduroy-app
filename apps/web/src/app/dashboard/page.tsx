@@ -1,92 +1,54 @@
-import { PlaceholderCard } from "@/components/placeholder-card";
-import { Shell } from "@/components/shell";
+import Link from "next/link";
+import { ClientLayout, StaffLayout } from "@/components/layout";
+import { StaffDashboardView } from "@/components/views/staff-dashboard-view";
+import { requireClientSession, requireStaffSession } from "@/lib/auth/session";
 import { requireSurface } from "@/lib/require-surface";
-import { createClient } from "@/lib/supabase/server";
-import { redirect } from "next/navigation";
 
 export default async function DashboardPage() {
   const surface = await requireSurface();
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    redirect("/login");
-  }
 
   if (surface === "client") {
-    const { data: profile } = await supabase
-      .from("client_users")
-      .select("display_name, clients(name)")
-      .eq("user_id", user.id)
-      .maybeSingle();
-
-    const displayName =
-      profile?.display_name ??
-      (user.user_metadata?.display_name as string | undefined) ??
-      user.email ??
-      "Client";
-    const clientsJoin = profile?.clients as
-      | { name: string }
-      | { name: string }[]
-      | null
-      | undefined;
-    const organization = Array.isArray(clientsJoin)
-      ? (clientsJoin[0]?.name ?? "Your organization")
-      : (clientsJoin?.name ?? "Your organization");
+    const { organization, displayName, user } = await requireClientSession();
 
     return (
-      <Shell surface="client" title={`Welcome, ${displayName}`} signedIn>
-        <p className="text-body-secondary mb-4">{organization}</p>
-        <div className="row g-4">
-          <div className="col-md-6">
-            <PlaceholderCard
-              title="The Vault"
-              description="Secure storage for your business documents and data sources. Upload and browse files from one place."
-            />
-          </div>
-          <div className="col-md-6">
-            <PlaceholderCard
-              title="90-Day Plan"
-              description="Your advisor-reviewed action plan with milestones and weekly priorities."
-            />
+      <ClientLayout
+        organization={organization}
+        displayName={displayName}
+        email={user.email ?? ""}
+        active="dashboard"
+      >
+        <div className="container-fluid py-4">
+          <div className="app-card">
+            <h2 className="h4 mb-2">Welcome, {displayName}</h2>
+            <p className="text-body-secondary mb-4">{organization}</p>
+            <p className="mb-4">
+              Your KPI dashboard and coaching insights will live here. For now,
+              explore your data sources and weekly plan.
+            </p>
+            <div className="d-flex flex-wrap gap-3">
+              <Link href="/vault" className="btn btn-primary">
+                Data hub
+              </Link>
+              <Link href="/plan" className="btn btn-outline-primary">
+                90-day plan
+              </Link>
+            </div>
           </div>
         </div>
-      </Shell>
+      </ClientLayout>
     );
   }
 
-  const { data: staff } = await supabase
-    .from("staff")
-    .select("role")
-    .eq("user_id", user.id)
-    .maybeSingle();
-
-  const displayName =
-    (user.user_metadata?.display_name as string | undefined) ??
-    user.email ??
-    "Staff";
-  const role =
-    staff?.role ?? (user.app_metadata?.staff_role as string) ?? "staff";
+  const { displayName, role, user } = await requireStaffSession();
 
   return (
-    <Shell surface="staff" title={`Welcome, ${displayName}`} signedIn>
-      <p className="text-body-secondary mb-4 text-capitalize">Role: {role}</p>
-      <div className="row g-4">
-        <div className="col-md-6">
-          <PlaceholderCard
-            title="Client list"
-            description="View assigned clients sorted by needs attention vs. on track."
-          />
-        </div>
-        <div className="col-md-6">
-          <PlaceholderCard
-            title="Review queue"
-            description="Plans and deliverables awaiting advisor review before client delivery."
-          />
-        </div>
-      </div>
-    </Shell>
+    <StaffLayout
+      displayName={displayName}
+      email={user.email ?? ""}
+      role={role}
+      active="portfolio"
+    >
+      <StaffDashboardView displayName={displayName} />
+    </StaffLayout>
   );
 }

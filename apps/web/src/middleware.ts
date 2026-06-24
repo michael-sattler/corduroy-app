@@ -17,6 +17,19 @@ function copyCookies(from: NextResponse, to: NextResponse) {
   });
 }
 
+const CLIENT_PROTECTED = new Set(["/dashboard", "/vault", "/plan"]);
+
+function isStaffProtected(pathname: string): boolean {
+  return pathname === "/dashboard" || pathname.startsWith("/admin");
+}
+
+function isProtectedPath(pathname: string, surface: "client" | "staff"): boolean {
+  if (surface === "client") {
+    return CLIENT_PROTECTED.has(pathname);
+  }
+  return isStaffProtected(pathname);
+}
+
 export async function middleware(request: NextRequest) {
   const host = request.headers.get("host") ?? "";
   const surface = getSurfaceFromHost(host);
@@ -32,9 +45,9 @@ export async function middleware(request: NextRequest) {
   }
 
   const isLoginPage = pathname === "/login";
-  const isDashboard = pathname === "/dashboard";
+  const isProtected = isProtectedPath(pathname, surface);
 
-  if (!isLoginPage && !isDashboard) {
+  if (!isLoginPage && !isProtected) {
     return nextWithSurface(request, surface);
   }
 
@@ -84,7 +97,7 @@ export async function middleware(request: NextRequest) {
       copyCookies(response, redirectResponse);
       return redirectResponse;
     }
-  } else if (isDashboard) {
+  } else if (isProtected) {
     const loginUrl = request.nextUrl.clone();
     loginUrl.pathname = "/login";
     const redirectResponse = NextResponse.redirect(loginUrl);

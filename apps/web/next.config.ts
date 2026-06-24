@@ -4,7 +4,8 @@ import path from "path";
 const monorepoRoot = path.join(__dirname, "../..");
 
 const nextConfig: NextConfig = {
-  output: "standalone",
+  // Standalone is for Docker/Railway self-hosting; Vercel uses its own output.
+  ...(process.env.VERCEL ? {} : { output: "standalone" }),
   outputFileTracingRoot: monorepoRoot,
 };
 

@@ -68,7 +68,28 @@ Run as version-controlled SQL migrations in `supabase/migrations/`:
 - [DONE] Middleware: read JWT, check `role` claim, reject wrong surface (client token on `staff.*` → sign out or 403)
 - [DONE] Logout flow
 
+### A4-supplemental
+- [x] build out static html for client /vault
+- [x] build out static html for client /plan
+- [x] build out static mockup for staff /dashboard
+- [x] build out navigation and styling
+- [x] componentize elements: layout-staff, layout-client, top nav, pagehead, logged-in-user widget
+- [x] placeholder management forms for important entities: 
+  - [x] Staff: manage/create client account .., name, location, datecreated, logo upload. Link from client panel in left of dashboard. Add a button at the bottom of the list to add a new client. 
+  - [x] Staff: manage/create client users ... list view + detail view ... name, email, password changes, avatar upload. Display list view on client account managment panel, ability to edit inline and create a new account user
+  - [x] Clients: manage user ... name, email, password change request, avatar upload ... upper right corner of navtop should contain avatar image and user's name, pulldown to expose links to utility options: account, preferences, sign out
+
+- [x] placeholder tools for staff admin
+  - [x] admin dashboard
+       - [x] counts of back-end client and staff actions like logins/uploads/file accesses/task checkoffs, etc.
+       - [x] health check - view of API health, S3 connectivity
+    - [x] link to prompt library tool - we'll put the content of the various prompts we use in a db table for easy tuning by staff
+    - [x] link to wait list view ... list+detail ... view of folks who have signed up from the mainsite for a consultation
+  
+
 ### A5. Vercel & DNS
+
+See [vercel-deploy.md](./vercel-deploy.md) for step-by-step instructions.
 
 - [ ] Connect repo to Vercel project (see creds-platform.md)
 - [ ] Configure custom domains:
