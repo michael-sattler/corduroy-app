@@ -44,10 +44,10 @@ function resolveRouting(host: string, pathname: string): ResolvedRouting | null 
   };
 }
 
-function continueWithSurface(
+function surfaceRequestHeaders(
   request: NextRequest,
   routing: ResolvedRouting,
-): NextResponse {
+): Headers {
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-corduroy-surface", routing.surface);
 
@@ -55,14 +55,21 @@ function continueWithSurface(
     requestHeaders.set("x-corduroy-path-prefix", routing.pathPrefix);
   }
 
+  return requestHeaders;
+}
+
+function nextWithSurface(
+  request: NextRequest,
+  routing: ResolvedRouting,
+): NextResponse {
   return NextResponse.next({
-    request: { headers: requestHeaders },
+    request: { headers: surfaceRequestHeaders(request, routing) },
   });
 }
 
-function copyCookies(from: NextResponse, to: NextResponse) {
-  from.cookies.getAll().forEach((cookie) => {
-    to.cookies.set(cookie.name, cookie.value, cookie);
+function copyResponseCookies(from: NextResponse, to: NextResponse) {
+  from.cookies.getAll().forEach(({ name, value, ...options }) => {
+    to.cookies.set(name, value, options);
   });
 }
 
@@ -70,7 +77,7 @@ function redirectTo(
   request: NextRequest,
   path: string,
   pathPrefix: string,
-  response?: NextResponse,
+  source?: NextResponse,
   searchParams?: Record<string, string>,
 ): NextResponse {
   const url = request.nextUrl.clone();
@@ -82,8 +89,8 @@ function redirectTo(
     }
   }
   const redirectResponse = NextResponse.redirect(url);
-  if (response) {
-    copyCookies(response, redirectResponse);
+  if (source) {
+    copyResponseCookies(source, redirectResponse);
   }
   return redirectResponse;
 }
@@ -126,7 +133,7 @@ export async function middleware(request: NextRequest) {
   const isProtected = isProtectedPath(internalPath, surface);
 
   if (!isLoginPage && !isProtected) {
-    return continueWithSurface(request, routing);
+    return nextWithSurface(request, routing);
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -136,10 +143,13 @@ export async function middleware(request: NextRequest) {
     if (isProtected) {
       return redirectTo(request, "/login", pathPrefix);
     }
-    return continueWithSurface(request, routing);
+    return nextWithSurface(request, routing);
   }
 
-  let response = continueWithSurface(request, routing);
+  const surfaceHeaders = surfaceRequestHeaders(request, routing);
+  let response = NextResponse.next({
+    request: { headers: surfaceHeaders },
+  });
 
   const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -147,6 +157,12 @@ export async function middleware(request: NextRequest) {
         return request.cookies.getAll();
       },
       setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) => {
+          request.cookies.set(name, value);
+        });
+        response = NextResponse.next({
+          request: { headers: surfaceHeaders },
+        });
         cookiesToSet.forEach(({ name, value, options }) => {
           response.cookies.set(name, value, options);
         });
