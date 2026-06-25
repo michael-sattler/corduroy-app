@@ -7,11 +7,8 @@ import {
   defaultWeekIndex,
   formatDayTab,
   formatIso,
-  formatKpiTarget,
-  formatKpiValue,
   formatPeriodLabel,
   groupTasksForDay,
-  kpiProgressPct,
   milestoneTone,
   milestonesForWeek,
   participantInitials,
@@ -22,6 +19,7 @@ import {
   workdaysInWeek,
 } from "@/lib/plan/derive";
 import type { PlanDocument } from "@/lib/plan/types";
+import { PlanKpiWidgets } from "@/components/views/plan-kpi-widgets";
 
 const PLAN_URL = "/data/sample-plan.json";
 
@@ -179,31 +177,6 @@ export function ClientPlanView() {
             </div>
           </div>
 
-          <div className="app-card mb-4">
-            <div className="plan-sidebar-label mb-3">Key metrics</div>
-            <div className="d-flex flex-column gap-3">
-              {doc.kpis.slice(0, 4).map((kpi) => (
-                <div key={kpi.id}>
-                  <div className="d-flex justify-content-between small mb-1">
-                    <span className="fw-medium">{kpi.name}</span>
-                    <span className="text-body-secondary">
-                      {formatKpiValue(kpi)}
-                    </span>
-                  </div>
-                  <div className="small text-body-secondary mb-1">
-                    Target {formatKpiTarget(kpi)}
-                  </div>
-                  <div className="progress plan-milestone-bar">
-                    <div
-                      className="progress-bar bg-primary"
-                      style={{ width: `${kpiProgressPct(kpi)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-
           <div className="app-card">
             <div className="plan-sidebar-label mb-3">Initiative themes</div>
             <div className="d-flex flex-column gap-3">
@@ -260,6 +233,8 @@ export function ClientPlanView() {
                 </span>
               ))}
             </div>
+
+            <PlanKpiWidgets kpis={doc.kpis} />
 
             <div className="plan-day-tabs mb-4">
               {workdays.map((day, index) => (

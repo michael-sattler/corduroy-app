@@ -4,7 +4,7 @@ import { useCallback, useSyncExternalStore } from "react";
 import { staffClients } from "@/lib/placeholder-data";
 
 const STORAGE_KEY = "corduroy.staff.selectedClientId";
-const DEFAULT_CLIENT_ID = staffClients[0]?.id ?? "ecs";
+const DEFAULT_CLIENT_ID = staffClients[0]?.id ?? "aaf";
 
 const CHANGE_EVENT = "corduroy:staff-client-change";
 

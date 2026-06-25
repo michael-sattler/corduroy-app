@@ -436,6 +436,147 @@ body {
   flex-shrink: 0;
 }
 
+/* Plan KPI widgets */
+
+.plan-kpi-widget {
+  height: 100%;
+  padding: 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.plan-kpi-widget-header {
+  min-height: 2.5rem;
+}
+
+.plan-kpi-widget-title {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--app-purple);
+}
+
+.plan-kpi-widget-subtitle {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.15rem;
+}
+
+.plan-kpi-widget-chart {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 7.5rem;
+}
+
+.plan-kpi-widget-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  margin-top: auto;
+}
+
+.plan-kpi-donut {
+  position: relative;
+  width: 5.75rem;
+  height: 5.75rem;
+}
+
+.plan-kpi-donut-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0.5rem;
+}
+
+.plan-kpi-donut-value {
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: #111827;
+}
+
+.plan-kpi-donut-pct {
+  font-size: 0.65rem;
+  color: #6b7280;
+  margin-top: 0.15rem;
+}
+
+.plan-kpi-columns {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 0.65rem;
+  width: 100%;
+  height: 6.5rem;
+  padding: 0 0.25rem;
+}
+
+.plan-kpi-column {
+  flex: 1;
+  max-width: 2.75rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35rem;
+  height: 100%;
+}
+
+.plan-kpi-column-track {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: #f3f4f6;
+  border-radius: 0.35rem 0.35rem 0.15rem 0.15rem;
+  padding: 0.2rem;
+  min-height: 4.5rem;
+}
+
+.plan-kpi-column-bar {
+  width: 100%;
+  border-radius: 0.25rem;
+  min-height: 0.35rem;
+  transition: height 0.2s ease;
+}
+
+.plan-kpi-column-bar--muted {
+  background: #d1d5db;
+}
+
+.plan-kpi-column-bar--current {
+  background: #f59e0b;
+}
+
+.plan-kpi-column-bar--target {
+  background: #22c55e;
+}
+
+.plan-kpi-column-label {
+  font-size: 0.65rem;
+  color: #6b7280;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.plan-kpi-column-value {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #111827;
+}
+
 /* Staff dashboard */
 
 .staff-client-group-label {

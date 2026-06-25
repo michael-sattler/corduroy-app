@@ -30,7 +30,7 @@ export default async function DashboardPage() {
             </p>
             <div className="d-flex flex-wrap gap-3">
               <Link href={vaultHref} className="btn btn-primary">
-                Data hub
+                Vault
               </Link>
               <Link href={planHref} className="btn btn-outline-primary">
                 90-day plan

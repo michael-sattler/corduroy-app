@@ -11,7 +11,7 @@ export const clientNavItems: {
   disabled?: boolean;
 }[] = [
   { key: "dashboard", label: "Dashboard", href: "/dashboard" },
-  { key: "vault", label: "Data hub", href: "/vault" },
+  { key: "vault", label: "Vault", href: "/vault" },
   { key: "plan", label: "90-day plan", href: "/plan" },
   { key: "coach", label: "Coach", href: "/dashboard", disabled: true },
 ];

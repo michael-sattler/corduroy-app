@@ -1,4 +1,4 @@
-export const PLACEHOLDER_ORG = "Elevated Concrete Solutions";
+export const PLACEHOLDER_ORG = "All-American Fitness";
 
 export const vaultSources = [
   {
@@ -114,6 +114,20 @@ export const planThemes = [
 ] as const;
 
 export const staffClients = [
+  {
+    id: "aaf",
+    initials: "AAF",
+    name: "All-American Fitness",
+    orgName: "All-American Fitness",
+    location: "Austin, TX",
+    dateCreated: "2026-05-16",
+    engagementSubtitle: "Week 4 of 13 · Jun 22–28, 2026",
+    meta: "Week 4 of 13 · on track",
+    kpisOnTrack: 4,
+    kpisAtRisk: 1,
+    reviewLabel: "Review due Fri",
+    attention: false,
+  },
   {
     id: "ecs",
     initials: "ECS",

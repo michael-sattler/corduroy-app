@@ -20,7 +20,7 @@ export function ClientAccountFields({
           id="client-name"
           className="form-control"
           defaultValue={name}
-          placeholder="Elevated Concrete Solutions"
+          placeholder="All-American Fitness"
         />
       </div>
       <div className="mb-3">

@@ -154,7 +154,7 @@ Complete after Milestone A is live. Unblocks Vault and Planner work.
 - [ ] Upload flow: API → broker → browser PUT → S3 ObjectCreated trigger
 - [ ] ContentDispatcher Lambda: extract, derived writes, catalog upsert
 - [ ] Catalog reconciliation job
-- [ ] Data Hub UI (add-source + repository views)
+- [ ] vault UI (add-source + repository views)
 - [ ] Security checkpoint: cross-client access review, canary, break-glass runbook
 
 ---

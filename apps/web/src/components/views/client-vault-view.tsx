@@ -1,4 +1,4 @@
-import { PLACEHOLDER_ORG, vaultSources } from "@/lib/placeholder-data";
+import { vaultSources } from "@/lib/placeholder-data";
 
 type ClientVaultViewProps = {
   organization: string;
@@ -14,8 +14,6 @@ const integrations = [
 ];
 
 export function ClientVaultView({ organization }: ClientVaultViewProps) {
-  const displayOrg = organization === "Acme Corp" ? PLACEHOLDER_ORG : organization;
-
   return (
     <div className="container-fluid py-4">
       <div className="row g-4">
@@ -92,7 +90,7 @@ export function ClientVaultView({ organization }: ClientVaultViewProps) {
               <div>
                 <h2 className="h5 mb-1">Data repository</h2>
                 <p className="text-body-secondary small mb-0">
-                  {displayOrg} — 11 sources
+                  {organization} — 11 sources
                 </p>
               </div>
             </div>

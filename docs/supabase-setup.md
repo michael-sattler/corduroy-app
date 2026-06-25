@@ -82,8 +82,8 @@ Creates:
 
 | User | Password | Notes |
 |------|----------|-------|
-| `client@acmecorp.test` | `CorduroyDev2026!` | Client user for Acme Corp |
-| `advisor@corduroytech.ai` | `CorduroyDev2026!` | Approved staff, assigned to Acme Corp |
+| `client@acmecorp.test` | `CorduroyDev2026!` | Client user for All-American Fitness |
+| `advisor@corduroytech.ai` | `CorduroyDev2026!` | Approved staff, assigned to All-American Fitness |
 
 Re-running the seed is idempotent.
 

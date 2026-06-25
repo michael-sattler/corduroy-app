@@ -218,9 +218,9 @@ The Lambda path failing degrades the application; it does not endanger the data.
 
 ## 
 
-### **5.8 Views — the Data Hub**
+### **5.8 Views — the Vault**
 
-The Vault's user-facing surface is the Data Hub: a two-pane screen for assembling and monitoring a client's data sources. The left pane adds sources — drag-and-drop upload (PDF, XLSX, DOCX, CSV) with a source label, category, and date-of-data, or a one-click connect to a system (QuickBooks, Pipedrive, Quotient, AnswerConnect; others as they are added). The right pane is the Data Repository: the catalog (§5.5) rendered for humans as a per-client list grouped by category (Financial; Pipeline & Sales; Operations & Context), each source showing a type badge (QB live, XLSX, PDF, API, Web scrape), its last-updated date, and an obtained / awaiting state, topped by a completeness meter (e.g. “8 of 11 sources obtained — 68% complete”).
+The Vault's user-facing surface is the Vault: a two-pane screen for assembling and monitoring a client's data sources. The left pane adds sources — drag-and-drop upload (PDF, XLSX, DOCX, CSV) with a source label, category, and date-of-data, or a one-click connect to a system (QuickBooks, Pipedrive, Quotient, AnswerConnect; others as they are added). The right pane is the Data Repository: the catalog (§5.5) rendered for humans as a per-client list grouped by category (Financial; Pipeline & Sales; Operations & Context), each source showing a type badge (QB live, XLSX, PDF, API, Web scrape), its last-updated date, and an obtained / awaiting state, topped by a completeness meter (e.g. “8 of 11 sources obtained — 68% complete”).
 
 * **USER STORY** As a client, I can upload a file or connect a system and immediately see it in my repository with its type and freshness, so I know what Corduroy holds.
 
@@ -412,7 +412,7 @@ Ordered so the standard SaaS scaffolding lands first, then the Vault (the non-ne
 
 9. Build the catalog and the reconciliation / true-up job (reconcile, never rebuild).
 
-10. Build the Data Hub views (§5.8): the add-source pane and the data repository.
+10. Build the Vault views (§5.8): the add-source pane and the data repository.
 
 11. Security checkpoint: verify no cross-client access by review, stand up the canary health check, and write the break-glass runbook (§5.7).
 

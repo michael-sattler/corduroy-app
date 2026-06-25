@@ -43,7 +43,8 @@ const admin = createClient(supabaseUrl, serviceRoleKey, {
 });
 
 const DEV_CLIENT = {
-  orgName: "Acme Corp",
+  orgName: "All-American Fitness",
+  legacyOrgNames: ["Acme Corp", "Acme"],
   email: "client@acmecorp.test",
   password: "CorduroyDev2026!",
   displayName: "Jane Client",
@@ -86,7 +87,7 @@ async function ensureAuthUser({ email, password, appMetadata, userMetadata }) {
   return data.user;
 }
 
-async function ensureClientOrg(name) {
+async function ensureClientOrg(name, legacyNames = []) {
   const { data: existing, error: lookupError } = await admin
     .from("clients")
     .select("id, name")
@@ -95,6 +96,28 @@ async function ensureClientOrg(name) {
 
   if (lookupError) throw lookupError;
   if (existing) return existing;
+
+  for (const legacyName of legacyNames) {
+    const { data: legacy, error: legacyError } = await admin
+      .from("clients")
+      .select("id, name")
+      .eq("name", legacyName)
+      .maybeSingle();
+
+    if (legacyError) throw legacyError;
+    if (!legacy) continue;
+
+    const { data: renamed, error: renameError } = await admin
+      .from("clients")
+      .update({ name })
+      .eq("id", legacy.id)
+      .select("id, name")
+      .single();
+
+    if (renameError) throw renameError;
+    console.log(`  Renamed client org "${legacyName}" → "${name}"`);
+    return renamed;
+  }
 
   const { data: inserted, error: insertError } = await admin
     .from("clients")
@@ -109,7 +132,10 @@ async function ensureClientOrg(name) {
 async function main() {
   console.log("Seeding Corduroy dev identity...");
 
-  const client = await ensureClientOrg(DEV_CLIENT.orgName);
+  const client = await ensureClientOrg(
+    DEV_CLIENT.orgName,
+    DEV_CLIENT.legacyOrgNames,
+  );
   const clientId = client.id;
 
   const clientUser = await ensureAuthUser({
