@@ -60,7 +60,6 @@ export async function buildStaffReturnUrl(
 export async function buildEndMasqueradePath(): Promise<string> {
   const headerStore = await headers();
   const host = getRequestHostFromHeaders(headerStore);
-  const pathPrefix = headerStore.get("x-corduroy-path-prefix") ?? "";
 
   if (isPathBasedHost(host)) {
     return withAppPath("/auth/end-impersonate", pathPrefixForSurface("client"));

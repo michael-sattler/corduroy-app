@@ -100,7 +100,7 @@ export async function GET(request: NextRequest) {
   }
 
   const config = requirePublicSupabaseConfig();
-  let response = NextResponse.redirect(dashboardRedirectUrl(request));
+  const response = NextResponse.redirect(dashboardRedirectUrl(request));
 
   const supabase = createServerClient(config.url, config.anonKey, {
     cookies: {

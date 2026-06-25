@@ -5,7 +5,6 @@ import { existsSync } from "node:fs";
 import { readUserRole } from "@/lib/auth/roles";
 import { createClient } from "@/lib/supabase/server";
 import type {
-  HealthCheck,
   PromptRecord,
   WaitlistRecord,
   ClientRecord,

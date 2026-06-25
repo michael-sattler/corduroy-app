@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import {
   createPortalUserAction,
   startClientImpersonationAction,
@@ -136,7 +136,8 @@ export function AdminClientDetailView({
   pathPrefix,
 }: AdminClientDetailViewProps) {
   const router = useRouter();
-  const [orgName, setOrgName] = useState(client.name);
+  const [savedOrgName, setSavedOrgName] = useState<string | null>(null);
+  const orgName = savedOrgName ?? client.name;
   const [orgError, setOrgError] = useState<string | null>(null);
   const [portalPanelMode, setPortalPanelMode] = useState<PortalPanelMode>(null);
   const [selectedUser, setSelectedUser] = useState<PortalUserListRecord | null>(
@@ -147,10 +148,6 @@ export function AdminClientDetailView({
   const [portalPending, startPortalTransition] = useTransition();
   const [impersonatePending, startImpersonateTransition] = useTransition();
   const [impersonateError, setImpersonateError] = useState<string | null>(null);
-
-  useEffect(() => {
-    setOrgName(client.name);
-  }, [client.name]);
 
   function closePortalPanel() {
     setPortalPanelMode(null);
@@ -165,7 +162,7 @@ export function AdminClientDetailView({
     startOrgTransition(async () => {
       try {
         const updated = await updateClientAction(client.id, { name });
-        setOrgName(updated.name);
+        setSavedOrgName(updated.name);
         router.refresh();
       } catch (err) {
         setOrgError(

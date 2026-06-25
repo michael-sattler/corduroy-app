@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
   const links = getSurfaceDashboardLinks(host, proto);
   const fallbackReturn = links.staff.href.replace(/\/dashboard$/, "/admin");
 
-  let response = NextResponse.redirect(masquerade?.staffReturnUrl ?? fallbackReturn);
+  const response = NextResponse.redirect(masquerade?.staffReturnUrl ?? fallbackReturn);
 
   const config = requirePublicSupabaseConfig();
   const supabase = createServerClient(config.url, config.anonKey, {

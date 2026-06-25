@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import { notFound } from "next/navigation";
-import { getSurfaceFromHost, type Surface } from "@/lib/subdomain";
+import { getSurfaceFromHost } from "@/lib/subdomain";
 
 export type AppSurface = "client" | "staff";
 
