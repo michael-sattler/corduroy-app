@@ -23,6 +23,22 @@ export async function runAdminHealthChecks(
 async function checkOrchestrationApi(apiBaseUrl: string): Promise<HealthCheck> {
   const started = Date.now();
   const checkedAt = new Date().toISOString();
+  const configuredUrl = process.env.ORCHESTRATION_API_URL?.trim();
+
+  if (
+    !configuredUrl ||
+    configuredUrl.includes("127.0.0.1") ||
+    configuredUrl.includes("localhost")
+  ) {
+    return {
+      service: "Orchestration API",
+      status: "degraded",
+      detail:
+        "ORCHESTRATION_API_URL not set on Vercel — deploy apps/api on Railway, then add the public Railway URL to Vercel env and redeploy",
+      latencyMs: null,
+      checkedAt,
+    };
+  }
 
   try {
     const res = await fetch(`${apiBaseUrl}/health`, {

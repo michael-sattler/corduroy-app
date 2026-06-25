@@ -27,7 +27,7 @@ In **Project → Settings → Environment Variables**, add for **Production** (a
 | `NEXT_PUBLIC_SUPABASE_URL` | `https://iggvqbqqzujixshiffqe.supabase.co` |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Current publishable key from [Supabase API settings](https://supabase.com/dashboard/project/iggvqbqqzujixshiffqe/settings/api) — must match `apps/web/.env` locally |
 | `SUPABASE_SERVICE_ROLE_KEY` | Service role key from Supabase API settings — **server only**; required for staff admin provisioning (create portal/staff users, “View as client” impersonation). Never expose as `NEXT_PUBLIC_*`. |
-| `ORCHESTRATION_API_URL` | *(Optional)* Public Railway API URL — only used by the admin **health check** card. Staff admin data reads/writes go to Supabase directly; omit until Railway is connected. |
+| `ORCHESTRATION_API_URL` | *(After Railway deploy)* Public Railway API URL, e.g. `https://corduroy-api-production.up.railway.app` — **no trailing slash**. Powers the admin health check; omit until Railway is live (shows degraded, not down). |
 
 Do **not** add `SUPABASE_SERVICE_ROLE_KEY` to client bundles or `NEXT_PUBLIC_*` vars.
 

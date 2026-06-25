@@ -15,5 +15,5 @@ RUN npm ci --omit=dev --workspace=@corduroy/api
 COPY --from=builder /app/apps/api/dist ./apps/api/dist
 USER api
 EXPOSE 4000
-ENV PORT=4000
+# Railway injects PORT at runtime; local Docker Compose sets PORT=4000 in compose.
 CMD ["node", "apps/api/dist/index.js"]
