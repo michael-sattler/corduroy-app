@@ -81,13 +81,23 @@ Staging subdomains (`app.staging.corduroytech.ai`, `staff.staging.corduroytech.a
 | Client login | https://app.corduroytech.ai/login | `client@acmecorp.test` |
 | Staff login | https://staff.corduroytech.ai/login | `advisor@corduroytech.ai` |
 
-Password: see [supabase-setup.md](./supabase-setup.md) (dev seed users).
+Passwords: see [supabase-setup.md](./supabase-setup.md) (dev seed users).
 
 Also verify:
 
 - Refresh on `/dashboard` keeps you signed in
-- Client user on `staff.*` is rejected
-- Staff user on `app.*` is rejected
+- Client user on `staff.*` is rejected (redirect to staff login)
+- Staff user on `app.*` is rejected (redirect to client login)
+
+### Verified (2026-06-25)
+
+| Test | Result |
+|------|--------|
+| Client login → dashboard (production) | Pass — shows Jane Client / Acme Corp |
+| Session survives reload on `/dashboard` | Pass |
+| Client session on `staff.corduroytech.ai/dashboard` | Pass — redirected to staff login |
+| Staff + client Auth API (`signInWithPassword`) | Pass — both return correct `role` |
+| Service role key absent from `apps/web` source and `.next` build | Pass |
 
 ## Troubleshooting
 

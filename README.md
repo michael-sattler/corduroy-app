@@ -77,6 +77,17 @@ Production image: `docker compose --profile prod up --build`
 | `npm run start` | Start production server |
 | `npm run lint` | ESLint |
 
+## Sign in (production & local)
+
+Dev seed users are documented in [supabase-setup.md](./docs/supabase-setup.md) (emails and passwords — not repeated here).
+
+| Portal | Production | Local |
+|--------|------------|-------|
+| Client | https://app.corduroytech.ai/login | http://app.localhost:3000/login |
+| Staff | https://staff.corduroytech.ai/login | http://staff.localhost:3000/login |
+
+After sign-in you should land on `/dashboard` with your name visible. Client and staff sessions are isolated — a client token on `staff.*` (or vice versa) is signed out and redirected to login.
+
 ## Docs
 
 - [Build plan](./docs/buildplan.md) — milestone checklist
@@ -86,4 +97,4 @@ Production image: `docker compose --profile prod up --build`
 
 ## Current milestone
 
-**A6** — production smoke tests (login, session, cross-surface isolation). Deploy is live at `app.corduroytech.ai` and `staff.corduroytech.ai`. See [vercel-deploy.md](./docs/vercel-deploy.md) and [supabase-setup.md](./docs/supabase-setup.md).
+**Milestone A complete.** Production portals are live; next up is **Milestone B** (Railway API shell). See [buildplan.md](./docs/buildplan.md).

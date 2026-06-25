@@ -12,10 +12,10 @@
 
 - [DONE] `app.corduroytech.ai` resolves and serves the client app over HTTPS
 - [DONE] `staff.corduroytech.ai` resolves and serves the staff console over HTTPS
-- [ ] A client user can sign in (email/password) and lands on a placeholder client dashboard showing their name and client org
-- [ ] A staff user can sign in and lands on a placeholder staff dashboard (distinct layout/copy from client)
-- [ ] Client JWT cannot access staff routes; staff JWT cannot access client-only routes (subdomain + middleware gate)
-- [ ] At least one seeded test client user and one seeded test staff user exist in Supabase
+- [DONE] A client user can sign in (email/password) and lands on a placeholder client dashboard showing their name and client org
+- [DONE] A staff user can sign in and lands on a placeholder staff dashboard (distinct layout/copy from client)
+- [DONE] Client JWT cannot access staff routes; staff JWT cannot access client-only routes (subdomain + middleware gate)
+- [DONE] At least one seeded test client user and one seeded test staff user exist in Supabase
 
 ---
 
@@ -100,9 +100,9 @@ See [vercel-deploy.md](./vercel-deploy.md) for step-by-step instructions.
 
 ### A6. Smoke test & handoff
 
-- [ ] Document "how to log in as client / staff" in a short README (no secrets in repo)
-- [ ] Verify session persists across refresh; verify cross-subdomain isolation
-- [ ] Security sanity: anon key only in frontend; no service role key in client bundle
+- [DONE] Document "how to log in as client / staff" in a short README (no secrets in repo)
+- [DONE] Verify session persists across refresh; verify cross-subdomain isolation
+- [DONE] Security sanity: anon key only in frontend; no service role key in client bundle
 
 ---
 
