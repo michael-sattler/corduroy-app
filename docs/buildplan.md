@@ -121,20 +121,21 @@ See [railway-deploy.md](./railway-deploy.md).
 - [DONE] CORS locked to `app.corduroytech.ai` and `staff.corduroytech.ai` (+ local dev origins)
 
 ### B1 Supplemental. Non-Vault API interactions
-- [PARTIAL] staff admin CRUD
-  - [DONE] healthchecks: API, Supabase (S3/Lambda stubs return degraded)
-  - [DONE] prompt library — list + edit via `/staff/admin/prompts`
-  - [DONE] wait list — list, detail, status/notes via `/staff/admin/waitlist`
-  - [DONE] client user management — create portal users (`/admin/clients/[id]`)
+- [PARTIAL] staff admin CRUD (Vercel → Supabase; Railway not required for current admin UI)
+  - [DONE] healthchecks: Supabase live; API/S3/Lambda rows (API down until Railway connected)
+  - [DONE] prompt library — list + edit (Supabase via staff JWT)
+  - [DONE] wait list — list, detail, status/notes (Supabase via staff JWT)
+  - [DONE] client user management — create portal users (`/admin/clients/[id]`; needs `SUPABASE_SERVICE_ROLE_KEY` on Vercel)
   - [DONE] client organization/account management — create orgs (`/admin/clients`)
   - [DONE] staff user management — create staff (`/admin/staff`)
+  - [DONE] staff “View as client” impersonation (needs service role key on Vercel)
   - [ ] image upload (organization logos, user and admin use avatars)
 
 ### B2. CI/CD
 
 - [DONE] GitHub Actions: lint + typecheck on PR
 - [ ] Supabase migrations applied via CI or documented CLI workflow
-- [ ] Railway deploy on merge to `main` (staging) / tag (production) — pick one branching model and document it
+- [ ] Railway: connect GitHub repo + deploy `apps/api` per [railway-deploy.md](./railway-deploy.md) (`railway.toml` at repo root)
 
 ### B3. AWS account skeleton (no Vault yet)
 

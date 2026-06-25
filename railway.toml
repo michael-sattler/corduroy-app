@@ -1,0 +1,12 @@
+# Orchestration API only — create a single Railway service from this repo.
+# Do not deploy apps/web here; the Next.js app lives on Vercel.
+# See docs/railway-deploy.md
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "apps/api/Dockerfile"
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "ON_FAILURE"

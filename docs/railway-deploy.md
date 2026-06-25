@@ -2,16 +2,30 @@
 
 Orchestration API (`apps/api`) for business logic, plan generation, and audit writes. Runs separately from the Next.js app on Vercel.
 
+## Current status (2026-06)
+
+| Component | Host | Connected? |
+|-----------|------|------------|
+| Client + staff web (`apps/web`) | Vercel (`app.*`, `staff.*`) | Yes |
+| Staff admin console (prompts, waitlist, clients, staff) | Vercel → Supabase (staff JWT) | Works **without** Railway |
+| Orchestration API (`apps/api`) | Railway | **Not connected yet** |
+
+Earlier admin pages proxied reads through `ORCHESTRATION_API_URL`. That broke production when Railway was not deployed. As of commit `8d44b29`, admin **reads and writes** use Supabase directly from the Next.js server (same RLS as the API routes). Railway is still needed for future orchestration (plan generation, LLM calls, vault broker) and for the admin **health check** row that probes `GET /health`.
+
 ## 1. Create the Railway service
 
 1. Log in at [railway.com](https://railway.com)
 2. **New Project → Deploy from GitHub repo** → `michael-sattler/corduroy-app`
-3. Add a service for the API:
-   - **Root Directory:** `/` (repo root)
-   - **Dockerfile path:** `apps/api/Dockerfile`
-   - **Service name:** `corduroy-api` (or match your creds doc)
-
-Railway sets `PORT` automatically — the API reads `process.env.PORT`.
+3. If Railway offers to deploy the whole monorepo, **remove** any auto-created web service — only the API belongs on Railway.
+4. Add (or configure) one service:
+   - **Source:** GitHub `main` branch
+   - **Config:** repo-root `railway.toml` (points at `apps/api/Dockerfile`)
+   - Or manually: **Root Directory** `/`, **Dockerfile path** `apps/api/Dockerfile`
+   - **Service name:** `corduroy-api`
+5. **Generate domain** (Settings → Networking) — note the public URL, e.g. `https://corduroy-api-production.up.railway.app`
+6. Optional — wire Vercel to the API for health monitoring only:
+   - Vercel → **Environment Variables** → `ORCHESTRATION_API_URL` = Railway public URL (no trailing slash)
+   - Redeploy Vercel. Admin pages do not require this; the admin overview health card will show API status.
 
 ## 2. Environment variables
 
