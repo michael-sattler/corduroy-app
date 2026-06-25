@@ -10,10 +10,25 @@ import { createServiceRoleClient } from "@/lib/supabase/admin";
 
 export type { PortalUserListRecord, StaffListRecord } from "@/lib/admin-api-types";
 
+function tryServiceRoleClient() {
+  try {
+    return createServiceRoleClient();
+  } catch {
+    return null;
+  }
+}
+
 export async function enrichStaffForAdmin(
   staff: StaffRecord[],
 ): Promise<StaffListRecord[]> {
-  const admin = createServiceRoleClient();
+  const admin = tryServiceRoleClient();
+  if (!admin) {
+    return staff.map((member) => ({
+      ...member,
+      email: "",
+      display_name: "",
+    }));
+  }
 
   return Promise.all(
     staff.map(async (member) => {
@@ -39,7 +54,10 @@ export async function enrichStaffForAdmin(
 export async function enrichPortalUsersForAdmin(
   users: ClientUserRecord[],
 ): Promise<PortalUserListRecord[]> {
-  const admin = createServiceRoleClient();
+  const admin = tryServiceRoleClient();
+  if (!admin) {
+    return users.map((user) => ({ ...user, email: "" }));
+  }
 
   return Promise.all(
     users.map(async (user) => {

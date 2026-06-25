@@ -14,6 +14,7 @@ export default async function AdminClientDetailPage({
   params,
 }: AdminClientDetailPageProps) {
   const { id } = await params;
+  const { displayName, role, user } = await requireStaffSession();
   const pathPrefix = await getSurfacePathPrefix();
 
   let client;
@@ -23,13 +24,16 @@ export default async function AdminClientDetailPage({
       fetchClient(id),
       fetchClientUsers(id),
     ]);
-  } catch {
-    notFound();
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Could not load client";
+    if (message === "Client not found") {
+      notFound();
+    }
+    throw error;
   }
 
   const enrichedUsers = await enrichPortalUsersForAdmin(users);
-
-  const { displayName, role, user } = await requireStaffSession();
 
   return (
     <StaffAdminShell
