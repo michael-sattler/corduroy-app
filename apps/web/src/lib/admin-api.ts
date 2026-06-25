@@ -87,70 +87,116 @@ export async function requireStaffApiAccess(): Promise<void> {
   await getStaffAccessToken();
 }
 
-export async function staffApiFetch<T>(
-  path: string,
-  init?: RequestInit,
-): Promise<T> {
-  const token = await getStaffAccessToken();
-  const apiBase = getOrchestrationApiUrl();
+async function staffSupabase() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-  let response: Response;
-  try {
-    response = await fetch(`${apiBase}${path}`, {
-      ...init,
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-        ...init?.headers,
-      },
-      cache: "no-store",
-    });
-  } catch (error) {
-    const detail =
-      error instanceof Error ? error.message : "Orchestration API unreachable";
-    throw new Error(
-      `Cannot reach orchestration API at ${apiBase} (${detail}). Is \`npm run dev:api\` running?`,
-    );
+  if (!user) {
+    throw new StaffApiHttpError(401, "Not authenticated");
   }
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`API ${path} failed (${response.status}): ${text}`);
+  if (readUserRole(user.app_metadata) !== "staff") {
+    throw new StaffApiHttpError(403, "Staff access required");
   }
 
-  return response.json() as Promise<T>;
+  return { supabase, user };
 }
 
 export async function fetchPrompts(): Promise<{ prompts: PromptRecord[] }> {
-  return staffApiFetch("/staff/admin/prompts");
+  const { supabase } = await staffSupabase();
+  const { data, error } = await supabase
+    .from("prompt_library")
+    .select("id, name, version, body, updated_at, updated_by")
+    .order("name");
+
+  if (error) throw new Error(error.message);
+  return { prompts: data ?? [] };
 }
 
 export async function fetchWaitlist(): Promise<{ entries: WaitlistRecord[] }> {
-  return staffApiFetch("/staff/admin/waitlist");
+  const { supabase } = await staffSupabase();
+  const { data, error } = await supabase
+    .from("waitlist_entries")
+    .select("id, name, company, email, status, submitted_at, updated_at")
+    .order("submitted_at", { ascending: false });
+
+  if (error) throw new Error(error.message);
+  return { entries: (data ?? []) as WaitlistRecord[] };
 }
 
 export async function fetchWaitlistEntry(
   id: string,
 ): Promise<{ entry: WaitlistRecord }> {
-  return staffApiFetch(`/staff/admin/waitlist/${id}`);
+  const { supabase } = await staffSupabase();
+  const { data, error } = await supabase
+    .from("waitlist_entries")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Waitlist entry not found");
+  return { entry: data as WaitlistRecord };
 }
 
 export async function fetchClients(): Promise<{ clients: ClientRecord[] }> {
-  return staffApiFetch("/staff/admin/clients");
+  const { supabase } = await staffSupabase();
+  const { data, error } = await supabase
+    .from("clients")
+    .select("id, name, created_at, client_users(count)")
+    .order("name");
+
+  if (error) throw new Error(error.message);
+
+  return {
+    clients: (data ?? []).map((row) => ({
+      id: row.id,
+      name: row.name,
+      created_at: row.created_at,
+      user_count:
+        (row.client_users as { count: number }[] | null)?.[0]?.count ?? 0,
+    })),
+  };
 }
 
 export async function fetchClient(
   clientId: string,
 ): Promise<{ client: Omit<ClientRecord, "user_count"> }> {
-  return staffApiFetch(`/staff/admin/clients/${clientId}`);
+  const { supabase } = await staffSupabase();
+  const { data, error } = await supabase
+    .from("clients")
+    .select("id, name, created_at")
+    .eq("id", clientId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Client not found");
+  return { client: data };
 }
 
 export async function fetchClientUsers(
   clientId: string,
 ): Promise<{ users: ClientUserRecord[] }> {
-  return staffApiFetch(`/staff/admin/clients/${clientId}/users`);
+  const { supabase } = await staffSupabase();
+  const { data, error } = await supabase
+    .from("client_users")
+    .select("id, user_id, client_id, display_name, created_at")
+    .eq("client_id", clientId)
+    .order("display_name");
+
+  if (error) throw new Error(error.message);
+  return { users: data ?? [] };
 }
 
 export async function fetchStaff(): Promise<{ staff: StaffRecord[] }> {
-  return staffApiFetch("/staff/admin/staff");
+  const { supabase } = await staffSupabase();
+  const { data, error } = await supabase
+    .from("staff")
+    .select("id, user_id, role, approved, created_at")
+    .order("created_at");
+
+  if (error) throw new Error(error.message);
+  return { staff: (data ?? []) as StaffRecord[] };
 }

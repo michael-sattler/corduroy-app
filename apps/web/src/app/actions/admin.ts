@@ -3,20 +3,30 @@
 import { revalidatePath } from "next/cache";
 import { isStaffEmail } from "@/lib/auth/roles";
 import { requireStaffSession } from "@/lib/auth/session";
-import { staffApiFetch } from "@/lib/admin-api";
 import { buildClientImpersonateUrl, buildStaffReturnUrl } from "@/lib/masquerade";
 import { createImpersonationToken } from "@/lib/impersonation";
 import { getSurfacePathPrefix } from "@/lib/surface-path";
+import { createClient } from "@/lib/supabase/server";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
 
 export async function updatePromptAction(
   id: string,
   data: { name: string; body: string },
 ) {
-  await staffApiFetch(`/staff/admin/prompts/${id}`, {
-    method: "PUT",
-    body: JSON.stringify(data),
-  });
+  const { user } = await requireStaffSession();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("prompt_library")
+    .update({
+      name: data.name,
+      body: data.body,
+      updated_at: new Date().toISOString(),
+      updated_by: user.id,
+    })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
   revalidatePath("/admin/prompts");
 }
 
@@ -24,13 +34,19 @@ export async function updateWaitlistEntryAction(
   id: string,
   data: { status: string; notes: string },
 ) {
-  await staffApiFetch(`/staff/admin/waitlist/${id}`, {
-    method: "PATCH",
-    body: JSON.stringify({
+  await requireStaffSession();
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("waitlist_entries")
+    .update({
       status: data.status.toLowerCase(),
       notes: data.notes,
-    }),
-  });
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
   revalidatePath("/admin/waitlist");
   revalidatePath(`/admin/waitlist/${id}`);
 }
