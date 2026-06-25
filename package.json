@@ -7,13 +7,17 @@
   ],
   "scripts": {
     "dev": "npm run dev --workspace=@corduroy/web",
+    "dev:api": "npm run dev --workspace=@corduroy/api",
     "build": "npm run build --workspace=@corduroy/web",
+    "build:api": "npm run build --workspace=@corduroy/api",
     "start": "npm run start --workspace=@corduroy/web",
+    "start:api": "npm run start --workspace=@corduroy/api",
     "lint": "npm run lint --workspace=@corduroy/web",
+    "typecheck": "npm run typecheck --workspace=@corduroy/api",
     "db:link": "supabase link --project-ref iggvqbqqzujixshiffqe",
     "db:push": "supabase db push --linked --yes",
     "db:seed": "node scripts/seed-dev-users.mjs",
-    "docker:dev": "docker compose up --build",
+    "docker:dev": "docker compose up --build web api",
     "docker:down": "docker compose down"
   },
   "devDependencies": {

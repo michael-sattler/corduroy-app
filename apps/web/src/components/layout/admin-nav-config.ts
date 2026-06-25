@@ -1,4 +1,9 @@
-export type AdminNavKey = "overview" | "prompts" | "waitlist";
+export type AdminNavKey =
+  | "overview"
+  | "prompts"
+  | "waitlist"
+  | "clients"
+  | "staff";
 
 export const adminNavItems: {
   key: AdminNavKey;
@@ -11,6 +16,18 @@ export const adminNavItems: {
     label: "Overview",
     href: "/admin",
     description: "Activity and platform health",
+  },
+  {
+    key: "clients",
+    label: "Clients",
+    href: "/admin/clients",
+    description: "Client organizations and portal users",
+  },
+  {
+    key: "staff",
+    label: "Staff",
+    href: "/admin/staff",
+    description: "Corduroy team accounts",
   },
   {
     key: "prompts",

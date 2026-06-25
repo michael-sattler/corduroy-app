@@ -44,7 +44,7 @@
 - [ ] Enable Supabase Auth (email/password for v1; magic link optional) — **Dashboard step** (documented in supabase-setup.md)
 - [DONE] Define roles in `app_metadata`: `client` | `staff` (`staff_role` for sub-roles)
 - [DONE] Staff sign-in path (v1 pragmatic): `@corduroytech.ai` + `staff.approved` — enforced in A4 login UI
-- [DONE] Seed script: `npm run db:seed` → Acme Corp, client user, staff user, assignment
+- [DONE] Seed script: `npm run db:seed` → All-American Fitness, client user, staff user, assignment
 
 ### A3. Core schema (minimal for auth)
 
@@ -112,25 +112,27 @@ Complete after Milestone A is live. Unblocks Vault and Planner work.
 
 ### B1. Orchestration API shell (Railway)
 
-- [ ] Node/Express or Fastify API service in `apps/api/` (or `services/api/`)
-- [ ] Dockerfile + Railway service `corduroy-app` with staging/production envs
-- [ ] Health check `GET /health`
-- [ ] JWT validation middleware (same Supabase JWT; separate route groups `/client/*` and `/staff/*`)
-- [ ] CORS locked to `app.corduroytech.ai` and `staff.corduroytech.ai`
+See [railway-deploy.md](./railway-deploy.md).
+
+- [DONE] Node/Fastify API service in `apps/api/`
+- [DONE] Dockerfile + docker-compose service (Railway deploy: dashboard step)
+- [DONE] Health check `GET /health`
+- [DONE] JWT validation middleware (Supabase JWT; route groups `/client/*` and `/staff/*`)
+- [DONE] CORS locked to `app.corduroytech.ai` and `staff.corduroytech.ai` (+ local dev origins)
 
 ### B1 Supplemental. Non-Vault API interactions
-- [ ] staff admin CRUD
-  - [ ] prompt library
-  - [ ] wait list
-  - [ ] client user management
-  - [ ] client organization/account management
-  - [ ] staff user management
-  - [ ] healthchecks: API, Supabase, S3 VPC endpoint, Landbdas
+- [PARTIAL] staff admin CRUD
+  - [DONE] healthchecks: API, Supabase (S3/Lambda stubs return degraded)
+  - [DONE] prompt library — list + edit via `/staff/admin/prompts`
+  - [DONE] wait list — list, detail, status/notes via `/staff/admin/waitlist`
+  - [DONE] client user management — create portal users (`/admin/clients/[id]`)
+  - [DONE] client organization/account management — create orgs (`/admin/clients`)
+  - [DONE] staff user management — create staff (`/admin/staff`)
   - [ ] image upload (organization logos, user and admin use avatars)
 
 ### B2. CI/CD
 
-- [ ] GitHub Actions: lint + typecheck on PR
+- [DONE] GitHub Actions: lint + typecheck on PR
 - [ ] Supabase migrations applied via CI or documented CLI workflow
 - [ ] Railway deploy on merge to `main` (staging) / tag (production) — pick one branching model and document it
 

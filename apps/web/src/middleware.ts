@@ -17,6 +17,16 @@ type ResolvedRouting = {
 };
 
 function resolveRouting(host: string, pathname: string): ResolvedRouting | null {
+  // Staff admin API routes — JWT role is verified in handlers; always tag as staff surface.
+  if (pathname.startsWith("/api/admin")) {
+    return {
+      surface: "staff",
+      pathPrefix: "",
+      internalPath: pathname,
+      pathBased: false,
+    };
+  }
+
   const subdomainSurface = getSurfaceFromHost(host);
 
   if (subdomainSurface === "client" || subdomainSurface === "staff") {

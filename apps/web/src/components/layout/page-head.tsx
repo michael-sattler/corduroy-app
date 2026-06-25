@@ -1,9 +1,12 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { AppSurface } from "@/components/layout/nav-config";
+import logoClient from "../../../public/brand/logo-horiz-blue.png";
+import logoStaff from "../../../public/brand/logo-horiz-white.png";
 
-const logos: Record<AppSurface, string> = {
-  client: "/brand/logo-horiz-blue.png",
-  staff: "/brand/logo-horiz-white.png",
+const logos: Record<AppSurface, typeof logoClient> = {
+  client: logoClient,
+  staff: logoStaff,
 };
 
 type PageHeadProps = {
@@ -27,11 +30,16 @@ export function PageHead({
 
   return (
     <div className="d-flex align-items-center gap-3 min-w-0">
-      <Link href={homeHref} className="app-brand-lockup shrink-0">
-        <img
+      <Link
+        href={homeHref}
+        className="app-brand-lockup shrink-0"
+        prefetch={false}
+      >
+        <Image
           src={logos[surface]}
           alt="Corduroy"
           className="app-brand-logo"
+          priority
         />
       </Link>
       <span className={subtitleClass}>

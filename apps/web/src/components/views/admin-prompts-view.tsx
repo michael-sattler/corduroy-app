@@ -1,12 +1,59 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
+import { updatePromptAction } from "@/app/actions/admin";
 import { SlidePanel } from "@/components/ui/slide-panel";
-import { adminPrompts } from "@/lib/placeholder-admin-data";
+import type { PromptRecord } from "@/lib/admin-api-types";
 
-export function AdminPromptsView() {
+type AdminPromptsViewProps = {
+  prompts: PromptRecord[];
+};
+
+function formatUpdatedAt(iso: string): string {
+  return new Date(iso).toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
+export function AdminPromptsView({ prompts }: AdminPromptsViewProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const selected = adminPrompts.find((p) => p.id === selectedId) ?? null;
+  const [items, setItems] = useState(prompts);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+
+  const selected = items.find((p) => p.id === selectedId) ?? null;
+
+  function handleSave(form: HTMLFormElement) {
+    if (!selected) return;
+
+    const formData = new FormData(form);
+    const name = String(formData.get("name") ?? "");
+    const body = String(formData.get("body") ?? "");
+
+    setError(null);
+    startTransition(async () => {
+      try {
+        await updatePromptAction(selected.id, { name, body });
+        setItems((prev) =>
+          prev.map((p) =>
+            p.id === selected.id
+              ? {
+                  ...p,
+                  name,
+                  body,
+                  updated_at: new Date().toISOString(),
+                }
+              : p,
+          ),
+        );
+        setSelectedId(null);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Save failed");
+      }
+    });
+  }
 
   return (
     <>
@@ -24,6 +71,10 @@ export function AdminPromptsView() {
           </button>
         </div>
 
+        {error ? (
+          <div className="alert alert-warning py-2 small mb-0">{error}</div>
+        ) : null}
+
         <div className="app-card p-0 overflow-hidden">
           <table className="table table-hover mb-0 admin-data-table">
             <thead>
@@ -36,12 +87,12 @@ export function AdminPromptsView() {
               </tr>
             </thead>
             <tbody>
-              {adminPrompts.map((prompt) => (
+              {items.map((prompt) => (
                 <tr key={prompt.id}>
                   <td className="fw-medium">{prompt.name}</td>
                   <td>{prompt.version}</td>
-                  <td>{prompt.updatedAt}</td>
-                  <td>{prompt.updatedBy}</td>
+                  <td>{formatUpdatedAt(prompt.updated_at)}</td>
+                  <td>{prompt.updated_by ?? "—"}</td>
                   <td className="text-end">
                     <button
                       type="button"
@@ -66,15 +117,22 @@ export function AdminPromptsView() {
         size="lg"
       >
         {selected ? (
-          <>
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleSave(event.currentTarget);
+            }}
+          >
             <div className="mb-3">
               <label className="form-label" htmlFor="prompt-name">
                 Display name
               </label>
               <input
                 id="prompt-name"
+                name="name"
                 className="form-control"
                 defaultValue={selected.name}
+                required
               />
             </div>
             <div className="mb-3">
@@ -94,9 +152,11 @@ export function AdminPromptsView() {
               </label>
               <textarea
                 id="prompt-body"
+                name="body"
                 className="form-control font-monospace"
                 rows={12}
-                defaultValue={`You are Corduroy's ${selected.name} assistant...\n\n[Placeholder prompt content — will load from database]`}
+                defaultValue={selected.body}
+                required
               />
             </div>
             <div className="slide-panel-footer">
@@ -104,14 +164,15 @@ export function AdminPromptsView() {
                 type="button"
                 className="btn btn-outline-secondary"
                 onClick={() => setSelectedId(null)}
+                disabled={pending}
               >
                 Cancel
               </button>
-              <button type="button" className="btn btn-primary">
-                Save prompt
+              <button type="submit" className="btn btn-primary" disabled={pending}>
+                {pending ? "Saving…" : "Save prompt"}
               </button>
             </div>
-          </>
+          </form>
         ) : null}
       </SlidePanel>
     </>

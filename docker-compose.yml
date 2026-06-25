@@ -16,6 +16,28 @@ services:
       - apps/web/.env
     environment:
       NODE_ENV: development
+      ORCHESTRATION_API_URL: http://api:4000
+    depends_on:
+      api:
+        condition: service_started
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile.dev
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./apps/api/src:/app/apps/api/src
+      - ./package.json:/app/package.json:ro
+      - ./package-lock.json:/app/package-lock.json:ro
+      - ./apps/api/package.json:/app/apps/api/package.json:ro
+      - ./apps/web/.env:/app/apps/web/.env:ro
+    env_file:
+      - apps/web/.env
+    environment:
+      NODE_ENV: development
+      PORT: 4000
 
   web-prod:
     profiles: ["prod"]
@@ -26,3 +48,16 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: production
+
+  api-prod:
+    profiles: ["prod"]
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    ports:
+      - "4000:4000"
+    env_file:
+      - apps/web/.env
+    environment:
+      NODE_ENV: production
+      PORT: 4000

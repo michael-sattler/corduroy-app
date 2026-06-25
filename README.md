@@ -12,6 +12,7 @@ Monorepo for the Corduroy business advisory platform — one Next.js codebase se
 ```
 corduroy/
 ├── apps/web/          # Next.js App Router (client + staff surfaces)
+├── apps/api/          # Fastify orchestration API (Railway)
 ├── docs/              # TDD, build plan, architecture
 ├── docker-compose.yml
 └── package.json       # npm workspaces root
@@ -54,25 +55,27 @@ Modern browsers resolve `*.localhost` to `127.0.0.1` without editing your hosts 
 npm run docker:dev
 ```
 
-On container start, the entrypoint checks `package-lock.json`. If dependencies changed since the last run, it runs `npm ci` automatically — you do not need to remember `--build` for new packages.
+Starts **web** (port 3000) and **api** (port 4000) in Docker. On container start, each entrypoint checks `package-lock.json` and runs `npm ci` when dependencies changed — you do not need to remember `--build` for new packages.
 
 - http://localhost:3000
 - http://app.localhost:3000/dashboard
 - http://staff.localhost:3000/dashboard
+- http://localhost:4000/health — orchestration API
 
 Stop: `npm run docker:down`
 
-For day-to-day dev on Windows, `npm run dev` is faster. Use Docker when you want to test the Linux container path.
+For day-to-day dev on Windows, `npm run dev` + `npm run dev:api` in a second terminal is faster. Use Docker when you want the full stack in containers.
 
-Production image: `docker compose --profile prod up --build`
+Production images: `docker compose --profile prod up --build`
 
 ## Scripts
 
 | Command | Description |
 |---------|-------------|
 | `npm run dev` | Start Next.js dev server (recommended) |
-| `npm run docker:dev` | Start dev server in Docker (auto-syncs deps) |
-| `npm run docker:down` | Stop Docker dev container |
+| `npm run dev:api` | Start orchestration API on port 4000 |
+| `npm run docker:dev` | Start web + API dev containers (ports 3000, 4000) |
+| `npm run docker:down` | Stop Docker dev containers |
 | `npm run build` | Production build |
 | `npm run start` | Start production server |
 | `npm run lint` | ESLint |
@@ -93,8 +96,10 @@ After sign-in you should land on `/dashboard` with your name visible. Client and
 - [Build plan](./docs/buildplan.md) — milestone checklist
 - [TDD](./docs/tdd-platform.md) — platform architecture
 - [Supabase setup](./docs/supabase-setup.md) — migrations, roles, dev seed users
+- [Vercel deploy](./docs/vercel-deploy.md) — web app production
+- [Railway deploy](./docs/railway-deploy.md) — orchestration API
 - [Credentials](./docs/creds-platform.md) — vendor accounts (not committed)
 
 ## Current milestone
 
-**Milestone A complete.** Production portals are live; next up is **Milestone B** (Railway API shell). See [buildplan.md](./docs/buildplan.md).
+**Milestone B** — platform scaffolding (API shell on Railway, CI/CD, AWS skeleton, Phase 0 schema). B1 API shell is in the repo; deploy to Railway per [railway-deploy.md](./docs/railway-deploy.md).

@@ -1,16 +1,24 @@
 import Link from "next/link";
-import { adminWaitlist } from "@/lib/placeholder-admin-data";
+import {
+  formatSubmittedAt,
+  formatWaitlistStatus,
+  type WaitlistRecord,
+} from "@/lib/admin-api-types";
 import { withAppPath } from "@/lib/path-routing";
 import { getSurfacePathPrefix } from "@/lib/surface-path";
 
-const statusClass: Record<string, string> = {
-  New: "admin-waitlist-new",
-  Contacted: "admin-waitlist-contacted",
-  Scheduled: "admin-waitlist-scheduled",
-  Declined: "admin-waitlist-declined",
+const statusClass: Record<WaitlistRecord["status"], string> = {
+  new: "admin-waitlist-new",
+  contacted: "admin-waitlist-contacted",
+  scheduled: "admin-waitlist-scheduled",
+  declined: "admin-waitlist-declined",
 };
 
-export async function AdminWaitlistView() {
+type AdminWaitlistViewProps = {
+  entries: WaitlistRecord[];
+};
+
+export async function AdminWaitlistView({ entries }: AdminWaitlistViewProps) {
   const pathPrefix = await getSurfacePathPrefix();
 
   return (
@@ -34,7 +42,7 @@ export async function AdminWaitlistView() {
             </tr>
           </thead>
           <tbody>
-            {adminWaitlist.map((entry) => (
+            {entries.map((entry) => (
               <tr key={entry.id}>
                 <td>
                   <Link
@@ -46,10 +54,10 @@ export async function AdminWaitlistView() {
                 </td>
                 <td>{entry.company}</td>
                 <td>{entry.email}</td>
-                <td>{entry.submittedAt}</td>
+                <td>{formatSubmittedAt(entry.submitted_at)}</td>
                 <td>
                   <span className={`badge ${statusClass[entry.status] ?? ""}`}>
-                    {entry.status}
+                    {formatWaitlistStatus(entry.status)}
                   </span>
                 </td>
               </tr>

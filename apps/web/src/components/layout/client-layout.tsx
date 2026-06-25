@@ -1,5 +1,7 @@
 import { AppHeader } from "@/components/layout/app-header";
+import { MasqueradeBanner } from "@/components/layout/masquerade-banner";
 import type { ClientNavKey } from "@/components/layout/nav-config";
+import { buildEndMasqueradePath, readMasqueradeSession } from "@/lib/masquerade";
 
 type ClientLayoutProps = {
   active?: ClientNavKey;
@@ -19,7 +21,7 @@ type ClientLayoutProps = {
     }
 );
 
-export function ClientLayout(props: ClientLayoutProps) {
+export async function ClientLayout(props: ClientLayoutProps) {
   const { active = "dashboard", children } = props;
   const guest = props.guest === true;
   const organization = guest
@@ -27,9 +29,14 @@ export function ClientLayout(props: ClientLayoutProps) {
     : props.organization;
   const displayName = guest ? "" : props.displayName;
   const email = guest ? "" : props.email;
+  const masquerade = guest ? null : await readMasqueradeSession();
+  const endMasqueradeHref = masquerade ? await buildEndMasqueradePath() : null;
 
   return (
     <div className="app-shell app-shell-client">
+      {masquerade && endMasqueradeHref ? (
+        <MasqueradeBanner session={masquerade} endHref={endMasqueradeHref} />
+      ) : null}
       <AppHeader
         surface="client"
         subtitle={organization}

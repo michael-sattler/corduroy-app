@@ -3,6 +3,7 @@ import {
   pathPrefixForSurface,
   withAppPath,
 } from "@/lib/path-routing";
+import { normalizeBindHostname, normalizeRequestHost } from "@/lib/request-host";
 
 export type SurfaceDashboardLink = {
   href: string;
@@ -57,11 +58,6 @@ function originFor(
   const prefix = surface === "client" ? "app" : "staff";
   const portSuffix = port ? `:${port}` : "";
 
-  if (isLocalHostname(hostname)) {
-    const devHost = localDevHostname(hostname);
-    return `${protocol}://${prefix}.${devHost}${portSuffix}`;
-  }
-
   if (hostname.startsWith("app.")) {
     const base = hostname.slice(4);
     if (surface === "client") {
@@ -76,6 +72,11 @@ function originFor(
       return `${protocol}://${hostname}${portSuffix}`;
     }
     return `${protocol}://app.${base}${portSuffix}`;
+  }
+
+  if (hostname === "localhost" || hostname === "127.0.0.1") {
+    const devHost = localDevHostname(hostname);
+    return `${protocol}://${prefix}.${devHost}${portSuffix}`;
   }
 
   return `${protocol}://${prefix}.${hostname}${portSuffix}`;
@@ -94,18 +95,20 @@ export function getSurfaceDashboardLinks(
   protocol = "http",
 ): SurfaceDashboardLinks {
   const normalizedProto = protocol === "https" ? "https" : "http";
-  const { hostname, port } = splitHost(host);
+  const normalizedHost = normalizeRequestHost(host);
+  const { hostname, port } = splitHost(normalizedHost);
+  const resolvedHostname = normalizeBindHostname(hostname);
 
-  if (isPathBasedHost(host)) {
+  if (isPathBasedHost(normalizedHost)) {
     const portSuffix = port ? `:${port}` : "";
     return {
       client: {
         href: withAppPath("/dashboard", pathPrefixForSurface("client")),
-        label: `${hostname}${portSuffix}/app`,
+        label: `${resolvedHostname}${portSuffix}/app`,
       },
       staff: {
         href: withAppPath("/dashboard", pathPrefixForSurface("staff")),
-        label: `${hostname}${portSuffix}/staff`,
+        label: `${resolvedHostname}${portSuffix}/staff`,
       },
       isLocal: false,
       isPathBased: true,
@@ -114,16 +117,16 @@ export function getSurfaceDashboardLinks(
 
   const clientOrigin =
     process.env.NEXT_PUBLIC_CLIENT_ORIGIN?.replace(/\/$/, "") ??
-    originFor("client", hostname, port, normalizedProto);
+    originFor("client", resolvedHostname, port, normalizedProto);
 
   const staffOrigin =
     process.env.NEXT_PUBLIC_STAFF_ORIGIN?.replace(/\/$/, "") ??
-    originFor("staff", hostname, port, normalizedProto);
+    originFor("staff", resolvedHostname, port, normalizedProto);
 
   return {
     client: toDashboardLink(clientOrigin),
     staff: toDashboardLink(staffOrigin),
-    isLocal: isLocalHostname(hostname),
+    isLocal: isLocalHostname(resolvedHostname),
     isPathBased: false,
   };
 }
