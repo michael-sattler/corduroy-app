@@ -10,8 +10,8 @@
 
 ## Definition of done — Milestone A (this sprint)
 
-- [ ] `app.corduroytech.ai` resolves and serves the client app over HTTPS
-- [ ] `staff.corduroytech.ai` resolves and serves the staff console over HTTPS
+- [DONE] `app.corduroytech.ai` resolves and serves the client app over HTTPS
+- [DONE] `staff.corduroytech.ai` resolves and serves the staff console over HTTPS
 - [ ] A client user can sign in (email/password) and lands on a placeholder client dashboard showing their name and client org
 - [ ] A staff user can sign in and lands on a placeholder staff dashboard (distinct layout/copy from client)
 - [ ] Client JWT cannot access staff routes; staff JWT cannot access client-only routes (subdomain + middleware gate)
@@ -91,12 +91,12 @@ Run as version-controlled SQL migrations in `supabase/migrations/`:
 
 See [vercel-deploy.md](./vercel-deploy.md) for step-by-step instructions.
 
-- [ ] Connect repo to Vercel project (see creds-platform.md)
-- [ ] Configure custom domains:
+- [DONE] Connect repo to Vercel project (`corduroy-app` on `michael-sattler` account)
+- [DONE] Configure custom domains:
   - `app.corduroytech.ai` → production
   - `staff.corduroytech.ai` → production (same Vercel project)
-- [ ] Environment variables in Vercel: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- [ ] Staging/preview: optional `app.staging.corduroytech.ai` / `staff.staging.corduroytech.ai` or Vercel preview URLs for PRs
+- [DONE] Environment variables in Vercel: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- [DEFERRED] Staging/preview: `app.staging.corduroytech.ai` / `staff.staging.corduroytech.ai` — use `*.vercel.app` path prefixes (`/app`, `/staff`) until staging DNS is needed
 
 ### A6. Smoke test & handoff
 

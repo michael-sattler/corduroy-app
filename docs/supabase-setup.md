@@ -100,6 +100,36 @@ npm run dev
 
 Cross-surface check: signing in as the client user on `staff.localhost` should fail with an error.
 
+## 7. Production auth URLs (A5)
+
+In [Authentication → URL Configuration](https://supabase.com/dashboard/project/iggvqbqqzujixshiffqe/auth/url-configuration):
+
+**Site URL:**
+
+```
+https://app.corduroytech.ai
+```
+
+**Redirect URLs** (add each):
+
+```
+https://app.corduroytech.ai/**
+https://staff.corduroytech.ai/**
+```
+
+Until staging DNS exists, also add your Vercel preview host if you test on `*.vercel.app`:
+
+```
+https://<project>.vercel.app/**
+```
+
+## 8. Test login on production (A6)
+
+| Portal | URL | Test user |
+|--------|-----|-----------|
+| Client | https://app.corduroytech.ai/login | `client@acmecorp.test` / see seed table above |
+| Staff | https://staff.corduroytech.ai/login | `advisor@corduroytech.ai` / see seed table above |
+
 ## Next milestone
 
-**A4** wires Supabase Auth into the Next.js login pages and middleware.
+**A6** — smoke tests on production (session persistence, cross-surface isolation).

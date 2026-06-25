@@ -86,4 +86,4 @@ Production image: `docker compose --profile prod up --build`
 
 ## Current milestone
 
-**A5** — Vercel deploy + DNS for `app.corduroytech.ai` and `staff.corduroytech.ai`. See [vercel-deploy.md](./docs/vercel-deploy.md).
+**A6** — production smoke tests (login, session, cross-surface isolation). Deploy is live at `app.corduroytech.ai` and `staff.corduroytech.ai`. See [vercel-deploy.md](./docs/vercel-deploy.md) and [supabase-setup.md](./docs/supabase-setup.md).

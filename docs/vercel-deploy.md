@@ -67,7 +67,14 @@ Save. Without this, production sign-in may fail or redirect incorrectly.
 
 Push to `main` (or click **Deploy** in Vercel). First production deploy may take a few minutes.
 
-## 6. Smoke test (A6)
+## 6. Staging (deferred)
+
+Staging subdomains (`app.staging.corduroytech.ai`, `staff.staging.corduroytech.ai`) are not configured yet. Until then:
+
+- Use Vercel preview deploys on `*.vercel.app` with path prefixes (`/app`, `/staff`)
+- Add `https://<project>.vercel.app/**` to Supabase redirect URLs when testing previews
+
+## 7. Smoke test (A6)
 
 | Check | URL | User |
 |-------|-----|------|
@@ -89,6 +96,7 @@ Also verify:
 | Build fails on monorepo imports | Confirm Root Directory = `apps/web` and outside-root include is on |
 | Login works locally, not on Vercel | Check Vercel env vars; redeploy; verify Supabase redirect URLs |
 | `Your project's URL and Key are required` after sign-in | `NEXT_PUBLIC_*` vars missing at **build** time — add in Vercel env (Production + Preview), then **Redeploy** (not just promote) |
+| `Invalid supabaseUrl` in middleware logs | `NEXT_PUBLIC_SUPABASE_URL` is empty, has quotes, or missing `https://`. Set exactly `https://iggvqbqqzujixshiffqe.supabase.co` — no quotes, no trailing spaces — for **Production**, then redeploy |
 | 404 on `/dashboard` | Should not happen — same routes as local; check domain points to this project |
 | Wrong portal branding | You may be on the wrong subdomain — client = `app.*`, staff = `staff.*` |
 

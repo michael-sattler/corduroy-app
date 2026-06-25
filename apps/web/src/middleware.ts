@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
 import { readUserRole, roleForSurface } from "@/lib/auth/roles";
+import { getPublicSupabaseConfig } from "@/lib/supabase/env";
 import {
   isPathBasedHost,
   parsePathBasedRoute,
@@ -136,15 +137,16 @@ export async function middleware(request: NextRequest) {
     return nextWithSurface(request, routing);
   }
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  const supabaseConfig = getPublicSupabaseConfig();
 
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!supabaseConfig) {
     if (isProtected) {
       return redirectTo(request, "/login", pathPrefix);
     }
     return nextWithSurface(request, routing);
   }
+
+  const { url: supabaseUrl, anonKey: supabaseAnonKey } = supabaseConfig;
 
   const surfaceHeaders = surfaceRequestHeaders(request, routing);
   let response = NextResponse.next({
