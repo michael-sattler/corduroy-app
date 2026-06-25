@@ -1,0 +1,704 @@
+{
+  "plan": {
+    "id": "plan_aaf_001",
+    "version": "1.0",
+    "status": "active",
+    "title": "All-American Fitness: 90-Day Growth Plan",
+    "description": "A structured 90-day execution plan focused on member retention, revenue growth, and operational efficiency based on the Corduroy data audit conducted in May 2026.",
+    "client_name": "All-American Fitness",
+    "advisor_name": "Joseph Rizzo",
+    "created_date": "2026-05-16",
+    "review_date": "2026-06-16",
+    "period_days": 90,
+    "period_start": "2026-06-01",
+    "period_end": "2026-08-29"
+  },
+
+  "participants": [
+    {
+      "id": "part_001",
+      "external_user_id": "usr_antonio_123",
+      "display_name": "Antonio Ferrara",
+      "role": "Owner",
+      "type": "client"
+    },
+    {
+      "id": "part_002",
+      "external_user_id": "usr_joseph_456",
+      "display_name": "Joseph Rizzo",
+      "role": "Principal Advisor",
+      "type": "corduroy"
+    },
+    {
+      "id": "part_003",
+      "external_user_id": "usr_apprentice_789",
+      "display_name": "Corduroy Apprentice",
+      "role": "Apprentice Consultant",
+      "type": "corduroy"
+    }
+  ],
+
+  "clients": [
+    {
+      "plan_client_id": "pcl_001",
+      "external_client_id": "cust_member_1042",
+      "display_name": "Maria Santos",
+      "type": "member"
+    },
+    {
+      "plan_client_id": "pcl_002",
+      "external_client_id": "cust_member_2087",
+      "display_name": "David Kim",
+      "type": "member"
+    },
+    {
+      "plan_client_id": "pcl_003",
+      "external_client_id": "cust_corp_0011",
+      "display_name": "Riverside Medical Group",
+      "type": "corporate_account"
+    }
+  ],
+
+  "phases": [
+    {
+      "id": "phase_01",
+      "name": "Month 1: Foundation",
+      "description": "Stabilize operations, address immediate retention risks, and establish baseline metrics.",
+      "week_start": 1,
+      "week_end": 4
+    },
+    {
+      "id": "phase_02",
+      "name": "Month 2: Growth",
+      "description": "Launch member acquisition campaigns and introduce new revenue streams.",
+      "week_start": 5,
+      "week_end": 8
+    },
+    {
+      "id": "phase_03",
+      "name": "Month 3: Optimize",
+      "description": "Review performance against KPIs, refine what's working, and set up the next 90-day cycle.",
+      "week_start": 9,
+      "week_end": 13
+    }
+  ],
+
+  "goals": [
+    {
+      "id": "goal_001",
+      "name": "Reduce Member Churn",
+      "description": "Decrease the monthly member cancellation rate from 8% to under 4% by the end of the 90-day period.",
+      "initial_status": "active",
+      "current_status": "active",
+      "last_updated": "2026-05-16",
+      "milestone_ids": ["ms_001", "ms_003"],
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_status": "active"
+          }
+        }
+      ]
+    },
+    {
+      "id": "goal_002",
+      "name": "Grow Monthly Recurring Revenue",
+      "description": "Increase MRR by 20% through a combination of new member acquisition and upsell to premium tiers.",
+      "initial_status": "active",
+      "current_status": "active",
+      "last_updated": "2026-05-16",
+      "milestone_ids": ["ms_002", "ms_004", "ms_005"],
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_status": "active"
+          }
+        }
+      ]
+    },
+    {
+      "id": "goal_003",
+      "name": "Establish Operational Reporting Discipline",
+      "description": "Stand up weekly KPI reviews so Antonio has a reliable view of business health without relying on ad hoc data pulls.",
+      "initial_status": "active",
+      "current_status": "active",
+      "last_updated": "2026-05-16",
+      "milestone_ids": ["ms_006"],
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_status": "active"
+          }
+        }
+      ]
+    }
+  ],
+
+  "milestones": [
+    {
+      "id": "ms_001",
+      "name": "At-Risk Member Outreach Complete",
+      "description": "All members flagged as churn risks have been personally contacted by Antonio or staff.",
+      "due_date": "2026-06-20",
+      "initial_status": "pending",
+      "current_status": "pending",
+      "initial_pct_complete": 0,
+      "current_pct_complete": 0,
+      "last_updated": "2026-05-16",
+      "phase_id": "phase_01",
+      "goal_ids": ["goal_001"],
+      "client_ids": ["pcl_001", "pcl_002"],
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_status": "pending",
+            "current_pct_complete": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "ms_002",
+      "name": "Corporate Wellness Proposal Delivered",
+      "description": "A formal proposal for a corporate wellness membership has been delivered to Riverside Medical Group.",
+      "due_date": "2026-06-27",
+      "initial_status": "pending",
+      "current_status": "pending",
+      "initial_pct_complete": 0,
+      "current_pct_complete": 0,
+      "last_updated": "2026-05-16",
+      "phase_id": "phase_01",
+      "goal_ids": ["goal_002"],
+      "client_ids": ["pcl_003"],
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_status": "pending",
+            "current_pct_complete": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "ms_003",
+      "name": "Member Retention Program Launched",
+      "description": "A formal 30-day check-in program for all members under 90 days tenure is active.",
+      "due_date": "2026-07-11",
+      "initial_status": "pending",
+      "current_status": "pending",
+      "initial_pct_complete": 0,
+      "current_pct_complete": 0,
+      "last_updated": "2026-05-16",
+      "phase_id": "phase_02",
+      "goal_ids": ["goal_001"],
+      "client_ids": [],
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_status": "pending",
+            "current_pct_complete": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "ms_004",
+      "name": "Premium Tier Offer Launched",
+      "description": "A premium membership tier (personal training bundle) is live and actively offered to existing members.",
+      "due_date": "2026-07-18",
+      "initial_status": "pending",
+      "current_status": "pending",
+      "initial_pct_complete": 0,
+      "current_pct_complete": 0,
+      "last_updated": "2026-05-16",
+      "phase_id": "phase_02",
+      "goal_ids": ["goal_002"],
+      "client_ids": [],
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_status": "pending",
+            "current_pct_complete": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "ms_005",
+      "name": "Summer Acquisition Campaign Complete",
+      "description": "A 4-week new member acquisition campaign has run and results have been logged.",
+      "due_date": "2026-08-01",
+      "initial_status": "pending",
+      "current_status": "pending",
+      "initial_pct_complete": 0,
+      "current_pct_complete": 0,
+      "last_updated": "2026-05-16",
+      "phase_id": "phase_02",
+      "goal_ids": ["goal_002"],
+      "client_ids": [],
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_status": "pending",
+            "current_pct_complete": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "ms_006",
+      "name": "Weekly KPI Review Cadence Established",
+      "description": "Antonio has completed four consecutive weekly KPI reviews using the Corduroy dashboard.",
+      "due_date": "2026-07-04",
+      "initial_status": "pending",
+      "current_status": "pending",
+      "initial_pct_complete": 0,
+      "current_pct_complete": 0,
+      "last_updated": "2026-05-16",
+      "phase_id": "phase_01",
+      "goal_ids": ["goal_003"],
+      "client_ids": [],
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_status": "pending",
+            "current_pct_complete": 0
+          }
+        }
+      ]
+    }
+  ],
+
+  "tasks": [
+    {
+      "id": "task_001",
+      "name": "Pull churn report from member management system",
+      "description": "Export the last 90 days of cancellation data and identify members who have reduced visit frequency below 2x/month.",
+      "assignee_id": "part_003",
+      "class": "action",
+      "phase_id": "phase_01",
+      "milestone_ids": ["ms_001"],
+      "client_ids": [],
+      "start_date": "2026-06-01",
+      "due_date": "2026-06-06",
+      "duration_days": 5,
+      "initial_status": "open",
+      "current_status": "open",
+      "initial_pct_complete": 0,
+      "current_pct_complete": 0,
+      "last_updated": "2026-05-16",
+      "notes": "Upload output to the Vault under /clients/aaf/retention/",
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_status": "open",
+            "current_pct_complete": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "task_002",
+      "name": "Personal outreach calls to flagged at-risk members",
+      "description": "Antonio personally calls each member flagged as at-risk. Script provided by Corduroy advisor. Log outcome of each call.",
+      "assignee_id": "part_001",
+      "class": "action",
+      "phase_id": "phase_01",
+      "milestone_ids": ["ms_001"],
+      "client_ids": ["pcl_001", "pcl_002"],
+      "start_date": "2026-06-09",
+      "due_date": "2026-06-20",
+      "duration_days": 8,
+      "initial_status": "open",
+      "current_status": "open",
+      "initial_pct_complete": 0,
+      "current_pct_complete": 0,
+      "last_updated": "2026-05-16",
+      "notes": "Target: 100% of flagged list contacted before June 20.",
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_status": "open",
+            "current_pct_complete": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "task_003",
+      "name": "Draft corporate wellness proposal for Riverside Medical",
+      "description": "Prepare a tailored proposal for a 10-seat corporate wellness membership. Include group class access, monthly wellness check-in, and a preferred rate.",
+      "assignee_id": "part_002",
+      "class": "deliverable",
+      "phase_id": "phase_01",
+      "milestone_ids": ["ms_002"],
+      "client_ids": ["pcl_003"],
+      "start_date": "2026-06-09",
+      "due_date": "2026-06-20",
+      "duration_days": 8,
+      "initial_status": "open",
+      "current_status": "open",
+      "initial_pct_complete": 0,
+      "current_pct_complete": 0,
+      "last_updated": "2026-05-16",
+      "notes": "Antonio to review and sign off before delivery.",
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_status": "open",
+            "current_pct_complete": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "task_004",
+      "name": "Deliver proposal to Riverside Medical Group",
+      "description": "Schedule and conduct a 30-minute walkthrough of the corporate wellness proposal with the Riverside Medical HR contact.",
+      "assignee_id": "part_001",
+      "class": "meeting",
+      "phase_id": "phase_01",
+      "milestone_ids": ["ms_002"],
+      "client_ids": ["pcl_003"],
+      "start_date": "2026-06-23",
+      "due_date": "2026-06-27",
+      "duration_days": 3,
+      "initial_status": "open",
+      "current_status": "open",
+      "initial_pct_complete": 0,
+      "current_pct_complete": 0,
+      "last_updated": "2026-05-16",
+      "notes": "",
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_status": "open",
+            "current_pct_complete": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "task_005",
+      "name": "Design 30-day new member check-in program",
+      "description": "Define the check-in cadence, touchpoint owners, and success criteria for members in their first 90 days.",
+      "assignee_id": "part_002",
+      "class": "deliverable",
+      "phase_id": "phase_01",
+      "milestone_ids": ["ms_003"],
+      "client_ids": [],
+      "start_date": "2026-06-16",
+      "due_date": "2026-06-27",
+      "duration_days": 8,
+      "initial_status": "open",
+      "current_status": "open",
+      "initial_pct_complete": 0,
+      "current_pct_complete": 0,
+      "last_updated": "2026-05-16",
+      "notes": "",
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_status": "open",
+            "current_pct_complete": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "task_006",
+      "name": "Set up weekly KPI review meeting",
+      "description": "Schedule a recurring 30-minute Friday review with Antonio and Corduroy apprentice to walk through the dashboard.",
+      "assignee_id": "part_003",
+      "class": "action",
+      "phase_id": "phase_01",
+      "milestone_ids": ["ms_006"],
+      "client_ids": [],
+      "start_date": "2026-06-01",
+      "due_date": "2026-06-06",
+      "duration_days": 3,
+      "initial_status": "open",
+      "current_status": "open",
+      "initial_pct_complete": 0,
+      "current_pct_complete": 0,
+      "last_updated": "2026-05-16",
+      "notes": "Block time on Antonio's calendar for all 13 Fridays of the plan period.",
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_status": "open",
+            "current_pct_complete": 0
+          }
+        }
+      ]
+    },
+    {
+      "id": "task_007",
+      "name": "90-Day plan review and next cycle planning",
+      "description": "Conduct a structured review of plan outcomes against goals. Identify wins, gaps, and priorities for the next 90-day cycle.",
+      "assignee_id": "part_002",
+      "class": "review",
+      "phase_id": "phase_03",
+      "milestone_ids": [],
+      "client_ids": [],
+      "start_date": "2026-08-24",
+      "due_date": "2026-08-29",
+      "duration_days": 4,
+      "initial_status": "open",
+      "current_status": "open",
+      "initial_pct_complete": 0,
+      "current_pct_complete": 0,
+      "last_updated": "2026-05-16",
+      "notes": "Produce Milestone Summary document as a deliverable.",
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_status": "open",
+            "current_pct_complete": 0
+          }
+        }
+      ]
+    }
+  ],
+
+  "kpis": [
+    {
+      "id": "kpi_001",
+      "name": "Monthly Member Churn Rate",
+      "description": "Percentage of active members who cancel in a given month.",
+      "unit": "%",
+      "source": "Member Management System",
+      "frequency": "monthly",
+      "target_value": 4.0,
+      "initial_value": 8.0,
+      "current_value": 8.0,
+      "last_updated": "2026-05-16",
+      "goal_ids": ["goal_001"],
+      "client_ids": [],
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "value": 8.0,
+          "note": "Baseline established from audit data."
+        }
+      ]
+    },
+    {
+      "id": "kpi_002",
+      "name": "Monthly Recurring Revenue (MRR)",
+      "description": "Total predictable monthly revenue from active memberships.",
+      "unit": "$",
+      "source": "QuickBooks",
+      "frequency": "monthly",
+      "target_value": 49440,
+      "initial_value": 41200,
+      "current_value": 41200,
+      "last_updated": "2026-05-16",
+      "goal_ids": ["goal_002"],
+      "client_ids": [],
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "value": 41200,
+          "note": "Baseline established from QuickBooks export dated May 2026."
+        }
+      ]
+    },
+    {
+      "id": "kpi_003",
+      "name": "New Member Sign-Ups",
+      "description": "Number of new member enrollments in the current month.",
+      "unit": "count",
+      "source": "Member Management System",
+      "frequency": "monthly",
+      "target_value": 28,
+      "initial_value": 18,
+      "current_value": 18,
+      "last_updated": "2026-05-16",
+      "goal_ids": ["goal_002"],
+      "client_ids": [],
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "value": 18,
+          "note": "Baseline established from audit data."
+        }
+      ]
+    },
+    {
+      "id": "kpi_004",
+      "name": "Average Member Visit Frequency",
+      "description": "Average number of facility visits per active member per month. Leading indicator for retention.",
+      "unit": "count",
+      "source": "Member Management System",
+      "frequency": "weekly",
+      "target_value": 7.0,
+      "initial_value": 5.2,
+      "current_value": 5.2,
+      "last_updated": "2026-05-16",
+      "goal_ids": ["goal_001"],
+      "client_ids": [],
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "value": 5.2,
+          "note": "Baseline established from audit data."
+        }
+      ]
+    },
+    {
+      "id": "kpi_005",
+      "name": "Corporate Account Revenue",
+      "description": "Total monthly revenue from corporate wellness memberships.",
+      "unit": "$",
+      "source": "QuickBooks",
+      "frequency": "monthly",
+      "target_value": 2400,
+      "initial_value": 0,
+      "current_value": 0,
+      "last_updated": "2026-05-16",
+      "goal_ids": ["goal_002"],
+      "client_ids": ["pcl_003"],
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "value": 0,
+          "note": "No corporate accounts active at plan generation."
+        }
+      ]
+    }
+  ],
+
+  "risks": [
+    {
+      "id": "risk_001",
+      "name": "Member data quality gaps",
+      "description": "The member management system export has inconsistent visit frequency data for members who use the mobile check-in app vs. the front desk scanner. Churn analysis may undercount at-risk members.",
+      "initial_severity": "medium",
+      "current_severity": "medium",
+      "initial_likelihood": "high",
+      "current_likelihood": "high",
+      "mitigation": "Corduroy apprentice to manually reconcile the two data sources before the churn report is finalized.",
+      "owner_id": "part_003",
+      "client_ids": [],
+      "last_updated": "2026-05-16",
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_severity": "medium",
+            "current_likelihood": "high"
+          }
+        }
+      ]
+    },
+    {
+      "id": "risk_002",
+      "name": "Riverside Medical proposal stalls",
+      "description": "Corporate decision cycles at medical practices can be slow. If the Riverside contact lacks budget authority, the proposal may not close within the 90-day window.",
+      "initial_severity": "medium",
+      "current_severity": "medium",
+      "initial_likelihood": "medium",
+      "current_likelihood": "medium",
+      "mitigation": "Identify decision-maker and budget holder before the proposal meeting. Prepare a phased entry offer (5-seat pilot) as a fallback.",
+      "owner_id": "part_001",
+      "client_ids": ["pcl_003"],
+      "last_updated": "2026-05-16",
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_severity": "medium",
+            "current_likelihood": "medium"
+          }
+        }
+      ]
+    },
+    {
+      "id": "risk_003",
+      "name": "Antonio bandwidth during summer peak",
+      "description": "Summer is the highest-traffic season for the facility. Antonio may have limited capacity for strategic tasks during June-July.",
+      "initial_severity": "high",
+      "current_severity": "high",
+      "initial_likelihood": "medium",
+      "current_likelihood": "medium",
+      "mitigation": "Front-load advisor-led deliverables in Weeks 1-3. Reserve Antonio's direct involvement for client-facing tasks only (calls, proposal meetings).",
+      "owner_id": "part_002",
+      "client_ids": [],
+      "last_updated": "2026-05-16",
+      "history": [
+        {
+          "timestamp": "2026-05-16",
+          "changed_by": "part_002",
+          "change_source": "plan_generation",
+          "fields_changed": {
+            "current_severity": "high",
+            "current_likelihood": "medium"
+          }
+        }
+      ]
+    }
+  ]
+}

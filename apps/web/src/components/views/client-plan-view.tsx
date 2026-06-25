@@ -1,89 +1,202 @@
-import { planThemes, planWeeks } from "@/lib/placeholder-data";
+"use client";
 
-const days = ["Mon Apr 14", "Tue Apr 15", "Wed Apr 16", "Thu Apr 17", "Fri Apr 18"];
+import { useEffect, useMemo, useState } from "react";
+import {
+  buildPlanWeeks,
+  defaultDayIndex,
+  defaultWeekIndex,
+  formatDayTab,
+  formatIso,
+  formatKpiTarget,
+  formatKpiValue,
+  formatPeriodLabel,
+  groupTasksForDay,
+  kpiProgressPct,
+  milestoneTone,
+  milestonesForWeek,
+  participantInitials,
+  phaseForWeek,
+  phaseThemeColor,
+  planStatusLabel,
+  remainingTaskCount,
+  workdaysInWeek,
+} from "@/lib/plan/derive";
+import type { PlanDocument } from "@/lib/plan/types";
 
-const milestones = [
-  { label: "Pull & score all open quotes >$5K", value: 100, tone: "success" },
-  { label: "Matt calls all Priority 1 quotes", value: 100, tone: "success" },
-  { label: "Re-engage K.R. Allen, TCCI, Harwin, Va...", value: 50, tone: "purple" },
-  { label: "Kyle follows up Priority 2 quotes", value: 40, tone: "warning" },
-  { label: "Pipedrive reactivated & admin assigned", value: 0, tone: "muted" },
-];
-
-const dueToday = [
-  {
-    title: "Call Phillip Oxsheer at TCCI — confirm interior slab scope",
-    tag: "Sales",
-    note: "Script: reference K.R. Allen intro, ask about Q2 commercial schedule",
-    assignee: "ME",
-    accent: "accent-red",
-  },
-  {
-    title: "Send follow-up to Harwin Properties on revised quote",
-    tag: "Sales",
-    note: "Attach updated interior slab pricing sheet",
-    assignee: "ME",
-    accent: "accent-red",
-  },
-];
-
-const inProgress = [
-  {
-    title: "Score all open Quotient quotes >$5K by age",
-    tag: "Pipeline",
-    note: "Priority 1 = 90+ days; Priority 2 = 60–89 days",
-    assignee: "KS",
-    accent: "accent-blue",
-  },
-  {
-    title: "Assign Pipedrive admin role to Kyle",
-    tag: "Admin",
-    note: "Pipeline owner for all new quotes",
-    assignee: "AD",
-    accent: "accent-purple",
-  },
-];
-
-const completed = [
-  "Pull all open quotes from Quotient API",
-  "Matt completed K.R. Allen re-engagement call",
-  "Upload Q1 P&L to data repository",
-  "Review Week 2 milestone completion with advisor",
-  "Update Pipedrive pipeline stages",
-  "Send weekly progress summary to Corduroy",
-];
+const PLAN_URL = "/data/sample-plan.json";
 
 export function ClientPlanView() {
+  const [doc, setDoc] = useState<PlanDocument | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [weekIndex, setWeekIndex] = useState(0);
+  const [dayIndex, setDayIndex] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadPlan() {
+      try {
+        const res = await fetch(PLAN_URL);
+        if (!res.ok) {
+          throw new Error(`Failed to load plan (${res.status})`);
+        }
+        const data = (await res.json()) as PlanDocument;
+        if (cancelled) return;
+
+        const weeks = buildPlanWeeks(data);
+        const initialWeek = defaultWeekIndex(weeks);
+        const days = workdaysInWeek(weeks[initialWeek]);
+
+        setDoc(data);
+        setWeekIndex(initialWeek);
+        setDayIndex(defaultDayIndex(days));
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Failed to load plan");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void loadPlan();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const weeks = useMemo(() => (doc ? buildPlanWeeks(doc) : []), [doc]);
+  const selectedWeek = weeks[weekIndex];
+  const workdays = useMemo(
+    () => (selectedWeek ? workdaysInWeek(selectedWeek) : []),
+    [selectedWeek],
+  );
+  const selectedDay = workdays[dayIndex];
+  const selectedDayIso = selectedDay ? formatIso(selectedDay) : "";
+
+  const phase = useMemo(
+    () =>
+      doc && selectedWeek
+        ? phaseForWeek(selectedWeek.week, doc.phases)
+        : undefined,
+    [doc, selectedWeek],
+  );
+
+  const milestones = useMemo(
+    () =>
+      doc && selectedWeek
+        ? milestonesForWeek(selectedWeek, doc.milestones, phase)
+        : [],
+    [doc, selectedWeek, phase],
+  );
+
+  const taskGroups = useMemo(
+    () =>
+      doc && selectedWeek && selectedDayIso
+        ? groupTasksForDay(doc, selectedWeek, selectedDayIso)
+        : { dueToday: [], inProgress: [], completed: [] },
+    [doc, selectedWeek, selectedDayIso],
+  );
+
+  if (loading) {
+    return (
+      <div className="container-fluid py-4">
+        <div className="app-card p-4 text-body-secondary">Loading your plan…</div>
+      </div>
+    );
+  }
+
+  if (error || !doc || !selectedWeek || !selectedDay) {
+    return (
+      <div className="container-fluid py-4">
+        <div className="app-card p-4 text-danger">
+          {error ?? "Plan data is unavailable."}
+        </div>
+      </div>
+    );
+  }
+
+  const milestoneComplete = milestones.filter(
+    (m) => m.current_pct_complete >= 100 || m.current_status === "achieved",
+  ).length;
+  const statusLabel = planStatusLabel(doc, selectedWeek);
+  const openTasks = remainingTaskCount(doc);
+
   return (
     <div className="container-fluid py-4">
       <div className="row g-4">
         <div className="col-lg-3">
           <div className="app-card mb-4">
-            <div className="plan-sidebar-label mb-3">April – June 2026</div>
+            <div className="plan-sidebar-label mb-3">
+              {formatPeriodLabel(doc.plan.period_start, doc.plan.period_end)}
+            </div>
             <div className="d-flex flex-column gap-3">
-              {planWeeks.map((week) => (
-                <div
+              {weeks.map((week, index) => (
+                <button
                   key={week.week}
-                  className={`plan-week-item${week.status === "active" ? " active" : ""}`}
+                  type="button"
+                  className={`plan-week-item border-0 text-start w-100${index === weekIndex ? " active" : ""}`}
+                  onClick={() => {
+                    setWeekIndex(index);
+                    setDayIndex(defaultDayIndex(workdaysInWeek(week)));
+                  }}
                 >
                   <div className="d-flex justify-content-between align-items-center">
                     <span className="fw-medium">{week.label}</span>
                     {week.status === "active" ? (
-                      <span className="badge plan-today-badge">Today</span>
+                      <span className="badge plan-today-badge">Current</span>
                     ) : null}
                   </div>
                   <div className="small text-body-secondary">{week.range}</div>
                   <div className="small mt-1">
                     {week.status === "complete"
-                      ? "100% — complete"
+                      ? `${week.progress}% — complete`
                       : week.status === "active"
-                        ? "3 of 5 days complete"
+                        ? `${week.progress}% — in progress`
                         : "Upcoming"}
                   </div>
                   <div className="progress plan-week-progress mt-2">
                     <div
                       className={`progress-bar${week.status === "complete" ? " bg-success" : week.status === "active" ? " bg-primary" : ""}`}
                       style={{ width: `${week.progress}%` }}
+                    />
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="app-card mb-4">
+            <div className="plan-sidebar-label mb-3">Goals</div>
+            <div className="d-flex flex-column gap-2">
+              {doc.goals.map((goal) => (
+                <div key={goal.id} className="small">
+                  <div className="fw-medium">{goal.name}</div>
+                  <div className="text-body-secondary">{goal.description}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="app-card mb-4">
+            <div className="plan-sidebar-label mb-3">Key metrics</div>
+            <div className="d-flex flex-column gap-3">
+              {doc.kpis.slice(0, 4).map((kpi) => (
+                <div key={kpi.id}>
+                  <div className="d-flex justify-content-between small mb-1">
+                    <span className="fw-medium">{kpi.name}</span>
+                    <span className="text-body-secondary">
+                      {formatKpiValue(kpi)}
+                    </span>
+                  </div>
+                  <div className="small text-body-secondary mb-1">
+                    Target {formatKpiTarget(kpi)}
+                  </div>
+                  <div className="progress plan-milestone-bar">
+                    <div
+                      className="progress-bar bg-primary"
+                      style={{ width: `${kpiProgressPct(kpi)}%` }}
                     />
                   </div>
                 </div>
@@ -94,12 +207,17 @@ export function ClientPlanView() {
           <div className="app-card">
             <div className="plan-sidebar-label mb-3">Initiative themes</div>
             <div className="d-flex flex-column gap-3">
-              {planThemes.map((theme) => (
-                <div key={theme.title} className="d-flex gap-2">
-                  <span className={`theme-dot ${theme.color}`} aria-hidden />
+              {doc.phases.map((theme, index) => (
+                <div key={theme.id} className="d-flex gap-2">
+                  <span
+                    className={`theme-dot ${phaseThemeColor(index)}`}
+                    aria-hidden
+                  />
                   <div>
-                    <div className="fw-medium small">{theme.title}</div>
-                    <div className="small text-body-secondary">{theme.sub}</div>
+                    <div className="fw-medium small">{theme.name}</div>
+                    <div className="small text-body-secondary">
+                      {theme.description}
+                    </div>
                   </div>
                 </div>
               ))}
@@ -109,92 +227,196 @@ export function ClientPlanView() {
 
         <div className="col-lg-9">
           <div className="app-card">
-            <div className="d-flex flex-wrap justify-content-between gap-3 mb-4">
+            <div className="d-flex flex-wrap justify-content-between gap-3 mb-3">
               <div>
-                <h2 className="h4 mb-1">Week 3 — Commercial push & follow-up</h2>
+                <h2 className="h4 mb-1">
+                  {selectedWeek.label}
+                  {phase ? ` — ${phase.name}` : ""}
+                </h2>
                 <p className="text-body-secondary mb-0">
-                  Apr 14–18, 2026 · Pipeline activation & GC relationships
+                  {selectedWeek.range} · {doc.plan.client_name}
                 </p>
               </div>
-              <div className="d-flex gap-2 align-items-start">
-                <span className="badge plan-status-on-track">On track</span>
-                <span className="badge plan-status-tasks">8 tasks remaining</span>
+              <div className="d-flex gap-2 align-items-start flex-wrap">
+                <span
+                  className={`badge ${statusLabel === "On track" ? "plan-status-on-track" : "plan-status-tasks"}`}
+                >
+                  {statusLabel}
+                </span>
+                <span className="badge plan-status-tasks">
+                  {openTasks} tasks remaining
+                </span>
               </div>
             </div>
 
-            <div className="plan-day-tabs mb-4">
-              {days.map((day) => (
+            <div className="d-flex flex-wrap gap-2 mb-4">
+              {doc.goals.map((goal) => (
                 <span
-                  key={day}
-                  className={`plan-day-tab${day === "Thu Apr 17" ? " active" : ""}`}
+                  key={goal.id}
+                  className="badge rounded-pill text-bg-light border"
+                  title={goal.description}
                 >
-                  {day}
+                  {goal.name}
                 </span>
+              ))}
+            </div>
+
+            <div className="plan-day-tabs mb-4">
+              {workdays.map((day, index) => (
+                <button
+                  key={formatIso(day)}
+                  type="button"
+                  className={`plan-day-tab border-0 bg-transparent${index === dayIndex ? " active" : ""}`}
+                  onClick={() => setDayIndex(index)}
+                >
+                  {formatDayTab(day)}
+                </button>
               ))}
             </div>
 
             <div className="plan-focus-banner mb-4">
               <div className="plan-focus-icon">🕐</div>
               <div className="flex-grow-1">
-                <div className="fw-semibold">Thursday, April 17</div>
+                <div className="fw-semibold">
+                  {selectedDay.toLocaleDateString("en-US", {
+                    weekday: "long",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </div>
                 <div className="small">
-                  GC outreach day — focus: interior slab opportunities
+                  {phase?.description ?? doc.plan.description}
                 </div>
               </div>
-              <span className="badge plan-status-tasks">4 tasks today</span>
+              <span className="badge plan-status-tasks">
+                {taskGroups.dueToday.length + taskGroups.inProgress.length}{" "}
+                active tasks
+              </span>
             </div>
 
-            <section className="mb-4">
-              <h3 className="h6 mb-3">Week 3 milestone progress</h3>
-              <div className="small text-body-secondary mb-2">3 of 5 complete</div>
-              <div className="d-flex flex-column gap-3">
-                {milestones.map((m) => (
-                  <div key={m.label}>
-                    <div className="d-flex justify-content-between small mb-1">
-                      <span>{m.label}</span>
+            {doc.risks.length > 0 ? (
+              <div className="alert alert-warning py-2 px-3 small mb-4">
+                <div className="fw-semibold mb-1">Risks to watch</div>
+                <ul className="mb-0 ps-3">
+                  {doc.risks.map((risk) => (
+                    <li key={risk.id}>
+                      <span className="fw-medium">{risk.name}</span>
                       <span className="text-body-secondary">
-                        {m.value === 100 ? "Done" : m.value === 0 ? "0%" : `${m.value}%`}
+                        {" "}
+                        — {risk.current_severity} severity ·{" "}
+                        {participantInitials(risk.owner_id, doc.participants)}{" "}
+                        owns mitigation
                       </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+
+            <section className="mb-4">
+              <h3 className="h6 mb-3">{selectedWeek.label} milestone progress</h3>
+              <div className="small text-body-secondary mb-2">
+                {milestoneComplete} of {milestones.length} complete
+              </div>
+              <div className="d-flex flex-column gap-3">
+                {milestones.map((m) => {
+                  const tone = milestoneTone(m);
+                  return (
+                    <div key={m.id}>
+                      <div className="d-flex justify-content-between small mb-1">
+                        <span>{m.name}</span>
+                        <span className="text-body-secondary">
+                          {m.current_pct_complete >= 100
+                            ? "Done"
+                            : m.current_pct_complete === 0
+                              ? "0%"
+                              : `${m.current_pct_complete}%`}
+                        </span>
+                      </div>
+                      <div className="progress plan-milestone-bar">
+                        <div
+                          className={`progress-bar bg-${tone === "purple" ? "primary" : tone === "warning" ? "warning" : tone === "muted" ? "secondary" : "success"}`}
+                          style={{ width: `${m.current_pct_complete}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="progress plan-milestone-bar">
-                      <div
-                        className={`progress-bar bg-${m.tone === "purple" ? "primary" : m.tone === "warning" ? "warning" : m.tone === "muted" ? "secondary" : "success"}`}
-                        style={{ width: `${m.value}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </section>
 
-            <TaskSection title="Due today" count={2} icon="!" tone="danger">
-              {dueToday.map((task) => (
-                <TaskRow key={task.title} {...task} />
-              ))}
+            <TaskSection
+              title="Due today"
+              count={taskGroups.dueToday.length}
+              icon="!"
+              tone="danger"
+            >
+              {taskGroups.dueToday.length === 0 ? (
+                <EmptyTasks message="Nothing due today." />
+              ) : (
+                taskGroups.dueToday.map((task) => (
+                  <TaskRow key={task.id} {...task} />
+                ))
+              )}
             </TaskSection>
 
-            <TaskSection title="In progress" count={2} icon="⚡" tone="primary">
-              {inProgress.map((task) => (
-                <TaskRow key={task.title} {...task} />
-              ))}
+            <TaskSection
+              title="In progress"
+              count={taskGroups.inProgress.length}
+              icon="⚡"
+              tone="primary"
+            >
+              {taskGroups.inProgress.length === 0 ? (
+                <EmptyTasks message="No tasks in progress for this day." />
+              ) : (
+                taskGroups.inProgress.map((task) => (
+                  <TaskRow key={task.id} {...task} />
+                ))
+              )}
             </TaskSection>
 
-            <TaskSection title="Completed earlier this week" count={6} icon="✓" tone="success">
-              {completed.map((title) => (
-                <div key={title} className="plan-task-row completed">
-                  <input type="checkbox" className="form-check-input" checked readOnly />
-                  <div className="flex-grow-1">
-                    <div className="text-decoration-line-through">{title}</div>
-                    <div className="small text-body-secondary">Completed this week</div>
+            <TaskSection
+              title="Completed this week"
+              count={taskGroups.completed.length}
+              icon="✓"
+              tone="success"
+            >
+              {taskGroups.completed.length === 0 ? (
+                <EmptyTasks message="No completed tasks yet this week." />
+              ) : (
+                taskGroups.completed.map((task) => (
+                  <div key={task.id} className="plan-task-row completed">
+                    <input
+                      type="checkbox"
+                      className="form-check-input"
+                      checked
+                      readOnly
+                    />
+                    <div className="flex-grow-1">
+                      <div className="text-decoration-line-through">
+                        {task.title}
+                      </div>
+                      <div className="small text-body-secondary">
+                        {task.tag}
+                      </div>
+                    </div>
+                    <span className="badge bg-success-subtle text-success">
+                      Done
+                    </span>
                   </div>
-                  <span className="badge bg-success-subtle text-success">Done</span>
-                </div>
-              ))}
+                ))
+              )}
             </TaskSection>
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+function EmptyTasks({ message }: { message: string }) {
+  return (
+    <div className="small text-body-secondary py-2 px-1">{message}</div>
   );
 }
 
@@ -215,7 +437,8 @@ function TaskSection({
     <section className="mb-4">
       <h3 className={`h6 plan-section-heading text-${tone}`}>
         <span className="plan-section-icon">{icon}</span>
-        {title} <span className="text-body-secondary fw-normal">({count} tasks)</span>
+        {title}{" "}
+        <span className="text-body-secondary fw-normal">({count} tasks)</span>
       </h3>
       <div className="d-flex flex-column gap-2">{children}</div>
     </section>
@@ -228,12 +451,14 @@ function TaskRow({
   note,
   assignee,
   accent,
+  overdue,
 }: {
   title: string;
   tag: string;
   note: string;
   assignee: string;
   accent: string;
+  overdue?: boolean;
 }) {
   return (
     <div className={`plan-task-row ${accent}`}>
@@ -245,7 +470,9 @@ function TaskRow({
           <span className="small text-body-secondary">{note}</span>
         </div>
       </div>
-      <span className="badge plan-today-badge">Today</span>
+      <span className="badge plan-today-badge">
+        {overdue ? "Overdue" : "Today"}
+      </span>
       <span className="plan-avatar">{assignee}</span>
     </div>
   );
