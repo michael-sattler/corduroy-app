@@ -129,9 +129,9 @@ See [railway-deploy.md](./railway-deploy.md).
   - [DONE] client organization/account management — create orgs (`/admin/clients`)
   - [DONE] staff user management — create staff (`/admin/staff`)
   - [DONE] staff “View as client” impersonation (needs service role key on Vercel)
-  - [ ] image upload (organization logos, user and admin use avatars)
+  - [DONE] image upload (organization logos, user and admin avatars; `public/uploads/`, cache-busted preview)
 
-### B2. CI/CD
+### B2. CI/CD / Continuous Integration and Continuous Delivery
 
 - [DONE] GitHub Actions: lint + typecheck on PR
 - [ ] Supabase migrations applied via CI or documented CLI workflow

@@ -22,13 +22,16 @@ export default async function AdminWaitlistDetailPage({
     notFound();
   }
 
-  const { displayName, role, user } = await requireStaffSession();
+  const { displayName, role, user, avatarPath, avatarUpdatedAt } =
+    await requireStaffSession();
 
   return (
     <StaffAdminShell
       displayName={displayName}
       email={user.email ?? ""}
       role={role}
+      avatarPath={avatarPath}
+      avatarVersion={avatarUpdatedAt}
       active="waitlist"
     >
       <AdminWaitlistDetailView entry={entry} pathPrefix={pathPrefix} />

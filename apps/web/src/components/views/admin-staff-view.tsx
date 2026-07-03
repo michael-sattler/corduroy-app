@@ -5,7 +5,9 @@ import { useState, useTransition } from "react";
 import {
   createStaffUserAction,
   updateStaffUserAction,
+  uploadStaffAvatarAction,
 } from "@/app/actions/admin";
+import { ImageUploadField } from "@/components/ui/image-upload-field";
 import { SlidePanel } from "@/components/ui/slide-panel";
 import type { StaffListRecord } from "@/lib/admin-api-types";
 import {
@@ -51,6 +53,15 @@ function StaffUserForm({
     >
       {error ? (
         <div className="alert alert-warning py-2 small">{error}</div>
+      ) : null}
+      {isEdit && member ? (
+        <ImageUploadField
+          label="Avatar"
+          imagePath={member.avatar_path}
+          imageVersion={member.avatar_updated_at}
+          fallbackLabel={member.display_name}
+          onUpload={(formData) => uploadStaffAvatarAction(member.id, formData)}
+        />
       ) : null}
       <div className="mb-3">
         <label className="form-label" htmlFor="staff-display-name">

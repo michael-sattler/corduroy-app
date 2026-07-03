@@ -15,6 +15,8 @@ type AppHeaderProps = {
   displayName: string;
   email?: string;
   role?: string;
+  avatarPath?: string | null;
+  avatarVersion?: string | null;
   active: ClientNavKey | StaffNavKey;
   guest?: boolean;
 };
@@ -25,6 +27,8 @@ export async function AppHeader({
   displayName,
   email,
   role,
+  avatarPath,
+  avatarVersion,
   active,
   guest = false,
 }: AppHeaderProps) {
@@ -51,6 +55,8 @@ export async function AppHeader({
             displayName={displayName}
             email={email}
             role={role}
+            avatarPath={avatarPath}
+            avatarVersion={avatarVersion}
           />
         )}
       </div>

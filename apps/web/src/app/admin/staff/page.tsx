@@ -5,7 +5,8 @@ import { fetchStaff } from "@/lib/admin-api";
 import { enrichStaffForAdmin } from "@/lib/admin-directory";
 
 export default async function AdminStaffPage() {
-  const { displayName, role, user } = await requireStaffSession();
+  const { displayName, role, user, avatarPath, avatarUpdatedAt } =
+    await requireStaffSession();
   const { staff } = await fetchStaff();
   const enriched = await enrichStaffForAdmin(staff);
 
@@ -14,6 +15,8 @@ export default async function AdminStaffPage() {
       displayName={displayName}
       email={user.email ?? ""}
       role={role}
+      avatarPath={avatarPath}
+      avatarVersion={avatarUpdatedAt}
       active="staff"
     >
       <AdminStaffView staff={enriched} />

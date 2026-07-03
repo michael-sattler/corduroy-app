@@ -1,20 +1,38 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { uploadMyStaffAvatarAction } from "@/app/actions/profile";
 import { signOut } from "@/app/actions/auth";
 import { UserAccountFields } from "@/components/management/user-account-fields";
+import { MenuAvatar } from "@/components/ui/menu-avatar";
 import { SlidePanel } from "@/components/ui/slide-panel";
 
 type StaffUserMenuProps = {
   displayName: string;
   email: string;
   role: string;
+  avatarPath: string | null;
+  avatarVersion: string | null;
 };
 
-export function StaffUserMenu({ displayName, email, role }: StaffUserMenuProps) {
+export function StaffUserMenu({
+  displayName,
+  email,
+  role,
+  avatarPath: initialAvatarPath,
+  avatarVersion: initialAvatarVersion,
+}: StaffUserMenuProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [avatarPath, setAvatarPath] = useState(initialAvatarPath);
+  const [avatarVersion, setAvatarVersion] = useState(initialAvatarVersion);
+  const [cacheBuster, setCacheBuster] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setAvatarPath(initialAvatarPath);
+    setAvatarVersion(initialAvatarVersion);
+  }, [initialAvatarPath, initialAvatarVersion]);
 
   useEffect(() => {
     if (!menuOpen) {
@@ -31,6 +49,12 @@ export function StaffUserMenu({ displayName, email, role }: StaffUserMenuProps) 
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [menuOpen]);
 
+  function handleAvatarUploaded(result: { path: string; version: string }) {
+    setAvatarPath(result.path);
+    setAvatarVersion(result.version);
+    setCacheBuster(Date.now());
+  }
+
   return (
     <>
       <div className="logged-in-user staff-user-menu ms-auto" ref={menuRef}>
@@ -41,9 +65,13 @@ export function StaffUserMenu({ displayName, email, role }: StaffUserMenuProps) 
           aria-expanded={menuOpen}
           aria-haspopup="menu"
         >
-          <span className="staff-user-avatar" aria-hidden>
-            {displayName.slice(0, 1).toUpperCase()}
-          </span>
+          <MenuAvatar
+            displayName={displayName}
+            avatarPath={avatarPath}
+            avatarVersion={avatarVersion}
+            cacheBuster={cacheBuster}
+            className="staff-user-avatar"
+          />
           <span className="staff-user-menu-text">
             <span className="staff-user-name">{displayName}</span>
             <span className="staff-user-role text-capitalize">{role}</span>
@@ -95,6 +123,10 @@ export function StaffUserMenu({ displayName, email, role }: StaffUserMenuProps) 
           surface="staff"
           displayName={displayName}
           email={email}
+          avatarPath={avatarPath}
+          avatarVersion={avatarVersion}
+          onAvatarUpload={uploadMyStaffAvatarAction}
+          onAvatarUploaded={handleAvatarUploaded}
         />
         <div className="slide-panel-footer">
           <button
@@ -102,10 +134,7 @@ export function StaffUserMenu({ displayName, email, role }: StaffUserMenuProps) 
             className="btn btn-outline-secondary"
             onClick={() => setAccountOpen(false)}
           >
-            Cancel
-          </button>
-          <button type="button" className="btn btn-primary">
-            Save changes
+            Close
           </button>
         </div>
       </SlidePanel>

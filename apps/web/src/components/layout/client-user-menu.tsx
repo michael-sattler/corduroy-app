@@ -1,19 +1,36 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { uploadMyClientAvatarAction } from "@/app/actions/profile";
 import { signOut } from "@/app/actions/auth";
 import { UserAccountFields } from "@/components/management/user-account-fields";
+import { MenuAvatar } from "@/components/ui/menu-avatar";
 import { SlidePanel } from "@/components/ui/slide-panel";
 
 type ClientUserMenuProps = {
   displayName: string;
   email: string;
+  avatarPath: string | null;
+  avatarVersion: string | null;
 };
 
-export function ClientUserMenu({ displayName, email }: ClientUserMenuProps) {
+export function ClientUserMenu({
+  displayName,
+  email,
+  avatarPath: initialAvatarPath,
+  avatarVersion: initialAvatarVersion,
+}: ClientUserMenuProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [avatarPath, setAvatarPath] = useState(initialAvatarPath);
+  const [avatarVersion, setAvatarVersion] = useState(initialAvatarVersion);
+  const [cacheBuster, setCacheBuster] = useState<number | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setAvatarPath(initialAvatarPath);
+    setAvatarVersion(initialAvatarVersion);
+  }, [initialAvatarPath, initialAvatarVersion]);
 
   useEffect(() => {
     if (!menuOpen) {
@@ -30,6 +47,12 @@ export function ClientUserMenu({ displayName, email }: ClientUserMenuProps) {
     return () => document.removeEventListener("mousedown", onPointerDown);
   }, [menuOpen]);
 
+  function handleAvatarUploaded(result: { path: string; version: string }) {
+    setAvatarPath(result.path);
+    setAvatarVersion(result.version);
+    setCacheBuster(Date.now());
+  }
+
   return (
     <>
       <div className="logged-in-user client-user-menu ms-auto" ref={menuRef}>
@@ -40,9 +63,13 @@ export function ClientUserMenu({ displayName, email }: ClientUserMenuProps) {
           aria-expanded={menuOpen}
           aria-haspopup="menu"
         >
-          <span className="client-user-avatar" aria-hidden>
-            {displayName.slice(0, 1).toUpperCase()}
-          </span>
+          <MenuAvatar
+            displayName={displayName}
+            avatarPath={avatarPath}
+            avatarVersion={avatarVersion}
+            cacheBuster={cacheBuster}
+            className="client-user-avatar"
+          />
           <span className="client-user-name">{displayName}</span>
           <span className="client-user-chevron" aria-hidden>
             ▾
@@ -87,17 +114,21 @@ export function ClientUserMenu({ displayName, email }: ClientUserMenuProps) {
         subtitle={email}
         size="md"
       >
-        <UserAccountFields displayName={displayName} email={email} />
+        <UserAccountFields
+          displayName={displayName}
+          email={email}
+          avatarPath={avatarPath}
+          avatarVersion={avatarVersion}
+          onAvatarUpload={uploadMyClientAvatarAction}
+          onAvatarUploaded={handleAvatarUploaded}
+        />
         <div className="slide-panel-footer">
           <button
             type="button"
             className="btn btn-outline-secondary"
             onClick={() => setAccountOpen(false)}
           >
-            Cancel
-          </button>
-          <button type="button" className="btn btn-primary">
-            Save changes
+            Close
           </button>
         </div>
       </SlidePanel>

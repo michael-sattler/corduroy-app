@@ -9,7 +9,8 @@ export default async function DashboardPage() {
   const surface = await requireSurface();
 
   if (surface === "client") {
-    const { organization, displayName, user } = await requireClientSession();
+    const { organization, displayName, user, avatarPath, avatarUpdatedAt } =
+      await requireClientSession();
     const vaultHref = await resolveAppHref("/vault", "client");
     const planHref = await resolveAppHref("/plan", "client");
 
@@ -18,6 +19,8 @@ export default async function DashboardPage() {
         organization={organization}
         displayName={displayName}
         email={user.email ?? ""}
+        avatarPath={avatarPath}
+        avatarVersion={avatarUpdatedAt}
         active="dashboard"
       >
         <div className="container-fluid py-4">
@@ -42,13 +45,16 @@ export default async function DashboardPage() {
     );
   }
 
-  const { displayName, role, user } = await requireStaffSession();
+  const { displayName, role, user, avatarPath, avatarUpdatedAt } =
+    await requireStaffSession();
 
   return (
     <StaffLayout
       displayName={displayName}
       email={user.email ?? ""}
       role={role}
+      avatarPath={avatarPath}
+      avatarVersion={avatarUpdatedAt}
       active="portfolio"
     >
       <StaffDashboardView displayName={displayName} />

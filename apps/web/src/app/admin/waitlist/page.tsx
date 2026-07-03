@@ -4,7 +4,8 @@ import { requireStaffSession } from "@/lib/auth/session";
 import { fetchWaitlist } from "@/lib/admin-api";
 
 export default async function AdminWaitlistPage() {
-  const { displayName, role, user } = await requireStaffSession();
+  const { displayName, role, user, avatarPath, avatarUpdatedAt } =
+    await requireStaffSession();
   const { entries } = await fetchWaitlist();
 
   return (
@@ -12,6 +13,8 @@ export default async function AdminWaitlistPage() {
       displayName={displayName}
       email={user.email ?? ""}
       role={role}
+      avatarPath={avatarPath}
+      avatarVersion={avatarUpdatedAt}
       active="waitlist"
     >
       <AdminWaitlistView entries={entries} />

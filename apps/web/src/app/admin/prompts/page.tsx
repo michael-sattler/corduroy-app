@@ -4,7 +4,8 @@ import { requireStaffSession } from "@/lib/auth/session";
 import { fetchPrompts } from "@/lib/admin-api";
 
 export default async function AdminPromptsPage() {
-  const { displayName, role, user } = await requireStaffSession();
+  const { displayName, role, user, avatarPath, avatarUpdatedAt } =
+    await requireStaffSession();
   const { prompts } = await fetchPrompts();
 
   return (
@@ -12,6 +13,8 @@ export default async function AdminPromptsPage() {
       displayName={displayName}
       email={user.email ?? ""}
       role={role}
+      avatarPath={avatarPath}
+      avatarVersion={avatarUpdatedAt}
       active="prompts"
     >
       <AdminPromptsView prompts={prompts} />

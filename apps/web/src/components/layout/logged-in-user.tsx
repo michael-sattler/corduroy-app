@@ -7,6 +7,8 @@ type LoggedInUserProps = {
   displayName: string;
   email?: string;
   role?: string;
+  avatarPath?: string | null;
+  avatarVersion?: string | null;
 };
 
 export function LoggedInUser({
@@ -14,12 +16,27 @@ export function LoggedInUser({
   displayName,
   email = "",
   role = "",
+  avatarPath = null,
+  avatarVersion = null,
 }: LoggedInUserProps) {
   if (surface === "client") {
-    return <ClientUserMenu displayName={displayName} email={email} />;
+    return (
+      <ClientUserMenu
+        displayName={displayName}
+        email={email}
+        avatarPath={avatarPath}
+        avatarVersion={avatarVersion}
+      />
+    );
   }
 
   return (
-    <StaffUserMenu displayName={displayName} email={email} role={role} />
+    <StaffUserMenu
+      displayName={displayName}
+      email={email}
+      role={role}
+      avatarPath={avatarPath}
+      avatarVersion={avatarVersion}
+    />
   );
 }

@@ -1,25 +1,33 @@
+import { UserAvatarEditor } from "@/components/ui/user-avatar-editor";
+
 type UserAccountFieldsProps = {
   surface?: "client" | "staff";
   displayName?: string;
   email?: string;
+  avatarPath?: string | null;
+  avatarVersion?: string | null;
+  onAvatarUpload: (formData: FormData) => Promise<{ path: string; version: string }>;
+  onAvatarUploaded?: (result: { path: string; version: string }) => void;
 };
 
 export function UserAccountFields({
   surface = "client",
   displayName = "",
   email = "",
+  avatarPath = null,
+  avatarVersion = null,
+  onAvatarUpload,
+  onAvatarUploaded,
 }: UserAccountFieldsProps) {
   return (
     <div className="management-form-section">
-      <div className="text-center mb-4">
-        <div className="user-avatar-preview mx-auto mb-2">
-          {displayName.slice(0, 1).toUpperCase() || "?"}
-        </div>
-        <label className="form-label small" htmlFor="user-avatar">
-          Avatar
-        </label>
-        <input id="user-avatar" type="file" className="form-control" accept="image/*" />
-      </div>
+      <UserAvatarEditor
+        displayName={displayName}
+        avatarPath={avatarPath}
+        avatarVersion={avatarVersion}
+        onUpload={onAvatarUpload}
+        onUploaded={onAvatarUploaded}
+      />
 
       <div className="mb-3">
         <label className="form-label" htmlFor="user-display-name">
@@ -29,6 +37,7 @@ export function UserAccountFields({
           id="user-display-name"
           className="form-control"
           defaultValue={displayName}
+          readOnly
         />
       </div>
 
@@ -41,6 +50,7 @@ export function UserAccountFields({
           type="email"
           className="form-control"
           defaultValue={email}
+          readOnly
         />
       </div>
 
@@ -53,17 +63,19 @@ export function UserAccountFields({
           type="password"
           className="form-control mb-2"
           placeholder="New password"
+          disabled
         />
         <input
           id="user-password-confirm"
           type="password"
           className="form-control"
           placeholder="Confirm new password"
+          disabled
         />
         <div className="form-text">
           {surface === "staff"
-            ? "Leave blank to keep your current password."
-            : "Submitting will send a change request to your advisor for approval."}
+            ? "Password changes coming soon."
+            : "Password changes require advisor approval."}
         </div>
       </div>
     </div>

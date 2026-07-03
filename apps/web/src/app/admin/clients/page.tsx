@@ -5,7 +5,8 @@ import { fetchClients } from "@/lib/admin-api";
 import { getSurfacePathPrefix } from "@/lib/surface-path";
 
 export default async function AdminClientsPage() {
-  const { displayName, role, user } = await requireStaffSession();
+  const { displayName, role, user, avatarPath, avatarUpdatedAt } =
+    await requireStaffSession();
   const pathPrefix = await getSurfacePathPrefix();
   const { clients } = await fetchClients();
 
@@ -14,6 +15,8 @@ export default async function AdminClientsPage() {
       displayName={displayName}
       email={user.email ?? ""}
       role={role}
+      avatarPath={avatarPath}
+      avatarVersion={avatarUpdatedAt}
       active="clients"
     >
       <AdminClientsView clients={clients} pathPrefix={pathPrefix} />

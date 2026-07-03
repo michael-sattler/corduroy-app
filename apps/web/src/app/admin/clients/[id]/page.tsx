@@ -14,7 +14,8 @@ export default async function AdminClientDetailPage({
   params,
 }: AdminClientDetailPageProps) {
   const { id } = await params;
-  const { displayName, role, user } = await requireStaffSession();
+  const { displayName, role, user, avatarPath, avatarUpdatedAt } =
+    await requireStaffSession();
   const pathPrefix = await getSurfacePathPrefix();
 
   let client;
@@ -40,6 +41,8 @@ export default async function AdminClientDetailPage({
       displayName={displayName}
       email={user.email ?? ""}
       role={role}
+      avatarPath={avatarPath}
+      avatarVersion={avatarUpdatedAt}
       active="clients"
     >
       <AdminClientDetailView

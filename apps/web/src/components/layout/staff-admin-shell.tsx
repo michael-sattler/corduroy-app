@@ -7,6 +7,8 @@ type StaffAdminShellProps = {
   displayName: string;
   email: string;
   role: string;
+  avatarPath?: string | null;
+  avatarVersion?: string | null;
   active: AdminNavKey;
   children: React.ReactNode;
 };
@@ -15,6 +17,8 @@ export async function StaffAdminShell({
   displayName,
   email,
   role,
+  avatarPath = null,
+  avatarVersion = null,
   active,
   children,
 }: StaffAdminShellProps) {
@@ -25,6 +29,8 @@ export async function StaffAdminShell({
       displayName={displayName}
       email={email}
       role={role}
+      avatarPath={avatarPath}
+      avatarVersion={avatarVersion}
       active="admin"
       subtitle="Platform admin"
     >

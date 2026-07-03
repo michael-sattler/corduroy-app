@@ -18,6 +18,8 @@ type ClientLayoutProps = {
       organization: string;
       displayName: string;
       email: string;
+      avatarPath?: string | null;
+      avatarVersion?: string | null;
     }
 );
 
@@ -29,6 +31,8 @@ export async function ClientLayout(props: ClientLayoutProps) {
     : props.organization;
   const displayName = guest ? "" : props.displayName;
   const email = guest ? "" : props.email;
+  const avatarPath = guest ? null : (props.avatarPath ?? null);
+  const avatarVersion = guest ? null : (props.avatarVersion ?? null);
   const masquerade = guest ? null : await readMasqueradeSession();
   const endMasqueradeHref = masquerade ? await buildEndMasqueradePath() : null;
 
@@ -42,6 +46,8 @@ export async function ClientLayout(props: ClientLayoutProps) {
         subtitle={organization}
         displayName={displayName}
         email={email}
+        avatarPath={avatarPath}
+        avatarVersion={avatarVersion}
         active={active}
         guest={guest}
       />

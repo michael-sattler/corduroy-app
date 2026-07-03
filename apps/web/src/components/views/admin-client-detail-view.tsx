@@ -8,7 +8,10 @@ import {
   startClientImpersonationAction,
   updateClientAction,
   updatePortalUserAction,
+  uploadClientLogoAction,
+  uploadPortalUserAvatarAction,
 } from "@/app/actions/admin";
+import { ImageUploadField } from "@/components/ui/image-upload-field";
 import { SlidePanel } from "@/components/ui/slide-panel";
 import {
   formatSubmittedAt,
@@ -17,7 +20,13 @@ import {
 import { withAppPath } from "@/lib/path-routing";
 
 type AdminClientDetailViewProps = {
-  client: { id: string; name: string; created_at: string };
+  client: {
+    id: string;
+    name: string;
+    created_at: string;
+    logo_path: string | null;
+    logo_updated_at: string | null;
+  };
   users: PortalUserListRecord[];
   pathPrefix: string;
 };
@@ -27,6 +36,7 @@ type PortalPanelMode = "create" | "edit" | null;
 function PortalUserForm({
   mode,
   user,
+  clientId,
   error,
   pending,
   onCancel,
@@ -35,6 +45,7 @@ function PortalUserForm({
 }: {
   mode: "create" | "edit";
   user: PortalUserListRecord | null;
+  clientId: string;
   error: string | null;
   pending: boolean;
   onCancel: () => void;
@@ -56,6 +67,17 @@ function PortalUserForm({
     >
       {error ? (
         <div className="alert alert-warning py-2 small">{error}</div>
+      ) : null}
+      {isEdit && user ? (
+        <ImageUploadField
+          label="Avatar"
+          imagePath={user.avatar_path}
+          imageVersion={user.avatar_updated_at}
+          fallbackLabel={user.display_name}
+          onUpload={(formData) =>
+            uploadPortalUserAvatarAction(clientId, user.id, formData)
+          }
+        />
       ) : null}
       <div className="mb-3">
         <label className="form-label" htmlFor="portal-display-name">
@@ -273,6 +295,15 @@ export function AdminClientDetailView({
             />
           </div>
 
+          <ImageUploadField
+            label="Organization logo"
+            shape="logo"
+            imagePath={client.logo_path}
+            imageVersion={client.logo_updated_at}
+            fallbackLabel={orgName}
+            onUpload={(formData) => uploadClientLogoAction(client.id, formData)}
+          />
+
           <dl className="row mb-0">
             <dt className="col-sm-3">Client ID</dt>
             <dd className="col-sm-9 font-monospace small">{client.id}</dd>
@@ -380,6 +411,7 @@ export function AdminClientDetailView({
           <PortalUserForm
             mode={portalPanelMode}
             user={selectedUser}
+            clientId={client.id}
             error={portalError}
             pending={portalPending}
             onCancel={closePortalPanel}

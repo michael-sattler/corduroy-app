@@ -145,7 +145,7 @@ export async function fetchClients(): Promise<{ clients: ClientRecord[] }> {
   const { supabase } = await staffSupabase();
   const { data, error } = await supabase
     .from("clients")
-    .select("id, name, created_at, client_users(count)")
+    .select("id, name, created_at, logo_path, logo_updated_at, client_users(count)")
     .order("name");
 
   if (error) throw new Error(error.message);
@@ -155,6 +155,8 @@ export async function fetchClients(): Promise<{ clients: ClientRecord[] }> {
       id: row.id,
       name: row.name,
       created_at: row.created_at,
+      logo_path: row.logo_path ?? null,
+      logo_updated_at: row.logo_updated_at ?? null,
       user_count:
         (row.client_users as { count: number }[] | null)?.[0]?.count ?? 0,
     })),
@@ -167,7 +169,7 @@ export async function fetchClient(
   const { supabase } = await staffSupabase();
   const { data, error } = await supabase
     .from("clients")
-    .select("id, name, created_at")
+    .select("id, name, created_at, logo_path, logo_updated_at")
     .eq("id", clientId)
     .maybeSingle();
 
@@ -182,7 +184,9 @@ export async function fetchClientUsers(
   const { supabase } = await staffSupabase();
   const { data, error } = await supabase
     .from("client_users")
-    .select("id, user_id, client_id, display_name, created_at")
+    .select(
+      "id, user_id, client_id, display_name, created_at, avatar_path, avatar_updated_at",
+    )
     .eq("client_id", clientId)
     .order("display_name");
 
@@ -194,7 +198,9 @@ export async function fetchStaff(): Promise<{ staff: StaffRecord[] }> {
   const { supabase } = await staffSupabase();
   const { data, error } = await supabase
     .from("staff")
-    .select("id, user_id, role, approved, created_at")
+    .select(
+      "id, user_id, role, approved, created_at, avatar_path, avatar_updated_at",
+    )
     .order("created_at");
 
   if (error) throw new Error(error.message);

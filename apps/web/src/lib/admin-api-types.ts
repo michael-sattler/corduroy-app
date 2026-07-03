@@ -34,6 +34,8 @@ export type ClientRecord = {
   name: string;
   created_at: string;
   user_count: number;
+  logo_path: string | null;
+  logo_updated_at: string | null;
 };
 
 export type ClientUserRecord = {
@@ -42,6 +44,8 @@ export type ClientUserRecord = {
   client_id: string;
   display_name: string;
   created_at: string;
+  avatar_path: string | null;
+  avatar_updated_at: string | null;
 };
 
 export type StaffRecord = {
@@ -50,6 +54,8 @@ export type StaffRecord = {
   role: "principal" | "advisor" | "admin";
   approved: boolean;
   created_at: string;
+  avatar_path: string | null;
+  avatar_updated_at: string | null;
 };
 
 export type StaffListRecord = StaffRecord & {

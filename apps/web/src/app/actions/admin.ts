@@ -7,7 +7,16 @@ import { buildClientImpersonateUrl, buildStaffReturnUrl } from "@/lib/masquerade
 import { createImpersonationToken } from "@/lib/impersonation";
 import { getSurfacePathPrefix } from "@/lib/surface-path";
 import { createClient } from "@/lib/supabase/server";
+import { savePlatformImage } from "@/lib/platform-images";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
+
+function readUploadFile(formData: FormData): File {
+  const file = formData.get("file");
+  if (!(file instanceof File)) {
+    throw new Error("Choose an image file to upload.");
+  }
+  return file;
+}
 
 export async function updatePromptAction(
   id: string,
@@ -350,6 +359,106 @@ export async function updatePortalUserAction(
 
   revalidatePath(`/admin/clients/${clientId}`);
   revalidatePath("/admin/clients");
+}
+
+export async function uploadClientLogoAction(
+  clientId: string,
+  formData: FormData,
+): Promise<{ path: string; version: string }> {
+  await requireStaffSession();
+
+  const file = readUploadFile(formData);
+  const saved = await savePlatformImage("client-logo", clientId, file);
+
+  const admin = createServiceRoleClient();
+  const { error } = await admin
+    .from("clients")
+    .update({
+      logo_path: saved.path,
+      logo_updated_at: saved.updatedAt,
+    })
+    .eq("id", clientId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/clients");
+  revalidatePath(`/admin/clients/${clientId}`);
+
+  return { path: saved.path, version: saved.updatedAt };
+}
+
+export async function uploadPortalUserAvatarAction(
+  clientId: string,
+  clientUserId: string,
+  formData: FormData,
+): Promise<{ path: string; version: string }> {
+  await requireStaffSession();
+
+  const file = readUploadFile(formData);
+  const admin = createServiceRoleClient();
+
+  const { data: profile, error: profileError } = await admin
+    .from("client_users")
+    .select("id, client_id")
+    .eq("id", clientUserId)
+    .maybeSingle();
+
+  if (profileError) throw new Error(profileError.message);
+  if (!profile) throw new Error("Portal user not found");
+  if (profile.client_id !== clientId) {
+    throw new Error("Portal user does not belong to this organization");
+  }
+
+  const saved = await savePlatformImage("portal-avatar", clientUserId, file);
+
+  const { error } = await admin
+    .from("client_users")
+    .update({
+      avatar_path: saved.path,
+      avatar_updated_at: saved.updatedAt,
+    })
+    .eq("id", clientUserId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath(`/admin/clients/${clientId}`);
+
+  return { path: saved.path, version: saved.updatedAt };
+}
+
+export async function uploadStaffAvatarAction(
+  staffId: string,
+  formData: FormData,
+): Promise<{ path: string; version: string }> {
+  await requireStaffSession();
+
+  const file = readUploadFile(formData);
+  const admin = createServiceRoleClient();
+
+  const { data: staffRow, error: staffError } = await admin
+    .from("staff")
+    .select("id")
+    .eq("id", staffId)
+    .maybeSingle();
+
+  if (staffError) throw new Error(staffError.message);
+  if (!staffRow) throw new Error("Staff user not found");
+
+  const saved = await savePlatformImage("staff-avatar", staffId, file);
+
+  const { error } = await admin
+    .from("staff")
+    .update({
+      avatar_path: saved.path,
+      avatar_updated_at: saved.updatedAt,
+    })
+    .eq("id", staffId);
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/staff");
+
+  return { path: saved.path, version: saved.updatedAt };
 }
 
 export async function startClientImpersonationAction(

@@ -40,3 +40,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# uploaded platform images (logos, avatars)
+/public/uploads/*
+!/public/uploads/.gitkeep

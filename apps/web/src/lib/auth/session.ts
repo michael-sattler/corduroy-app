@@ -9,6 +9,8 @@ export type ClientContext = {
   user: User;
   displayName: string;
   organization: string;
+  avatarPath: string | null;
+  avatarUpdatedAt: string | null;
 };
 
 export type StaffContext = {
@@ -16,6 +18,8 @@ export type StaffContext = {
   user: User;
   displayName: string;
   role: string;
+  avatarPath: string | null;
+  avatarUpdatedAt: string | null;
 };
 
 export async function requireClientSession(): Promise<ClientContext> {
@@ -35,7 +39,7 @@ export async function requireClientSession(): Promise<ClientContext> {
 
   const { data: profile } = await supabase
     .from("client_users")
-    .select("display_name, clients(name)")
+    .select("display_name, avatar_path, avatar_updated_at, clients(name)")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -57,6 +61,8 @@ export async function requireClientSession(): Promise<ClientContext> {
       user.email ??
       "Client",
     organization,
+    avatarPath: profile?.avatar_path ?? null,
+    avatarUpdatedAt: profile?.avatar_updated_at ?? null,
   };
 }
 
@@ -77,7 +83,7 @@ export async function requireStaffSession(): Promise<StaffContext> {
 
   const { data: staff } = await supabase
     .from("staff")
-    .select("role")
+    .select("role, avatar_path, avatar_updated_at")
     .eq("user_id", user.id)
     .maybeSingle();
 
@@ -89,6 +95,8 @@ export async function requireStaffSession(): Promise<StaffContext> {
       user.email ??
       "Staff",
     role: staff?.role ?? (user.app_metadata?.staff_role as string) ?? "staff",
+    avatarPath: staff?.avatar_path ?? null,
+    avatarUpdatedAt: staff?.avatar_updated_at ?? null,
   };
 }
 

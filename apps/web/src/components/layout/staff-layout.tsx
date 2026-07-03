@@ -17,6 +17,8 @@ type StaffLayoutProps = {
       displayName: string;
       email: string;
       role: string;
+      avatarPath?: string | null;
+      avatarVersion?: string | null;
     }
 );
 
@@ -30,6 +32,8 @@ export function StaffLayout(props: StaffLayoutProps) {
   const displayName = guest ? "" : props.displayName;
   const email = guest ? "" : props.email;
   const role = guest ? "" : props.role;
+  const avatarPath = guest ? null : (props.avatarPath ?? null);
+  const avatarVersion = guest ? null : (props.avatarVersion ?? null);
 
   return (
     <div className="app-shell app-shell-staff">
@@ -39,6 +43,8 @@ export function StaffLayout(props: StaffLayoutProps) {
         displayName={displayName}
         email={email}
         role={role}
+        avatarPath={avatarPath}
+        avatarVersion={avatarVersion}
         active={active}
         guest={guest}
       />
