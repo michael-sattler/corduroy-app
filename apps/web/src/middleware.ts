@@ -27,6 +27,16 @@ function resolveRouting(host: string, pathname: string): ResolvedRouting | null 
     };
   }
 
+  // Client vault API routes — presign proxy; handler verifies client JWT.
+  if (pathname.startsWith("/api/client")) {
+    return {
+      surface: "client",
+      pathPrefix: "",
+      internalPath: pathname,
+      pathBased: false,
+    };
+  }
+
   const subdomainSurface = getSurfaceFromHost(host);
 
   if (subdomainSurface === "client" || subdomainSurface === "staff") {

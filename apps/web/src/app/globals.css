@@ -228,11 +228,22 @@ body {
 /* Vault */
 
 .vault-dropzone {
-  border: 2px dashed #c4b5fd;
+  border: 2px dashed #d1d5db;
   border-radius: 0.75rem;
-  padding: 1.5rem 1rem;
+  padding: 2rem 1.5rem;
   text-align: center;
-  background: #faf5ff;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.vault-dropzone-active {
+  border-color: var(--app-purple);
+  background: var(--app-purple-soft);
+}
+
+.vault-dropzone-busy {
+  opacity: 0.7;
+  pointer-events: none;
 }
 
 .vault-dropzone-icon {

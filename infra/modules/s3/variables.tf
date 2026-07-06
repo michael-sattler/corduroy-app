@@ -30,6 +30,17 @@ variable "content_processor_role_arn" {
   type = string
 }
 
+variable "browser_upload_origins" {
+  description = "Browser origins allowed to PUT via pre-signed URLs (Vault upload flow)."
+  type        = list(string)
+  default = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+    "http://app.localhost:3000",
+    "https://app.corduroytech.ai",
+  ]
+}
+
 variable "tags" {
   type    = map(string)
   default = {}

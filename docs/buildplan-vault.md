@@ -182,9 +182,10 @@ v1 TDD: one **primary** bucket per client (`purpose = 'primary'`). Table allows 
 
 ### P1.3 — Upload flow
 
-- [ ] API route: client requests upload → invoke AccessBroker → return PUT URL
-- [ ] Browser PUTs directly to S3
-- [ ] S3 ObjectCreated on `raw/` triggers ContentDispatcher
+- [DONE] API route: client requests upload → invoke AccessBroker → return PUT URL
+- [DONE] Browser PUTs directly to S3 (client `/vault` upload + `npm run test:vault-upload`)
+- [DONE] S3 bucket CORS for browser PUT (Terraform `modules/s3`)
+- [ ] S3 ObjectCreated on `raw/` triggers ContentDispatcher (P1.4)
 
 ### P1.4 — ContentDispatcher Lambda
 

@@ -19,6 +19,7 @@
     "db:push": "supabase db push --linked --yes",
     "db:seed": "node scripts/seed-dev-users.mjs",
     "test:vault-presign": "node scripts/test-vault-presign.mjs",
+    "test:vault-upload": "node scripts/test-vault-upload.mjs",
     "test:supabase-service-key": "node scripts/test-supabase-service-key.mjs",
     "docker:dev": "docker compose up --build web api",
     "docker:down": "docker compose down",

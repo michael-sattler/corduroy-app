@@ -111,4 +111,16 @@ resource "aws_s3_bucket_policy" "vault" {
   policy = data.aws_iam_policy_document.vault_bucket.json
 }
 
+resource "aws_s3_bucket_cors_configuration" "vault" {
+  bucket = aws_s3_bucket.vault.id
+
+  cors_rule {
+    allowed_headers = ["*"]
+    allowed_methods = ["PUT", "GET", "HEAD"]
+    allowed_origins = var.browser_upload_origins
+    expose_headers  = ["ETag"]
+    max_age_seconds = 3600
+  }
+}
+
 # Prefix layout (virtual): raw/, derived/, context/, audit/ — created on first object write.

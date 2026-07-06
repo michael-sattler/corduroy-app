@@ -35225,7 +35225,11 @@ module.exports = __toCommonJS(handler_exports);
 var import_client_s3 = __toESM(require_dist_cjs16(), 1);
 var import_s3_request_presigner = __toESM(require_dist_cjs17(), 1);
 var PRESIGN_EXPIRY_SECONDS = 900;
-var s3 = new import_client_s3.S3Client({});
+var s3 = new import_client_s3.S3Client({
+  // Default SDK checksums break browser PUTs against presigned URLs (SignatureDoesNotMatch).
+  requestChecksumCalculation: "WHEN_REQUIRED",
+  responseChecksumValidation: "WHEN_REQUIRED"
+});
 async function mintPresignedUrl(input) {
   const expiresIn = PRESIGN_EXPIRY_SECONDS;
   if (input.operation === "presign_put") {
@@ -35235,11 +35239,12 @@ async function mintPresignedUrl(input) {
     const command6 = new import_client_s3.PutObjectCommand({
       Bucket: input.bucketName,
       Key: input.s3Key,
-      ContentType: input.contentType,
-      ServerSideEncryption: "aws:kms",
-      SSEKMSKeyId: input.kmsKeyArn
+      ContentType: input.contentType
     });
-    const url2 = await (0, import_s3_request_presigner.getSignedUrl)(s3, command6, { expiresIn });
+    const url2 = await (0, import_s3_request_presigner.getSignedUrl)(s3, command6, {
+      expiresIn,
+      signableHeaders: /* @__PURE__ */ new Set(["content-type"])
+    });
     return { url: url2, expires_in: expiresIn };
   }
   const command5 = new import_client_s3.GetObjectCommand({

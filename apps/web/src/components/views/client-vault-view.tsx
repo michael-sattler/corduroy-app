@@ -1,3 +1,4 @@
+import { VaultFileUpload } from "@/components/vault/vault-file-upload";
 import { vaultSources } from "@/lib/placeholder-data";
 
 type ClientVaultViewProps = {
@@ -24,28 +25,7 @@ export function ClientVaultView({ organization }: ClientVaultViewProps) {
               Upload files or connect a system
             </p>
 
-            <div className="vault-dropzone mb-4">
-              <div className="vault-dropzone-icon">☁</div>
-              <div className="fw-medium">Drop files here or click to browse</div>
-              <div className="small text-body-secondary">
-                Financials, proposals, contracts, reports
-              </div>
-              <div className="d-flex gap-2 justify-content-center mt-3 flex-wrap">
-                <span className="file-pill file-pill-pdf">PDF</span>
-                <span className="file-pill file-pill-xlsx">XLSX</span>
-                <span className="file-pill file-pill-docx">DOCX</span>
-                <span className="file-pill file-pill-csv">CSV</span>
-              </div>
-            </div>
-
-            <div className="mb-3">
-              <label className="form-label small fw-medium">Source label</label>
-              <input
-                className="form-control form-control-sm"
-                placeholder="e.g. Q1 2026 P&L statement"
-                readOnly
-              />
-            </div>
+            <VaultFileUpload />
 
             <div className="row g-2 mb-3">
               <div className="col-6">
@@ -77,10 +57,6 @@ export function ClientVaultView({ organization }: ClientVaultViewProps) {
                 ))}
               </div>
             </div>
-
-            <button type="button" className="btn btn-primary w-100" disabled>
-              Add to data repository
-            </button>
           </div>
         </div>
 

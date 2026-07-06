@@ -4,7 +4,11 @@ import type { AccessBrokerOperation } from "./types.js";
 
 const PRESIGN_EXPIRY_SECONDS = 900;
 
-const s3 = new S3Client({});
+const s3 = new S3Client({
+  // Default SDK checksums break browser PUTs against presigned URLs (SignatureDoesNotMatch).
+  requestChecksumCalculation: "WHEN_REQUIRED",
+  responseChecksumValidation: "WHEN_REQUIRED",
+});
 
 export async function mintPresignedUrl(input: {
   operation: AccessBrokerOperation;
@@ -20,15 +24,18 @@ export async function mintPresignedUrl(input: {
       throw new Error("content_type is required for presign_put");
     }
 
+    // Bucket default encryption applies SSE-KMS (see modules/s3) — no extra signed
+    // x-amz-server-side-encryption headers required on the browser PUT.
     const command = new PutObjectCommand({
       Bucket: input.bucketName,
       Key: input.s3Key,
       ContentType: input.contentType,
-      ServerSideEncryption: "aws:kms",
-      SSEKMSKeyId: input.kmsKeyArn,
     });
 
-    const url = await getSignedUrl(s3, command, { expiresIn });
+    const url = await getSignedUrl(s3, command, {
+      expiresIn,
+      signableHeaders: new Set(["content-type"]),
+    });
     return { url, expires_in: expiresIn };
   }
 
