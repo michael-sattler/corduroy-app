@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@aws-sdk/client-lambda": "^3.750.0",
     "@fastify/cors": "^11.2.0",
     "@supabase/supabase-js": "^2.108.2",
     "dotenv": "^17.2.3",

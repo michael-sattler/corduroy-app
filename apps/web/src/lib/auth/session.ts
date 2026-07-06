@@ -37,13 +37,29 @@ export async function requireClientSession(): Promise<ClientContext> {
     redirect(await resolveAppHref("/login", "client"));
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("client_users")
     .select("display_name, avatar_path, avatar_updated_at, clients(name)")
     .eq("user_id", user.id)
     .maybeSingle();
 
-  const clientsJoin = profile?.clients as
+  let resolvedProfile = profile;
+  if (profileError?.message.includes("avatar_")) {
+    const { data: fallbackProfile } = await supabase
+      .from("client_users")
+      .select("display_name, clients(name)")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    resolvedProfile = fallbackProfile
+      ? {
+          ...fallbackProfile,
+          avatar_path: null,
+          avatar_updated_at: null,
+        }
+      : null;
+  }
+
+  const clientsJoin = resolvedProfile?.clients as
     | { name: string }
     | { name: string }[]
     | null
@@ -56,13 +72,13 @@ export async function requireClientSession(): Promise<ClientContext> {
     surface: "client",
     user,
     displayName:
-      profile?.display_name ??
+      resolvedProfile?.display_name ??
       (user.user_metadata?.display_name as string | undefined) ??
       user.email ??
       "Client",
     organization,
-    avatarPath: profile?.avatar_path ?? null,
-    avatarUpdatedAt: profile?.avatar_updated_at ?? null,
+    avatarPath: resolvedProfile?.avatar_path ?? null,
+    avatarUpdatedAt: resolvedProfile?.avatar_updated_at ?? null,
   };
 }
 
@@ -81,11 +97,23 @@ export async function requireStaffSession(): Promise<StaffContext> {
     redirect(await resolveAppHref("/login", "staff"));
   }
 
-  const { data: staff } = await supabase
+  const { data: staff, error: staffError } = await supabase
     .from("staff")
     .select("role, avatar_path, avatar_updated_at")
     .eq("user_id", user.id)
     .maybeSingle();
+
+  let resolvedStaff = staff;
+  if (staffError?.message.includes("avatar_")) {
+    const { data: fallbackStaff } = await supabase
+      .from("staff")
+      .select("role")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    resolvedStaff = fallbackStaff
+      ? { ...fallbackStaff, avatar_path: null, avatar_updated_at: null }
+      : null;
+  }
 
   return {
     surface: "staff",
@@ -94,9 +122,9 @@ export async function requireStaffSession(): Promise<StaffContext> {
       (user.user_metadata?.display_name as string | undefined) ??
       user.email ??
       "Staff",
-    role: staff?.role ?? (user.app_metadata?.staff_role as string) ?? "staff",
-    avatarPath: staff?.avatar_path ?? null,
-    avatarUpdatedAt: staff?.avatar_updated_at ?? null,
+    role: resolvedStaff?.role ?? (user.app_metadata?.staff_role as string) ?? "staff",
+    avatarPath: resolvedStaff?.avatar_path ?? null,
+    avatarUpdatedAt: resolvedStaff?.avatar_updated_at ?? null,
   };
 }
 

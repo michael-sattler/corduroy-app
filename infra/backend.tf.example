@@ -1,0 +1,11 @@
+# Copy to environments/<env>/backend.tf after running bootstrap (see bootstrap/README.md).
+#
+# terraform {
+#   backend "s3" {
+#     bucket         = "corduroy-tfstate-789535501521"
+#     key            = "environments/dev/terraform.tfstate"
+#     region         = "us-east-1"
+#     dynamodb_table = "corduroy-tfstate-lock"
+#     encrypt        = true
+#   }
+# }

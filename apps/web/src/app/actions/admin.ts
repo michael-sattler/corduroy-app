@@ -108,6 +108,49 @@ export async function updateClientAction(
 
   revalidatePath("/admin/clients");
   revalidatePath(`/admin/clients/${clientId}`);
+  revalidatePath("/dashboard");
+  return client;
+}
+
+export async function createStaffManagedClientAction(name: string) {
+  const { user } = await requireStaffSession();
+
+  const trimmed = name.trim();
+  if (!trimmed) {
+    throw new Error("Organization name is required");
+  }
+
+  const admin = createServiceRoleClient();
+
+  const { data: staffRow, error: staffError } = await admin
+    .from("staff")
+    .select("id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (staffError) throw new Error(staffError.message);
+  if (!staffRow) throw new Error("Staff profile not found");
+
+  const { data: client, error: clientError } = await admin
+    .from("clients")
+    .insert({ name: trimmed })
+    .select("id, name, created_at")
+    .single();
+
+  if (clientError) throw new Error(clientError.message);
+
+  const { error: assignmentError } = await admin
+    .from("staff_assignments")
+    .insert({
+      staff_id: staffRow.id,
+      client_id: client.id,
+    });
+
+  if (assignmentError) throw new Error(assignmentError.message);
+
+  revalidatePath("/admin/clients");
+  revalidatePath("/dashboard");
+
   return client;
 }
 
@@ -164,6 +207,7 @@ export async function createPortalUserAction(
 
   revalidatePath(`/admin/clients/${clientId}`);
   revalidatePath("/admin/clients");
+  revalidatePath("/dashboard");
 }
 
 export async function createStaffUserAction(data: {
@@ -359,6 +403,7 @@ export async function updatePortalUserAction(
 
   revalidatePath(`/admin/clients/${clientId}`);
   revalidatePath("/admin/clients");
+  revalidatePath("/dashboard");
 }
 
 export async function uploadClientLogoAction(
@@ -383,6 +428,7 @@ export async function uploadClientLogoAction(
 
   revalidatePath("/admin/clients");
   revalidatePath(`/admin/clients/${clientId}`);
+  revalidatePath("/dashboard");
 
   return { path: saved.path, version: saved.updatedAt };
 }
@@ -422,6 +468,7 @@ export async function uploadPortalUserAvatarAction(
   if (error) throw new Error(error.message);
 
   revalidatePath(`/admin/clients/${clientId}`);
+  revalidatePath("/dashboard");
 
   return { path: saved.path, version: saved.updatedAt };
 }

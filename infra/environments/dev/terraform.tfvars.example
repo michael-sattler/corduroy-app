@@ -1,0 +1,17 @@
+# Copy to terraform.tfvars and adjust if needed (terraform.tfvars is gitignored).
+
+aws_region  = "us-east-1"
+project     = "corduroy"
+environment = "dev"
+vpc_cidr    = "10.0.0.0/16"
+
+# Get client UUID from Supabase SQL Editor:
+#   select id, name from public.clients where name = 'All-American Fitness';
+#
+# vault_clients = {
+#   "00000000-0000-0000-0000-000000000000" = { name = "All-American Fitness" }
+# }
+
+# AccessBroker Lambda (optional — requires npm run build:access-broker first):
+# Use the secret key (sb_secret_...) or legacy service_role JWT (eyJ...) from Dashboard → API.
+# supabase_service_role_key = "sb_secret_..."

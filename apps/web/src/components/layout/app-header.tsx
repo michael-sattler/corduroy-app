@@ -1,5 +1,6 @@
 import { getSurfacePathPrefix } from "@/lib/surface-path";
 import { withAppPath } from "@/lib/path-routing";
+import { AccessBrokerStatusIndicator } from "@/components/layout/access-broker-status-indicator";
 import { LoggedInUser } from "@/components/layout/logged-in-user";
 import type {
   AppSurface,
@@ -50,14 +51,17 @@ export async function AppHeader({
           <TopNav surface="staff" active={active as StaffNavKey} pathPrefix={pathPrefix} />
         )}
         {guest ? null : (
-          <LoggedInUser
-            surface={surface}
-            displayName={displayName}
-            email={email}
-            role={role}
-            avatarPath={avatarPath}
-            avatarVersion={avatarVersion}
-          />
+          <div className="app-topbar-trailing">
+            {surface === "staff" ? <AccessBrokerStatusIndicator /> : null}
+            <LoggedInUser
+              surface={surface}
+              displayName={displayName}
+              email={email}
+              role={role}
+              avatarPath={avatarPath}
+              avatarVersion={avatarVersion}
+            />
+          </div>
         )}
       </div>
     </header>

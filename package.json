@@ -14,11 +14,15 @@
     "start:api": "npm run start --workspace=@corduroy/api",
     "lint": "npm run lint --workspace=@corduroy/web",
     "typecheck": "npm run typecheck --workspace=@corduroy/api",
+    "build:access-broker": "npm run build --workspace=@corduroy/access-broker",
     "db:link": "supabase link --project-ref iggvqbqqzujixshiffqe",
     "db:push": "supabase db push --linked --yes",
     "db:seed": "node scripts/seed-dev-users.mjs",
+    "test:vault-presign": "node scripts/test-vault-presign.mjs",
+    "test:supabase-service-key": "node scripts/test-supabase-service-key.mjs",
     "docker:dev": "docker compose up --build web api",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+    "docker:web-fresh": "docker exec corduroy-web-1 rm -rf /app/apps/web/.next && docker restart corduroy-web-1"
   },
   "devDependencies": {
     "@supabase/supabase-js": "^2.97.0",

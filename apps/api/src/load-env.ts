@@ -8,9 +8,14 @@ const repoRoot = resolve(
   "../../..",
 );
 
-for (const file of [".env", "apps/web/.env", "apps/api/.env"]) {
+for (const file of [
+  ".env",
+  "apps/web/.env",
+  "apps/web/.env.local",
+  "apps/api/.env",
+]) {
   const path = resolve(repoRoot, file);
   if (existsSync(path)) {
-    dotenv.config({ path });
+    dotenv.config({ path, override: true });
   }
 }

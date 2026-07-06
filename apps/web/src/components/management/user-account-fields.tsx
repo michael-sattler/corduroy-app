@@ -1,4 +1,8 @@
+"use client";
+
 import { UserAvatarEditor } from "@/components/ui/user-avatar-editor";
+
+export const USER_ACCOUNT_FORM_ID = "user-account-form";
 
 type UserAccountFieldsProps = {
   surface?: "client" | "staff";
@@ -6,8 +10,11 @@ type UserAccountFieldsProps = {
   email?: string;
   avatarPath?: string | null;
   avatarVersion?: string | null;
+  error?: string | null;
+  pending?: boolean;
   onAvatarUpload: (formData: FormData) => Promise<{ path: string; version: string }>;
   onAvatarUploaded?: (result: { path: string; version: string }) => void;
+  onSave: (form: HTMLFormElement) => void;
 };
 
 export function UserAccountFields({
@@ -16,11 +23,25 @@ export function UserAccountFields({
   email = "",
   avatarPath = null,
   avatarVersion = null,
+  error = null,
+  pending = false,
   onAvatarUpload,
   onAvatarUploaded,
+  onSave,
 }: UserAccountFieldsProps) {
   return (
-    <div className="management-form-section">
+    <form
+      id={USER_ACCOUNT_FORM_ID}
+      className="management-form-section"
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSave(event.currentTarget);
+      }}
+    >
+      {error ? (
+        <div className="alert alert-warning py-2 small">{error}</div>
+      ) : null}
+
       <UserAvatarEditor
         displayName={displayName}
         avatarPath={avatarPath}
@@ -35,9 +56,11 @@ export function UserAccountFields({
         </label>
         <input
           id="user-display-name"
+          name="displayName"
           className="form-control"
           defaultValue={displayName}
-          readOnly
+          required
+          disabled={pending}
         />
       </div>
 
@@ -47,10 +70,12 @@ export function UserAccountFields({
         </label>
         <input
           id="user-email"
+          name="email"
           type="email"
           className="form-control"
           defaultValue={email}
-          readOnly
+          required
+          disabled={pending}
         />
       </div>
 
@@ -60,24 +85,28 @@ export function UserAccountFields({
         </label>
         <input
           id="user-password"
+          name="password"
           type="password"
           className="form-control mb-2"
           placeholder="New password"
-          disabled
+          autoComplete="new-password"
+          disabled={pending}
         />
         <input
           id="user-password-confirm"
+          name="passwordConfirm"
           type="password"
           className="form-control"
           placeholder="Confirm new password"
-          disabled
+          autoComplete="new-password"
+          disabled={pending}
         />
         <div className="form-text">
           {surface === "staff"
-            ? "Password changes coming soon."
-            : "Password changes require advisor approval."}
+            ? "Leave blank to keep your current password."
+            : "Submitting will send a change request to your advisor for approval."}
         </div>
       </div>
-    </div>
+    </form>
   );
 }

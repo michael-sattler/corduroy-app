@@ -1,18 +1,16 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
-import { staffClients } from "@/lib/placeholder-data";
+import type { StaffDashboardClient } from "@/lib/staff-dashboard-types";
 
 const STORAGE_KEY = "corduroy.staff.selectedClientId";
-const DEFAULT_CLIENT_ID = staffClients[0]?.id ?? "aaf";
-
 const CHANGE_EVENT = "corduroy:staff-client-change";
 
 function readSelectedClientId(): string {
   if (typeof window === "undefined") {
-    return DEFAULT_CLIENT_ID;
+    return "";
   }
-  return sessionStorage.getItem(STORAGE_KEY) ?? DEFAULT_CLIENT_ID;
+  return sessionStorage.getItem(STORAGE_KEY) ?? "";
 }
 
 function subscribe(onStoreChange: () => void) {
@@ -25,11 +23,11 @@ function subscribe(onStoreChange: () => void) {
   };
 }
 
-export function useStaffSelectedClient() {
+export function useStaffSelectedClient(clients: StaffDashboardClient[]) {
   const selectedId = useSyncExternalStore(
     subscribe,
     readSelectedClientId,
-    () => DEFAULT_CLIENT_ID,
+    () => "",
   );
 
   const selectClient = useCallback((clientId: string) => {
@@ -38,7 +36,7 @@ export function useStaffSelectedClient() {
   }, []);
 
   const selectedClient =
-    staffClients.find((client) => client.id === selectedId) ?? staffClients[0];
+    clients.find((client) => client.id === selectedId) ?? clients[0] ?? null;
 
   return { selectedId, selectedClient, selectClient };
 }

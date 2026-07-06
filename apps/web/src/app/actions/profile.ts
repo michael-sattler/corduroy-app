@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { isStaffEmail } from "@/lib/auth/roles";
 import { requireClientSession, requireStaffSession } from "@/lib/auth/session";
 import { savePlatformImage } from "@/lib/platform-images";
 import { createClient } from "@/lib/supabase/server";
@@ -11,6 +12,106 @@ function readUploadFile(formData: FormData): File {
     throw new Error("Choose an image file to upload.");
   }
   return file;
+}
+
+export async function updateMyClientProfileAction(data: {
+  displayName: string;
+  email: string;
+  password: string;
+  passwordConfirm: string;
+}): Promise<{ displayName: string; email: string }> {
+  await requireClientSession();
+
+  const displayName = data.displayName.trim();
+  const email = data.email.trim().toLowerCase();
+  const password = data.password.trim();
+  const passwordConfirm = data.passwordConfirm.trim();
+
+  if (!displayName) throw new Error("Name is required");
+  if (!email) throw new Error("Email is required");
+
+  if (password || passwordConfirm) {
+    throw new Error(
+      "Password changes require advisor approval. Leave password fields blank.",
+    );
+  }
+
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) throw new Error("Not signed in");
+
+  const { error: profileError } = await supabase
+    .from("client_users")
+    .update({ display_name: displayName })
+    .eq("user_id", user.id);
+
+  if (profileError) throw new Error(profileError.message);
+
+  const { error: authError } = await supabase.auth.updateUser({
+    email,
+    data: { display_name: displayName },
+  });
+
+  if (authError) throw new Error(authError.message);
+
+  revalidatePath("/", "layout");
+
+  return { displayName, email };
+}
+
+export async function updateMyStaffProfileAction(data: {
+  displayName: string;
+  email: string;
+  password: string;
+  passwordConfirm: string;
+}): Promise<{ displayName: string; email: string }> {
+  await requireStaffSession();
+
+  const displayName = data.displayName.trim();
+  const email = data.email.trim().toLowerCase();
+  const password = data.password.trim();
+  const passwordConfirm = data.passwordConfirm.trim();
+
+  if (!displayName) throw new Error("Name is required");
+  if (!email) throw new Error("Email is required");
+  if (!isStaffEmail(email)) {
+    throw new Error("Staff accounts must use a @corduroytech.ai email");
+  }
+
+  if (password || passwordConfirm) {
+    if (password !== passwordConfirm) {
+      throw new Error("Passwords do not match");
+    }
+    if (password.length < 8) {
+      throw new Error("Password must be at least 8 characters");
+    }
+  }
+
+  const supabase = await createClient();
+
+  const authUpdate: {
+    email: string;
+    data: { display_name: string };
+    password?: string;
+  } = {
+    email,
+    data: { display_name: displayName },
+  };
+
+  if (password) {
+    authUpdate.password = password;
+  }
+
+  const { error: authError } = await supabase.auth.updateUser(authUpdate);
+
+  if (authError) throw new Error(authError.message);
+
+  revalidatePath("/", "layout");
+
+  return { displayName, email };
 }
 
 export async function uploadMyClientAvatarAction(

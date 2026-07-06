@@ -139,18 +139,24 @@ See [railway-deploy.md](./railway-deploy.md).
 
 ### B3. AWS account skeleton (no Vault yet)
 
+See [buildplan-vault.md](./buildplan-vault.md) for the full B3 + Phase 1 step-by-step checklist.
+
 - [ ] Dedicated VPC, S3 and KMS VPC endpoints (TDD §5.1)
 - [ ] IAM role stub for future Lambda execution role
 - [ ] Terraform or CDK layout in `infra/` — empty modules for buckets/Lambdas
 
 ### B4. Remaining Phase 0 schema
 
-- [ ] `audit_events` — append-only
-- [ ] `vault_objects` — catalog table (empty until Phase 1)
+- [DONE] `audit_events` — append-only (`supabase/migrations/20260706120000_vault_catalog_audit_schema.sql`)
+- [DONE] `vault_objects` — catalog table (empty until Phase 1)
+- [DONE] `client_vault_storage` — bucket/KMS coordinates per client (see buildplan-vault.md P1.0.1)
+- [DONE] Apply migration to remote: `npm run db:push` (after `supabase link`)
 
 ---
 
 ## Phase 1 — The Vault (TDD §12 items 5–11)
+
+See [buildplan-vault.md](./buildplan-vault.md) for detailed steps.
 
 - [ ] IaC: per-client S3 bucket + KMS key provisioning
 - [ ] AccessBroker Lambda: pre-signed GET/PUT URLs, server-built keys, audit append

@@ -3,6 +3,9 @@ import { ClientLayout, StaffLayout } from "@/components/layout";
 import { StaffDashboardView } from "@/components/views/staff-dashboard-view";
 import { requireClientSession, requireStaffSession } from "@/lib/auth/session";
 import { requireSurface } from "@/lib/require-surface";
+import {
+  fetchStaffDashboardClients,
+} from "@/lib/staff-client-directory";
 import { resolveAppHref } from "@/lib/surface-path";
 
 export default async function DashboardPage() {
@@ -47,6 +50,7 @@ export default async function DashboardPage() {
 
   const { displayName, role, user, avatarPath, avatarUpdatedAt } =
     await requireStaffSession();
+  const clients = await fetchStaffDashboardClients();
 
   return (
     <StaffLayout
@@ -57,7 +61,7 @@ export default async function DashboardPage() {
       avatarVersion={avatarUpdatedAt}
       active="portfolio"
     >
-      <StaffDashboardView displayName={displayName} />
+      <StaffDashboardView displayName={displayName} clients={clients} />
     </StaffLayout>
   );
 }

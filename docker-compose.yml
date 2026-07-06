@@ -35,6 +35,7 @@ services:
       - ./apps/web/.env:/app/apps/web/.env:ro
     env_file:
       - apps/web/.env
+      - apps/api/.env
     environment:
       NODE_ENV: development
       PORT: 4000
@@ -58,6 +59,7 @@ services:
       - "4000:4000"
     env_file:
       - apps/web/.env
+      - apps/api/.env
     environment:
       NODE_ENV: production
       PORT: 4000

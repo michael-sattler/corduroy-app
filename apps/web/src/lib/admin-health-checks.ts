@@ -14,10 +14,67 @@ export async function runAdminHealthChecks(
     Promise.resolve(
       checkNotConfigured("S3 (VPC endpoint)", "Milestone B3"),
     ),
-    Promise.resolve(
-      checkNotConfigured("AccessBroker Lambda", "Phase 1 Vault"),
-    ),
+    checkAccessBroker(accessToken, apiBase),
   ]);
+}
+
+async function checkAccessBroker(
+  accessToken: string,
+  apiBaseUrl: string,
+): Promise<HealthCheck> {
+  const checkedAt = new Date().toISOString();
+
+  try {
+    const res = await fetch(`${apiBaseUrl}/staff/vault/access-broker-status`, {
+      headers: { Authorization: `Bearer ${accessToken}` },
+      signal: AbortSignal.timeout(8000),
+    });
+    const body = (await res.json()) as {
+      status?: string;
+      function_name?: string | null;
+      detail?: string;
+      latency_ms?: number | null;
+      error?: string;
+    };
+
+    if (!res.ok) {
+      return {
+        service: "AccessBroker Lambda",
+        status: "down",
+        detail: body.error ?? `HTTP ${res.status}`,
+        latencyMs: null,
+        checkedAt,
+      };
+    }
+
+    const healthStatus = body.status ?? "unhealthy";
+    const status: HealthCheck["status"] =
+      healthStatus === "healthy"
+        ? "healthy"
+        : healthStatus === "not_configured"
+          ? "degraded"
+          : "down";
+
+    const name = body.function_name ?? "AccessBroker";
+    return {
+      service: "AccessBroker Lambda",
+      status,
+      detail: `${name}: ${body.detail ?? "unknown"}`,
+      latencyMs: body.latency_ms ?? null,
+      checkedAt,
+    };
+  } catch (error) {
+    return {
+      service: "AccessBroker Lambda",
+      status: "down",
+      detail:
+        error instanceof Error
+          ? error.message
+          : "AccessBroker status check failed",
+      latencyMs: null,
+      checkedAt,
+    };
+  }
 }
 
 async function checkOrchestrationApi(apiBaseUrl: string): Promise<HealthCheck> {

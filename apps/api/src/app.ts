@@ -6,6 +6,8 @@ import { registerClientRoutes } from "./routes/client.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerStaffAdminRoutes } from "./routes/staff-admin.js";
 import { registerStaffRoutes } from "./routes/staff.js";
+import { registerStaffVaultRoutes } from "./routes/staff-vault.js";
+import { registerVaultClientRoutes } from "./routes/vault.js";
 
 export async function buildApp(config: ApiConfig) {
   initSupabaseAuth(config.supabaseUrl, config.supabaseAnonKey);
@@ -24,7 +26,9 @@ export async function buildApp(config: ApiConfig) {
 
   await registerHealthRoutes(app);
   await registerClientRoutes(app);
+  await registerVaultClientRoutes(app);
   await registerStaffRoutes(app);
+  await registerStaffVaultRoutes(app);
   await registerStaffAdminRoutes(app, config);
 
   return app;

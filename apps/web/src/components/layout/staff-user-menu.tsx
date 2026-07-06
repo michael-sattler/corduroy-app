@@ -1,9 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { uploadMyStaffAvatarAction } from "@/app/actions/profile";
+import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState, useTransition } from "react";
+import {
+  updateMyStaffProfileAction,
+  uploadMyStaffAvatarAction,
+} from "@/app/actions/profile";
 import { signOut } from "@/app/actions/auth";
-import { UserAccountFields } from "@/components/management/user-account-fields";
+import {
+  USER_ACCOUNT_FORM_ID,
+  UserAccountFields,
+} from "@/components/management/user-account-fields";
 import { MenuAvatar } from "@/components/ui/menu-avatar";
 import { SlidePanel } from "@/components/ui/slide-panel";
 
@@ -16,23 +23,30 @@ type StaffUserMenuProps = {
 };
 
 export function StaffUserMenu({
-  displayName,
-  email,
+  displayName: initialDisplayName,
+  email: initialEmail,
   role,
   avatarPath: initialAvatarPath,
   avatarVersion: initialAvatarVersion,
 }: StaffUserMenuProps) {
+  const router = useRouter();
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [displayName, setDisplayName] = useState(initialDisplayName);
+  const [email, setEmail] = useState(initialEmail);
   const [avatarPath, setAvatarPath] = useState(initialAvatarPath);
   const [avatarVersion, setAvatarVersion] = useState(initialAvatarVersion);
   const [cacheBuster, setCacheBuster] = useState<number | null>(null);
+  const [accountError, setAccountError] = useState<string | null>(null);
+  const [accountPending, startAccountTransition] = useTransition();
   const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    setDisplayName(initialDisplayName);
+    setEmail(initialEmail);
     setAvatarPath(initialAvatarPath);
     setAvatarVersion(initialAvatarVersion);
-  }, [initialAvatarPath, initialAvatarVersion]);
+  }, [initialDisplayName, initialEmail, initialAvatarPath, initialAvatarVersion]);
 
   useEffect(() => {
     if (!menuOpen) {
@@ -53,6 +67,30 @@ export function StaffUserMenu({
     setAvatarPath(result.path);
     setAvatarVersion(result.version);
     setCacheBuster(Date.now());
+  }
+
+  function handleAccountSave(form: HTMLFormElement) {
+    const formData = new FormData(form);
+
+    setAccountError(null);
+    startAccountTransition(async () => {
+      try {
+        const updated = await updateMyStaffProfileAction({
+          displayName: String(formData.get("displayName") ?? ""),
+          email: String(formData.get("email") ?? ""),
+          password: String(formData.get("password") ?? ""),
+          passwordConfirm: String(formData.get("passwordConfirm") ?? ""),
+        });
+        setDisplayName(updated.displayName);
+        setEmail(updated.email);
+        setAccountOpen(false);
+        router.refresh();
+      } catch (err) {
+        setAccountError(
+          err instanceof Error ? err.message : "Could not save account",
+        );
+      }
+    });
   }
 
   return (
@@ -89,6 +127,7 @@ export function StaffUserMenu({
               role="menuitem"
               onClick={() => {
                 setMenuOpen(false);
+                setAccountError(null);
                 setAccountOpen(true);
               }}
             >
@@ -125,16 +164,28 @@ export function StaffUserMenu({
           email={email}
           avatarPath={avatarPath}
           avatarVersion={avatarVersion}
+          error={accountError}
+          pending={accountPending}
           onAvatarUpload={uploadMyStaffAvatarAction}
           onAvatarUploaded={handleAvatarUploaded}
+          onSave={handleAccountSave}
         />
         <div className="slide-panel-footer">
           <button
             type="button"
             className="btn btn-outline-secondary"
             onClick={() => setAccountOpen(false)}
+            disabled={accountPending}
           >
-            Close
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form={USER_ACCOUNT_FORM_ID}
+            className="btn btn-primary"
+            disabled={accountPending}
+          >
+            {accountPending ? "Saving…" : "Save changes"}
           </button>
         </div>
       </SlidePanel>

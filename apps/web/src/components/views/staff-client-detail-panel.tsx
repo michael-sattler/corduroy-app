@@ -1,4 +1,5 @@
-import type { StaffClientListItem } from "@/lib/placeholder-data";
+import { withImageCacheBuster } from "@/lib/platform-images-client";
+import type { StaffDashboardClient } from "@/lib/staff-dashboard-types";
 
 const kpis = [
   {
@@ -86,7 +87,7 @@ const milestones = [
 ];
 
 type StaffClientDetailPanelProps = {
-  client: StaffClientListItem;
+  client: StaffDashboardClient | null;
   consultantName: string;
 };
 
@@ -94,33 +95,41 @@ export function StaffClientDetailPanel({
   client,
   consultantName,
 }: StaffClientDetailPanelProps) {
+  if (!client) {
+    return (
+      <div className="app-card mb-4">
+        <h2 className="h5 mb-2">Select a client</h2>
+        <p className="text-body-secondary mb-0">
+          Choose an organization from the list, or create one with{" "}
+          <strong>Add client</strong>.
+        </p>
+      </div>
+    );
+  }
+
+  const logoSrc = withImageCacheBuster(client.logo_path, client.logo_updated_at);
+
   return (
     <div className="app-card mb-4" key={client.id}>
       <div className="d-flex flex-wrap justify-content-between gap-3 mb-4">
         <div className="d-flex gap-3">
-          <span className="staff-client-avatar-lg">{client.initials}</span>
+          <span className="staff-client-avatar-lg">
+            {logoSrc ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={logoSrc} alt="" />
+            ) : (
+              client.initials
+            )}
+          </span>
           <div>
-            <h2 className="h5 mb-1">{client.orgName}</h2>
+            <h2 className="h5 mb-1">{client.name}</h2>
             <p className="small text-body-secondary mb-0">
-              {client.engagementSubtitle} · Consultant: {consultantName}
+              {client.meta} · Consultant: {consultantName}
             </p>
-            <p className="small text-body-secondary mb-0">{client.location}</p>
           </div>
         </div>
         <div className="d-flex gap-2 flex-wrap align-items-start">
-          <span className="badge staff-badge-on-track">
-            {client.kpisOnTrack} KPIs on track
-          </span>
-          {client.kpisAtRisk > 0 ? (
-            <span className="badge staff-badge-at-risk">
-              {client.kpisAtRisk} at risk
-            </span>
-          ) : null}
-          {client.reviewLabel ? (
-            <button type="button" className="btn btn-sm btn-primary" disabled>
-              {client.reviewLabel}
-            </button>
-          ) : null}
+          <span className="badge staff-badge-on-track">Engagement preview</span>
         </div>
       </div>
 
@@ -198,7 +207,7 @@ export function StaffClientDetailPanel({
           Draft coach message — inject to {client.name}
         </div>
         <p className="mb-3">
-          Quick check-in for {client.orgName}: focus this week on clearing the
+          Quick check-in for {client.name}: focus this week on clearing the
           oldest open pipeline items and confirming owners for each follow-up.
           Momentum is solid — keep daily plan execution tight.
         </p>
