@@ -41,6 +41,24 @@ variable "browser_upload_origins" {
   ]
 }
 
+variable "content_processor_lambda_arn" {
+  description = "ContentProcessor Lambda ARN for raw/ ObjectCreated notifications."
+  type        = string
+  default     = ""
+}
+
+variable "content_processor_lambda_name" {
+  description = "ContentProcessor Lambda function name (for S3 invoke permission)."
+  type        = string
+  default     = ""
+}
+
+variable "content_processor_notifications_enabled" {
+  description = "When true, wire S3 ObjectCreated on raw/ to ContentProcessor."
+  type        = bool
+  default     = false
+}
+
 variable "tags" {
   type    = map(string)
   default = {}

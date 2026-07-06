@@ -23,6 +23,9 @@ module "s3" {
   kms_key_arn                = module.kms.key_arn
   access_broker_role_arn     = var.access_broker_role_arn
   content_processor_role_arn = var.content_processor_role_arn
+  content_processor_lambda_arn  = var.content_processor_lambda_arn
+  content_processor_lambda_name = var.content_processor_lambda_name
+  content_processor_notifications_enabled = var.content_processor_notifications_enabled
 
   tags = var.tags
 }

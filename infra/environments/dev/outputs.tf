@@ -59,3 +59,13 @@ output "access_broker_function_name" {
   description = "AccessBroker Lambda function name."
   value       = try(module.access_broker_lambda[0].function_name, null)
 }
+
+output "content_processor_function_arn" {
+  description = "ContentProcessor Lambda ARN (null until supabase_service_role_key is set and Lambda is built)."
+  value       = try(module.content_processor_lambda[0].function_arn, null)
+}
+
+output "content_processor_function_name" {
+  description = "ContentProcessor Lambda function name."
+  value       = try(module.content_processor_lambda[0].function_name, null)
+}

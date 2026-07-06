@@ -141,8 +141,8 @@ export function VaultFileUpload({ onUploaded }: VaultFileUploadProps) {
           <div className="fw-medium">Uploaded to Vault</div>
           <div className="text-break">{lastResult.s3_key}</div>
           <div className="text-body-secondary">
-            Audit event {lastResult.audit_event_id.slice(0, 8)}… — catalog update
-            follows when processing runs.
+            Audit event {lastResult.audit_event_id.slice(0, 8)}… — catalog updates
+            after processing.
           </div>
         </div>
       ) : null}

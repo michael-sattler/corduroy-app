@@ -185,15 +185,16 @@ v1 TDD: one **primary** bucket per client (`purpose = 'primary'`). Table allows 
 - [DONE] API route: client requests upload → invoke AccessBroker → return PUT URL
 - [DONE] Browser PUTs directly to S3 (client `/vault` upload + `npm run test:vault-upload`)
 - [DONE] S3 bucket CORS for browser PUT (Terraform `modules/s3`)
-- [ ] S3 ObjectCreated on `raw/` triggers ContentDispatcher (P1.4)
+- [DONE] S3 ObjectCreated on `raw/` triggers ContentProcessor (P1.4)
 
-### P1.4 — ContentDispatcher Lambda
+### P1.4 — ContentProcessor Lambda
 
-- [ ] S3 event trigger on `raw/` ObjectCreated
-- [ ] Extract/normalize contents; type sniff after upload
-- [ ] Write derived artifacts to `derived/` and `context/` under execution role
-- [ ] Upsert `vault_objects` catalog row; complete audit row
-- [ ] Supabase credential in Secrets Manager (insert-only to catalog + audit)
+- [DONE] S3 event trigger on `raw/` ObjectCreated (`modules/s3` + `content-processor-lambda`)
+- [DONE] Type sniff via HeadObject content-type → `object_type` on catalog row
+- [ ] Write derived artifacts to `derived/` and `context/` (deferred)
+- [DONE] Upsert `vault_objects`; append `vault.ingest_raw` audit row (append-only)
+- [DONE] Supabase via env vars on Lambda (same PostgREST pattern as AccessBroker)
+- [DONE] Build + `terraform apply`; verify with `npm run test:vault-ingest`
 
 ### P1.5 — Catalog reconciliation
 
@@ -202,9 +203,9 @@ v1 TDD: one **primary** bucket per client (`purpose = 'primary'`). Table allows 
 
 ### P1.6 — Vault UI
 
-- [ ] Client `/vault`: add-source pane (upload + metadata) and data repository (catalog grouped by category)
+- [DONE] Client `/vault`: add-source pane (upload + metadata) and data repository (catalog grouped by source)
 - [ ] Staff: upload/download for selected client via same broker path
-- [ ] Wire to live API (replace static mockup)
+- [DONE] Wire to live catalog (`vault_objects` via Supabase RLS + `/api/client/vault/objects`)
 
 ### P1.7 — Security checkpoint
 

@@ -123,4 +123,28 @@ resource "aws_s3_bucket_cors_configuration" "vault" {
   }
 }
 
+resource "aws_lambda_permission" "content_processor_s3" {
+  count = var.content_processor_notifications_enabled ? 1 : 0
+
+  statement_id  = "AllowS3InvokeRawObjectCreated"
+  action        = "lambda:InvokeFunction"
+  function_name = var.content_processor_lambda_name
+  principal     = "s3.amazonaws.com"
+  source_arn    = aws_s3_bucket.vault.arn
+}
+
+resource "aws_s3_bucket_notification" "vault_raw_created" {
+  count = var.content_processor_notifications_enabled ? 1 : 0
+
+  bucket = aws_s3_bucket.vault.id
+
+  lambda_function {
+    lambda_function_arn = var.content_processor_lambda_arn
+    events              = ["s3:ObjectCreated:*"]
+    filter_prefix       = "raw/"
+  }
+
+  depends_on = [aws_lambda_permission.content_processor_s3]
+}
+
 # Prefix layout (virtual): raw/, derived/, context/, audit/ — created on first object write.

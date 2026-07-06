@@ -59,6 +59,10 @@ module "vault_client" {
   access_broker_role_name     = module.iam.access_broker_role_name
   content_processor_role_arn  = module.iam.content_processor_role_arn
   content_processor_role_name = module.iam.content_processor_role_name
+
+  content_processor_lambda_arn  = try(module.content_processor_lambda[0].function_arn, "")
+  content_processor_lambda_name = try(module.content_processor_lambda[0].function_name, "")
+  content_processor_notifications_enabled = var.supabase_service_role_key != ""
 }
 
 data "archive_file" "access_broker" {
@@ -81,4 +85,26 @@ module "access_broker_lambda" {
   supabase_service_role_key = var.supabase_service_role_key
   source_zip_path           = data.archive_file.access_broker[0].output_path
   railway_invoke_user_name  = module.iam.railway_invoke_user_name
+}
+
+data "archive_file" "content_processor" {
+  count = var.supabase_service_role_key != "" ? 1 : 0
+
+  type        = "zip"
+  source_file = abspath("${path.module}/../../../apps/content-processor/dist/index.js")
+  output_path = "${path.module}/.build/content-processor.zip"
+}
+
+module "content_processor_lambda" {
+  count  = var.supabase_service_role_key != "" ? 1 : 0
+  source = "../../modules/content-processor-lambda"
+
+  project     = var.project
+  environment = var.environment
+
+  content_processor_role_arn  = module.iam.content_processor_role_arn
+  content_processor_role_name = module.iam.content_processor_role_name
+  supabase_url                = var.supabase_url
+  supabase_service_role_key   = var.supabase_service_role_key
+  source_zip_path             = data.archive_file.content_processor[0].output_path
 }
