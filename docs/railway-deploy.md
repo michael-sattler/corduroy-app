@@ -29,6 +29,10 @@ Earlier admin pages proxied reads through `ORCHESTRATION_API_URL`. As of commit 
    | `SUPABASE_URL` | `https://iggvqbqqzujixshiffqe.supabase.co` |
    | `SUPABASE_ANON_KEY` | Same publishable key as Vercel `NEXT_PUBLIC_SUPABASE_ANON_KEY` |
    | `CORS_ORIGINS` | `https://app.corduroytech.ai,https://staff.corduroytech.ai` |
+   | `AWS_REGION` | `us-east-1` |
+   | `AWS_ACCESS_KEY_ID` | IAM user `corduroy-dev-railway-invoke` (invoke-only) |
+   | `AWS_SECRET_ACCESS_KEY` | Matching secret for that user |
+   | `ACCESS_BROKER_LAMBDA_NAME` | `corduroy-dev-access-broker` (from `terraform output access_broker_function_name`) |
 
 5. **Settings → Networking** → **Generate domain** (e.g. `corduroy-api-production.up.railway.app`)
 6. Wait for deploy **Success**, then verify:
@@ -77,14 +81,12 @@ Set in **Railway → corduroy-api → Variables**:
 | `SUPABASE_URL` | `https://iggvqbqqzujixshiffqe.supabase.co` |
 | `SUPABASE_ANON_KEY` | Publishable key from [Supabase API settings](https://supabase.com/dashboard/project/iggvqbqqzujixshiffqe/settings/api) |
 | `CORS_ORIGINS` | `https://app.corduroytech.ai,https://staff.corduroytech.ai` |
+| `AWS_REGION` | `us-east-1` |
+| `AWS_ACCESS_KEY_ID` | `corduroy-dev-railway-invoke` access key |
+| `AWS_SECRET_ACCESS_KEY` | Matching secret |
+| `ACCESS_BROKER_LAMBDA_NAME` | `corduroy-dev-access-broker` |
 
-Optional for local-style preview testing:
-
-```
-https://<vercel-project>.vercel.app
-```
-
-Do **not** add `SUPABASE_SERVICE_ROLE_KEY` unless a specific server route needs admin access (none do yet).
+Do **not** add `SUPABASE_SERVICE_ROLE_KEY` to Railway — AccessBroker uses its own key via Lambda env (Terraform).
 
 ## 3. Health check
 
@@ -127,7 +129,24 @@ curl -H "Authorization: Bearer <access_token>" https://<api>/client/me
 
 Wrong role → `403`. Missing/invalid token → `401`.
 
+## 4b. Verify Vault / AccessBroker (Phase 1.2)
+
+After Railway has the AWS + `ACCESS_BROKER_LAMBDA_NAME` vars and Vercel has `ORCHESTRATION_API_URL`:
+
+1. **Staff console** ([staff.corduroytech.ai/dashboard](https://staff.corduroytech.ai/dashboard)) — header pill should be **green** (DryRun invoke permitted).
+2. **Admin health** ([staff.corduroytech.ai/admin](https://staff.corduroytech.ai/admin)) → **Run checks** — “AccessBroker Lambda” row should be **healthy**.
+3. **End-to-end presign** (from your machine, against production API):
+
+   ```powershell
+   $env:API_URL = "https://<your-railway-domain>"
+   npm run test:vault-presign
+   ```
+
+   Uses Supabase sign-in locally but calls the Railway API for presign. Expect `Presign OK` with `url`, `s3_key`, `audit_event_id`.
+
 ## 5. Local development
+
+**Use one API at a time on port 4000** — either `npm run dev:api` **or** `docker compose up api`, not both. Mixing them causes `EADDRINUSE` and a stale API without Vault env vars (orange telltale). See [apps/api/docs/lambda-ops.md](../apps/api/docs/lambda-ops.md).
 
 ```bash
 # From repo root — uses apps/web/.env for Supabase keys
@@ -159,4 +178,7 @@ For Milestone B, a **single Railway service** on `main` is enough. Add a second 
 | Build fails on `npm ci` | Ensure Dockerfile copies root `package-lock.json` |
 | `Missing required env var` | Set `SUPABASE_URL` and `SUPABASE_ANON_KEY` in Railway |
 | CORS errors from browser | Add the exact frontend origin to `CORS_ORIGINS` |
+| AccessBroker telltale **orange** on production | Set `ACCESS_BROKER_LAMBDA_NAME` + AWS vars on **Railway**; redeploy API |
+| AccessBroker telltale **red** | Check IAM invoke policy, function name, region; read tooltip `detail` |
+| Local telltale orange after editing `.env` | Stop Docker **or** stop `dev:api` — only one process on :4000 |
 | `403 Wrong surface` | Client token on `/staff/*` or vice versa — by design |
