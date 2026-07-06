@@ -47,7 +47,7 @@ function mapClientJoin(client: ClientJoinRow): StaffManagedClient {
     users: (client.client_users ?? []).map((portalUser) => ({
       id: portalUser.id,
       display_name: portalUser.display_name,
-      email: portalUser.email,
+      email: "",
       avatar_path: portalUser.avatar_path ?? null,
       avatar_updated_at: portalUser.avatar_updated_at ?? null,
     })),
