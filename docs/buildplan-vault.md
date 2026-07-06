@@ -204,6 +204,7 @@ v1 TDD: one **primary** bucket per client (`purpose = 'primary'`). Table allows 
 ### P1.6 — Vault UI
 
 - [DONE] Client `/vault`: add-source pane (upload + metadata) and data repository (catalog grouped by source)
+- [DONE] Client download: presign GET + browser fetch (`/api/client/vault/presign-download`, catalog Download button)
 - [ ] Staff: upload/download for selected client via same broker path
 - [DONE] Wire to live catalog (`vault_objects` via Supabase RLS + `/api/client/vault/objects`)
 

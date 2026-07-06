@@ -7,6 +7,10 @@ import type {
   VaultPresignUploadRequest,
   VaultPresignUploadResponse,
 } from "@/lib/vault-upload-types";
+import type {
+  VaultPresignDownloadRequest,
+  VaultPresignDownloadResponse,
+} from "@/lib/vault-download-types";
 
 export class ClientApiHttpError extends Error {
   constructor(
@@ -74,4 +78,37 @@ export async function requestVaultPresignUpload(
   }
 
   return payload as VaultPresignUploadResponse;
+}
+
+export async function requestVaultPresignDownload(
+  body: VaultPresignDownloadRequest,
+): Promise<VaultPresignDownloadResponse> {
+  const token = await getClientAccessToken();
+  const apiBase = getOrchestrationApiUrl();
+
+  const res = await fetch(`${apiBase}/client/vault/presign-download`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+    signal: AbortSignal.timeout(30_000),
+  });
+
+  const payload = (await res.json().catch(() => ({}))) as
+    | VaultPresignDownloadResponse
+    | { error?: string };
+
+  if (!res.ok) {
+    throw new ClientApiHttpError(
+      res.status,
+      "error" in payload && payload.error
+        ? payload.error
+        : `Presign download failed (${res.status})`,
+    );
+  }
+
+  return payload as VaultPresignDownloadResponse;
 }

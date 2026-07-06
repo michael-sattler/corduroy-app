@@ -150,6 +150,11 @@ export function formatVaultObjectMeta(object: VaultCatalogObject): string {
   return size ? `Uploaded ${uploaded} · ${size}` : `Uploaded ${uploaded}`;
 }
 
+export function vaultObjectDownloadFilename(s3Key: string): string {
+  const basename = s3Key.split("/").pop()?.trim() ?? "vault-file";
+  return basename || "vault-file";
+}
+
 function formatVaultDate(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) {
