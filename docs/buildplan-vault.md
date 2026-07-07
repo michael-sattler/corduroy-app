@@ -157,6 +157,12 @@ Ordered per [TDD Platform](./tdd-platform.md) §12 and [buildplan.md](./buildpla
 
 **Target (later):** `provisionClientVault(clientId)` — API or CI job; staff UI “Provision Vault” button.
 
+**To do:**
+
+- [ ] Wire vault provisioning to new client creation — on staff “Create client”, provision S3 bucket + KMS (Terraform or API), upsert `client_vault_storage`, replace manual tfvars + SQL steps above
+- [ ] `provisionClientVault(clientId)` helper (callable from server action or ops job)
+- [ ] Staff UI: “Provision Vault” for clients missing `client_vault_storage` (until auto-provision ships)
+
 | Store | Role |
 |-------|------|
 | `terraform.tfvars` | Ops input: which clients to provision in AWS |
@@ -212,18 +218,18 @@ Ordered per [TDD Platform](./tdd-platform.md) §12 and [buildplan.md](./buildpla
 ### P1.6.1 — UI polish (open)
 
 Functional MVP shipped; polish pass in progress:
-- [ ] Upon upload, extract filename and use as Source label (Source label override not required)
-- [ ] Show progress indicator as small stripe under app-topbar-inner, whille waiting for functions to complete, show animation in stripe; hide when complete
-- [ ] Catalog:Be sure name of file (from database) is shown in vault-source-row title
-- [ ] Catalog: vault-source-icon should indicate the type of file (PDF, DOCx, etc.)
-- [ ] Catalog: Download button in file listing should have an icon
-- [ ] Catalog row title: show original filename where available (may need metadata column or key parsing)
+- [DONE] Upon upload, extract filename and use as Source label (Source label override not required)
+- [DONE] Show progress indicator as small stripe under app-topbar-inner, whille waiting for functions to complete, show animation in stripe; hide when complete
+- [DONE] Catalog:Be sure name of file (from database) is shown in vault-source-row title
+- [DONE] Catalog: vault-source-icon should indicate the type of file (PDF, DOCx, etc.)
+- [DONE] Catalog: Download button in file listing should have an icon
+- [DONE] Catalog row title: show original filename where available (may need metadata column or key parsing)
 - [ ] Build universal toaster interface for result messages of all types (slide-in div from upper right corner containing message/type (warning, danger, info, etc)
-- [ ] Success message: friendly filename, not raw `s3_key` / audit UUID
-- [ ] Catalog: Disable or clearly mark placeholder fields (category, date, integrations grid)
+- [DONE] Success message: friendly filename, not raw `s3_key` / audit UUID
+- [DONE] Catalog: Disable or clearly mark placeholder fields (category, date, integrations grid)
 - [ ] Catalog: Empty / error states copy review (client + staff)
-- [ ] Hover over vault-dropzone highlights div
-- [ ] Remove all checkboxes for now
+- [DONE] Hover over vault-dropzone highlights div
+- [DONE] Remove all checkboxes for now
 
 <<DEFERRED>>
 - [ ] Source label **above** dropzone (or sensible default e.g. `manual-upload`) <<N/A: INFER FILE NAME DURING UPLOAD>>
@@ -256,8 +262,8 @@ flowchart LR
 |-------|--------|
 | **Done** | B3/B4, P1.1–P1.4, P1.6 core (client + staff file exchange) |
 | **Now** | P1.6.1 UI polish |
-| **Next** | P1.5 reconciliation, P1.7 security checkpoint |
-| **Deferred** | Derived/context extraction, automated vault provisioning |
+| **Next** | P1.5 reconciliation, P1.7 security checkpoint, P1.0.1 automated vault provisioning on client create |
+| **Deferred** | Derived/context extraction |
 
 ---
 
