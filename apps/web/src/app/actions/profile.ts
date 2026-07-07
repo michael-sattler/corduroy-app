@@ -57,7 +57,9 @@ export async function updateMyClientProfileAction(data: {
 
   if (authError) throw new Error(authError.message);
 
-  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
+  revalidatePath("/vault");
+  revalidatePath("/plan");
 
   return { displayName, email };
 }
@@ -109,7 +111,8 @@ export async function updateMyStaffProfileAction(data: {
 
   if (authError) throw new Error(authError.message);
 
-  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
+  revalidatePath("/admin", "layout");
 
   return { displayName, email };
 }
@@ -140,9 +143,18 @@ export async function uploadMyClientAvatarAction(
     })
     .eq("user_id", user.id);
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.message.includes("avatar_")) {
+      throw new Error(
+        "Avatar columns are missing. Run migration 20260625160000_platform_image_assets.sql in Supabase.",
+      );
+    }
+    throw new Error(error.message);
+  }
 
-  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
+  revalidatePath("/vault");
+  revalidatePath("/plan");
 
   return { path: saved.path, version: saved.updatedAt };
 }
@@ -175,7 +187,8 @@ export async function uploadMyStaffAvatarAction(
 
   if (error) throw new Error(error.message);
 
-  revalidatePath("/", "layout");
+  revalidatePath("/dashboard");
+  revalidatePath("/admin", "layout");
 
   return { path: saved.path, version: saved.updatedAt };
 }

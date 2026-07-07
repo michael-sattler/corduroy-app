@@ -465,7 +465,14 @@ export async function uploadPortalUserAvatarAction(
     })
     .eq("id", clientUserId);
 
-  if (error) throw new Error(error.message);
+  if (error) {
+    if (error.message.includes("avatar_")) {
+      throw new Error(
+        "Avatar columns are missing. Run migration 20260625160000_platform_image_assets.sql in Supabase.",
+      );
+    }
+    throw new Error(error.message);
+  }
 
   revalidatePath(`/admin/clients/${clientId}`);
   revalidatePath("/dashboard");

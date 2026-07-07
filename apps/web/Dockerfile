@@ -12,6 +12,10 @@ ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 RUN groupadd --system --gid 1001 nodejs && useradd --system --uid 1001 --gid nodejs nextjs
 COPY --from=builder /app/apps/web/public ./apps/web/public
+RUN mkdir -p ./apps/web/public/uploads/avatars/portal \
+    ./apps/web/public/uploads/avatars/staff \
+    ./apps/web/public/uploads/logos \
+  && chown -R nextjs:nodejs ./apps/web/public/uploads
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 USER nextjs

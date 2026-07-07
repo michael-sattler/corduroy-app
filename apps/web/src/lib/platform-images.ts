@@ -1,8 +1,9 @@
 import "server-only";
 
-import { mkdir, readdir, unlink, writeFile } from "node:fs/promises";
+import { constants, existsSync } from "node:fs";
+import { access, mkdir, readdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { existsSync } from "node:fs";
+import { createServiceRoleClient } from "@/lib/supabase/admin";
 
 export const PLATFORM_IMAGE_MAX_BYTES = 2 * 1024 * 1024;
 
@@ -12,6 +13,8 @@ const MIME_TO_EXT: Record<string, string> = {
   "image/webp": "webp",
   "image/gif": "gif",
 };
+
+const IMAGE_EXTENSIONS = ["jpg", "png", "webp", "gif"] as const;
 
 export type PlatformImageKind = "client-logo" | "portal-avatar" | "staff-avatar";
 
@@ -65,6 +68,35 @@ function subdirForKind(kind: PlatformImageKind): string {
   }
 }
 
+function storageObjectPath(kind: PlatformImageKind, id: string, ext: string): string {
+  const subdir = subdirForKind(kind).replace(/\\/g, "/");
+  return `${subdir}/${id}.${ext}`;
+}
+
+function shouldUseSupabaseStorage(): boolean {
+  if (process.env.PLATFORM_IMAGES_USE_SUPABASE === "1") {
+    return true;
+  }
+
+  return Boolean(process.env.VERCEL);
+}
+
+async function canWriteLocalUploads(): Promise<boolean> {
+  if (shouldUseSupabaseStorage()) {
+    return false;
+  }
+
+  const dir = uploadsDir();
+
+  try {
+    await mkdir(dir, { recursive: true });
+    await access(dir, constants.W_OK);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function extensionForImageFile(file: File): string {
   const fromMime = MIME_TO_EXT[file.type];
   if (fromMime) return fromMime;
@@ -89,7 +121,7 @@ export function validateImageFile(file: File): void {
   extensionForImageFile(file);
 }
 
-async function removeSiblingImages(
+async function removeSiblingImagesLocal(
   kind: PlatformImageKind,
   id: string,
   keepExt: string,
@@ -107,6 +139,101 @@ async function removeSiblingImages(
   );
 }
 
+async function removeSiblingImagesRemote(
+  kind: PlatformImageKind,
+  id: string,
+  keepExt: string,
+): Promise<void> {
+  const admin = createServiceRoleClient();
+  const subdir = subdirForKind(kind).replace(/\\/g, "/");
+  const removePaths = IMAGE_EXTENSIONS.filter((ext) => ext !== keepExt).map(
+    (ext) => `${subdir}/${id}.${ext}`,
+  );
+
+  if (removePaths.length === 0) {
+    return;
+  }
+
+  await admin.storage.from("platform-images").remove(removePaths);
+}
+
+async function savePlatformImageLocal(
+  kind: PlatformImageKind,
+  id: string,
+  file: File,
+  ext: string,
+): Promise<SavedPlatformImage> {
+  const relative = relativePath(kind, id, ext);
+  const absolute = absolutePathForRelative(relative);
+  const dir = path.dirname(absolute);
+  const buffer = Buffer.from(await file.arrayBuffer());
+
+  try {
+    await mkdir(dir, { recursive: true });
+    await writeFile(absolute, buffer);
+  } catch (error) {
+    const code =
+      error && typeof error === "object" && "code" in error
+        ? String(error.code)
+        : "";
+
+    if (code === "EACCES" || code === "EROFS") {
+      throw new Error(
+        "Image uploads are not writable on this host. Use Supabase Storage (set PLATFORM_IMAGES_USE_SUPABASE=1) or run the web app with a writable public/uploads directory.",
+      );
+    }
+
+    throw error;
+  }
+
+  await removeSiblingImagesLocal(kind, id, ext);
+
+  return {
+    path: relative,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+async function savePlatformImageRemote(
+  kind: PlatformImageKind,
+  id: string,
+  file: File,
+  ext: string,
+): Promise<SavedPlatformImage> {
+  const admin = createServiceRoleClient();
+  const objectPath = storageObjectPath(kind, id, ext);
+  const buffer = Buffer.from(await file.arrayBuffer());
+  const contentType =
+    file.type || (ext === "jpg" ? "image/jpeg" : `image/${ext}`);
+
+  await removeSiblingImagesRemote(kind, id, ext);
+
+  const { error } = await admin.storage.from("platform-images").upload(objectPath, buffer, {
+    contentType,
+    upsert: true,
+  });
+
+  if (error) {
+    if (
+      error.message.includes("Bucket not found") ||
+      error.message.includes("platform-images")
+    ) {
+      throw new Error(
+        "Platform image storage is not configured. Run migration 20260707024500_platform_images_storage.sql in Supabase.",
+      );
+    }
+
+    throw new Error(error.message);
+  }
+
+  const { data } = admin.storage.from("platform-images").getPublicUrl(objectPath);
+
+  return {
+    path: data.publicUrl,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
 export async function savePlatformImage(
   kind: PlatformImageKind,
   id: string,
@@ -114,19 +241,12 @@ export async function savePlatformImage(
 ): Promise<SavedPlatformImage> {
   validateImageFile(file);
   const ext = extensionForImageFile(file);
-  const relative = relativePath(kind, id, ext);
-  const absolute = absolutePathForRelative(relative);
-  const dir = path.dirname(absolute);
 
-  await mkdir(dir, { recursive: true });
-  const buffer = Buffer.from(await file.arrayBuffer());
-  await writeFile(absolute, buffer);
-  await removeSiblingImages(kind, id, ext);
+  if (await canWriteLocalUploads()) {
+    return savePlatformImageLocal(kind, id, file, ext);
+  }
 
-  return {
-    path: relative,
-    updatedAt: new Date().toISOString(),
-  };
+  return savePlatformImageRemote(kind, id, file, ext);
 }
 
 export function platformImageUrl(

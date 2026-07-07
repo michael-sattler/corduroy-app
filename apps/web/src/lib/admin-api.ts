@@ -182,16 +182,38 @@ export async function fetchClientUsers(
   clientId: string,
 ): Promise<{ users: ClientUserRecord[] }> {
   const { supabase } = await staffSupabase();
+  const fullSelect =
+    "id, user_id, client_id, display_name, created_at, avatar_path, avatar_updated_at";
+
   const { data, error } = await supabase
     .from("client_users")
-    .select(
-      "id, user_id, client_id, display_name, created_at, avatar_path, avatar_updated_at",
-    )
+    .select(fullSelect)
     .eq("client_id", clientId)
     .order("display_name");
 
-  if (error) throw new Error(error.message);
-  return { users: data ?? [] };
+  if (!error) {
+    return { users: data ?? [] };
+  }
+
+  if (error.message.includes("avatar_")) {
+    const fallback = await supabase
+      .from("client_users")
+      .select("id, user_id, client_id, display_name, created_at")
+      .eq("client_id", clientId)
+      .order("display_name");
+
+    if (fallback.error) throw new Error(fallback.error.message);
+
+    return {
+      users: (fallback.data ?? []).map((user) => ({
+        ...user,
+        avatar_path: null,
+        avatar_updated_at: null,
+      })),
+    };
+  }
+
+  throw new Error(error.message);
 }
 
 export async function fetchStaff(): Promise<{ staff: StaffRecord[] }> {

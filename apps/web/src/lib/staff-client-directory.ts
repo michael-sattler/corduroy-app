@@ -133,11 +133,7 @@ export async function fetchStaffAssignedClients(): Promise<StaffManagedClient[]>
     .select(fullSelect)
     .eq("staff_id", staffRow.id);
 
-  if (
-    assignmentError?.message.includes("logo_") ||
-    assignmentError?.message.includes("avatar_") ||
-    assignmentError?.message.includes("client_vault_storage")
-  ) {
+  if (assignmentError) {
     const { data: fallbackAssignments, error: fallbackError } = await supabase
       .from("staff_assignments")
       .select(
@@ -145,16 +141,21 @@ export async function fetchStaffAssignedClients(): Promise<StaffManagedClient[]>
       )
       .eq("staff_id", staffRow.id);
 
-    if (fallbackError) throw new Error(fallbackError.message);
+    if (!fallbackError) {
+      return mapAssignmentRows(
+        (fallbackAssignments ?? []).map((row) => ({
+          clients: normalizeFallbackClient(row.clients),
+        })),
+      );
+    }
 
-    return mapAssignmentRows(
-      (fallbackAssignments ?? []).map((row) => ({
-        clients: normalizeFallbackClient(row.clients),
-      })),
+    console.error(
+      "Staff client directory query failed:",
+      assignmentError.message,
+      fallbackError.message,
     );
+    return [];
   }
-
-  if (assignmentError) throw new Error(assignmentError.message);
 
   return mapAssignmentRows(assignments ?? []);
 }
