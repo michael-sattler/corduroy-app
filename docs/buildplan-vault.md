@@ -4,146 +4,148 @@
 
 **Reference:** [Build Plan](./buildplan.md) (Milestone B3, Phase 1), [TDD Platform](./tdd-platform.md) §5 (Vault), §9 (environments), §12 (build sequence). Account credentials in [creds-platform.md](./creds-platform.md).
 
-> **Region:** Pick one AWS region and use it everywhere (e.g. `us-east-1`). Corduroy has no region pinned in the repo yet — document the choice in `infra/README.md` when B3 lands.
+**Region:** `us-east-1` · **Account:** `789535501521` · **Seed client:** All-American Fitness (`9811e315-7f2d-4484-9929-709900bb1bbd`)
+
+---
+
+## Status (2026-07-06)
+
+**Shipped:** End-to-end Vault file exchange for client and staff — upload, ingest, catalog, download — on dev AWS + production (`app.corduroytech.ai` / `staff.corduroytech.ai`).
+
+| Layer | State |
+|-------|--------|
+| B3 infra (VPC, endpoints, IAM) | Applied in `dev` |
+| B4 schema | Migrations written; applied to remote |
+| P1.1 seed bucket + KMS | Live |
+| AccessBroker + ContentProcessor Lambdas | Deployed |
+| Client `/vault` UI | Live catalog + upload + download |
+| Staff dashboard vault panel | Live catalog + upload + download |
+| P1.5 reconciliation | Not started |
+| P1.7 security checkpoint | Not started |
+| UI polish | In progress (see P1.6.1) |
 
 ---
 
 ## Definition of done — B3 (AWS account skeleton)
 
-- [ ] Dedicated VPC with private subnets for future Lambda placement
-- [ ] S3 gateway endpoint and KMS interface endpoint attached to the VPC (TDD §5.1)
-- [ ] IAM execution-role stubs for AccessBroker and ContentDispatcher (no Lambdas deployed yet)
-- [ ] Terraform layout in `infra/` with implemented `network` + `iam` modules and empty stubs for `kms`, `s3`, `lambda`
-- [ ] Remote state backend (S3 + DynamoDB lock) configured; no secrets or state files in the repo
-- [ ] `terraform apply` succeeds in a `dev` environment with **no** per-client buckets, KMS keys, or Lambda functions
+- [DONE] Dedicated VPC with private subnets for future Lambda placement
+- [DONE] S3 gateway endpoint and KMS interface endpoint attached to the VPC (TDD §5.1)
+- [DONE] IAM execution-role stubs for AccessBroker and ContentProcessor
+- [DONE] Terraform layout in `infra/` with `network`, `iam`, `kms`, `s3`, `vault-client`, `access-broker-lambda`, `content-processor-lambda`
+- [DONE] Remote state backend (S3 + DynamoDB lock) configured; no secrets or state files in the repo
+- [DONE] `terraform apply` succeeds in `dev`
+
+> B3 originally scoped **no** per-client resources; seed client bucket/KMS were added in Phase 1.1 on the same stack.
 
 ---
 
 ## Definition of done — Phase 1 (The Vault)
 
-- [ ] Per-client S3 bucket + KMS key provisioned via IaC (one seed client first)
-- [ ] AccessBroker Lambda: pre-signed GET/PUT URLs, server-built keys, audit append
-- [ ] Upload flow: API → broker → browser PUT → S3 ObjectCreated trigger
-- [ ] ContentDispatcher Lambda: extract, derived writes, catalog upsert
+- [DONE] Per-client S3 bucket + KMS key provisioned via IaC (seed client)
+- [DONE] AccessBroker Lambda: pre-signed GET/PUT URLs, server-built keys, audit append
+- [DONE] Upload flow: API → broker → browser PUT → S3 ObjectCreated trigger
+- [DONE] ContentProcessor Lambda: type sniff, catalog upsert, ingest audit (derived/context deferred)
 - [ ] Catalog reconciliation job
-- [ ] Vault UI (add-source + repository views)
+- [DONE] Vault UI — client add-source + repository; staff vault panel for selected client
 - [ ] Security checkpoint: cross-client access review, canary health check, break-glass runbook
+
+---
+
+## Verification scripts
+
+Run from repo root (API on `:4000`, Lambdas deployed):
+
+| Script | What it exercises |
+|--------|-------------------|
+| `npm run test:vault-presign` | Client sign-in → presign upload URL |
+| `npm run test:vault-upload` | Presign + browser-style PUT to S3 |
+| `npm run test:vault-ingest` | Upload + poll `vault_objects` + `vault.ingest_raw` |
+| `npm run test:vault-download` | Client presign GET + fetch bytes |
+| `npm run test:vault-staff-download` | Staff presign GET for assigned client |
+| `npm run test:supabase-service-key` | Service role can read `client_vault_storage` |
 
 ---
 
 ## B3 — AWS account skeleton (step-by-step)
 
-**Scope:** VPC, endpoints, IAM stubs, and `infra/` scaffold only. **No per-client buckets, no Lambdas, no real Vault traffic.**
+**Scope:** VPC, endpoints, IAM stubs, and `infra/` scaffold. Per-client resources deferred to Phase 1 (now live for seed client).
 
-### Phase 0 — Account & local tooling (before Terraform)
+### Phase 0 — Account & local tooling
 
-| # | Step | Done? |
-|---|------|-------|
-| 1 | **Confirm AWS account** — dedicated Corduroy account (or a clearly named sub-account), not a personal sandbox mixed with other projects. | ☐ |
-| 2 | **Enable MFA** on the root user; don't use root for day-to-day work. | ☐ |
-| 3 | **Create an IAM admin user** (or use IAM Identity Center) for yourself with programmatic access. Store access key only in local `~/.aws/credentials` — never in the repo. | ☐ |
-| 4 | **Verify credentials locally:** `aws sts get-caller-identity`; `aws configure get region` (set default region if empty). | ☐ |
-| 5 | **Install tooling:** AWS CLI v2, Terraform ≥ 1.5 (or CDK if preferred — TDD allows either; pick one for `infra/`). | ☐ |
-| 6 | **Enable CloudTrail** (organization trail or account trail) — audit who changes IAM/VPC/KMS later. | ☐ |
-| 7 | **Set a billing alarm** (e.g. SNS → email at $50 / $100) so VPC endpoints and stray resources don't surprise you. | ☐ |
+Done   | # | Step | Note
+-------|---|------|-------|
+[DONE] | 1 | Dedicated Corduroy AWS account |  `789535501521` |
+[    ] | 2 | MFA on root user |
+[DONE] | 3 | IAM admin / programmatic access (local credentials only) | profile `corduroy` |
+[DONE] | 4 | `aws sts get-caller-identity`; region `us-east-1` |
+[DONE] | 5 | AWS CLI v2, Terraform ≥ 1.5 |
+[DONE] | 6 | CloudTrail |
+[DONE] | 7 | Billing alarm |
 
 ### Phase 1 — `infra/` repository layout
 
-| # | Step | Done? |
-|---|------|-------|
-| 8 | **Create `infra/` at repo root** with this shape (see tree below). | ☐ |
-| 9 | **Terraform state backend** — create once (manually or via a tiny `bootstrap/` stack): S3 bucket `corduroy-tfstate-<account-id>` (versioning on, encryption on, block public access); DynamoDB table `corduroy-tfstate-lock`. Wire `backend "s3"` in each environment. Do not commit state files. | ☐ |
-| 10 | **Add `infra/.gitignore`:** `*.tfstate*`, `.terraform/`, `*.tfvars` (keep `*.tfvars.example`). | ☐ |
-| 11 | **Document required outputs** in `infra/README.md`: `vpc_id`, `private_subnet_ids`, `lambda_execution_role_arn`, endpoint IDs. Railway/API will need these in Phase 1. | ☐ |
+Done   | # | Step | Note
+-------|---|------|-------|
+[DONE] | 8 | `infra/` at repo root |
+[DONE] | 9 | Terraform state backend (S3 + DynamoDB lock) | `corduroy-tfstate-789535501521` |
+[DONE] | 10 | `infra/.gitignore` for state / tfvars |
+[DONE] | 11 | Outputs documented in `infra/README.md` | 
 
-```
-infra/
-├── README.md                 # how to init/apply, region, state backend
-├── environments/
-│   ├── dev/                  # or staging — start with one env
-│   │   ├── main.tf
-│   │   ├── variables.tf
-│   │   ├── outputs.tf
-│   │   └── terraform.tfvars.example
-│   └── prod/                 # same modules, different tfvars (can stub empty for now)
-├── modules/
-│   ├── network/              # VPC, subnets, endpoints  ← B3 implements this
-│   ├── iam/                  # Lambda execution role stubs
-│   ├── kms/                  # empty stub (Phase 1)
-│   ├── s3/                   # empty stub (Phase 1)
-│   └── lambda/               # empty stub (Phase 1)
-└── backend.tf.example        # S3 + DynamoDB lock (see step 9)
-```
+### Phase 2 — VPC & networking
 
-### Phase 2 — VPC & networking (TDD §5.1, §9)
+Done   | # | Step | Note
+-------|---|------|-------|
+[DONE] | 12 | `modules/network/` — VPC, private subnets |
+[DONE] | 13 | Lambda security group |
+[DONE] | 14 | Tagging convention |
 
-| # | Step | Done? |
-|---|------|-------|
-| 12 | **`modules/network/` — VPC:** CIDR e.g. `10.0.0.0/16`; 2–3 **private subnets** across AZs (Lambda will run here). Optional small public subnets only if NAT is needed later; for B3, Lambdas in private subnets + VPC endpoints often avoid NAT cost. | ☐ |
-| 13 | **Security groups (minimal for B3):** `lambda-default` — egress all (or restrict to VPC CIDR + endpoints). No ingress rules needed for Lambdas invoked by AWS. | ☐ |
-| 14 | **Tagging convention** from day one (TDD §9): `Project=corduroy`, `Environment=dev\|prod`, `ManagedBy=terraform`. | ☐ |
+### Phase 3 — VPC endpoints
 
-### Phase 3 — VPC endpoints (TDD §5.1)
+Done   | # | Step | Note
+-------|---|------|-------|
+[DONE] | 15 | S3 gateway endpoint |
+[DONE] | 16 | KMS interface endpoint |
+[DONE] | 17 | Optional: logs, secretsmanager endpoints |
+[DONE] | 18 | Verify endpoints after apply |
 
-These keep Lambda ↔ S3/KMS traffic on the AWS network.
+### Phase 4 — IAM role stubs
 
-| # | Step | Done? |
-|---|------|-------|
-| 15 | **S3 gateway endpoint** — attach to private route tables (no hourly charge). | ☐ |
-| 16 | **KMS interface endpoint** — private subnets + security group allowing HTTPS from Lambda SG. | ☐ |
-| 17 | **(Optional but useful for Phase 1)** Interface endpoints for `logs` (CloudWatch), `secretsmanager` (ContentDispatcher Supabase cred), `lambda` (if invoking from inside VPC later). | ☐ |
-| 18 | **Verify endpoints** after apply: `aws ec2 describe-vpc-endpoints --filters Name=vpc-id,Values=<vpc_id>`. | ☐ |
+Done   | # | Step | Note
+-------|---|------|-------|
+[DONE] | 19 | Lambda execution roles + VPC access attachment | [DONE] |
+[DONE] | 20 | `access-broker` + `content-processor` roles | [DONE] |
+[DONE] | 21 | `railway-invoke` IAM user, scoped `lambda:InvokeFunction` | [DONE] |
+| 22 | KMS never-delete guardrails documented | ☐ |
 
-### Phase 4 — IAM role stubs (no Lambdas yet)
+### Phase 5 — Modules
 
-| # | Step | Done? |
-|---|------|-------|
-| 19 | **`modules/iam/` — `vault-lambda-execution` role:** trust policy `lambda.amazonaws.com`; attach `AWSLambdaVPCAccessExecutionRole`. Do **not** attach broad S3/KMS policies yet — Phase 1 scopes per-client. | ☐ |
-| 20 | **Stub two role names** (or same module, two roles): `access-broker` execution role; `content-processor` execution role. Empty/minimal policies for B3; real bucket ARNs come in Phase 1. | ☐ |
-| 21 | **`railway-invoke` IAM user or role (stub only):** policy `lambda:InvokeFunction` on specific function ARNs — **no S3, no KMS** (TDD §5.3). Attach placeholder/deny-all until functions exist. | ☐ |
-| 22 | **KMS key admin guardrails (policy stub, no keys yet):** document that per-client keys are **never delete**; only a break-glass principal can schedule deletion (TDD §5.7). | ☐ |
-
-### Phase 5 — Empty modules (placeholders only)
-
-| # | Step | Done? |
-|---|------|-------|
-| 23 | **`modules/kms/`** — `variables.tf` + `outputs.tf` + README: per-client key in Phase 1. | ☐ |
-| 24 | **`modules/s3/`** — same: bucket naming `corduroy-vault-<client_id>`, prefixes `raw/`, `derived/`, `context/`, `audit/`. | ☐ |
-| 25 | **`modules/lambda/`** — same: AccessBroker + ContentDispatcher placeholders. | ☐ |
-| 26 | **Wire modules in `environments/dev/main.tf`** — call `network` + `iam` only; comment out or no-op `kms` / `s3` / `lambda`. | ☐ |
+Done   | # | Step | Note
+-------|---|------|-------|
+[DONE] | 23 | `modules/kms/` |
+[DONE] | 24 | `modules/s3/` |
+[DONE] | 25 | `modules/access-broker-lambda/`, `content-processor-lambda/` | (replaces generic `lambda/` stub) |
+[DONE] | 26 | Wired in `environments/dev/main.tf` | 
 
 ### Phase 6 — Apply & verify B3
 
-| # | Step | Done? |
-|---|------|-------|
-| 27 | `cd infra/environments/dev && terraform init && terraform plan` | ☐ |
-| 28 | Review plan: **only** VPC, subnets, endpoints, IAM roles — no S3 buckets, no Lambdas, no KMS keys. | ☐ |
-| 29 | `terraform apply` | ☐ |
-| 30 | **Smoke checks:** VPC + subnets exist in console; S3 + KMS endpoints `available`; Lambda execution role ARN in outputs; output pattern documented (not secret values in repo). | ☐ |
-| 31 | **Update [buildplan.md](./buildplan.md)** — check off B3 items when done. | ☐ |
-
-### Explicit B3 boundary — do not do yet
-
-| Defer to | Item |
-|----------|------|
-| **B4** | `audit_events` + `vault_objects` Supabase migrations |
-| **Phase 1 §5** | Per-client S3 bucket + KMS key provisioning |
-| **Phase 1 §6–8** | AccessBroker / ContentDispatcher Lambda code + deploy |
-| **Phase 1 §7** | S3 ObjectCreated triggers, upload flow |
-| **Railway** | `AWS_ACCESS_KEY_ID` with invoke-only scope (after Lambdas exist) |
+Done   | # | Step | Note
+-------|---|------|-------|
+[DONE] | 27–29 | init / plan / apply |
+[DONE] | 30 | Smoke checks (VPC, endpoints, role ARNs) |
+[    ] | 31 | Update [buildplan.md](./buildplan.md) B3 section |
 
 ---
 
-## Phase 1 — The Vault (after B3)
+## Phase 1 — The Vault
 
-Ordered per [TDD Platform](./tdd-platform.md) §12 items 5–11 and [buildplan.md](./buildplan.md).
+Ordered per [TDD Platform](./tdd-platform.md) §12 and [buildplan.md](./buildplan.md).
 
-### P1.0 — Schema prerequisite (B4, can run parallel to B3)
+### P1.0 — Schema prerequisite (B4)
 
 - [DONE] `audit_events` — append-only (who, client, object, when, why)
 - [DONE] `vault_objects` — catalog table (client_id, key, prefix, type, source, size, created_at)
-- [DONE] `client_vault_storage` — bucket + KMS coordinates per client (`20260706150000_client_vault_storage.sql`)
-- [ ] Apply latest migrations to remote
+- [DONE] `client_vault_storage` — bucket + KMS coordinates per client
+- [DONE] Applied to remote Supabase
 
 ### P1.0.1 — Vault provisioning flow (design)
 
@@ -151,9 +153,9 @@ Ordered per [TDD Platform](./tdd-platform.md) §12 items 5–11 and [buildplan.m
 
 1. Staff creates client in admin UI → `clients` row
 2. Ops adds `client_id` to `infra/environments/dev/terraform.tfvars` → `terraform apply` (AWS bucket + KMS)
-3. Insert/upsert `client_vault_storage` row (`status = active`, bucket + KMS ARN) — migration backfill or SQL
+3. Upsert `client_vault_storage` row (`status = active`, bucket + KMS ARN)
 
-**Target (Phase 1.2+):** `provisionClientVault(clientId)` — API or Lambda that runs Terraform/CI or calls AWS SDK, then upserts `client_vault_storage` via service role. Staff UI button: “Provision Vault”.
+**Target (later):** `provisionClientVault(clientId)` — API or CI job; staff UI “Provision Vault” button.
 
 | Store | Role |
 |-------|------|
@@ -161,40 +163,39 @@ Ordered per [TDD Platform](./tdd-platform.md) §12 items 5–11 and [buildplan.m
 | `client_vault_storage` | **Runtime** lookup: bucket name, KMS ARN for AccessBroker |
 | `vault_objects` | Catalog of files *inside* the bucket |
 
-v1 TDD: one **primary** bucket per client (`purpose = 'primary'`). Table allows `archive` / `migration` buckets later without schema churn.
-
 ### P1.1 — Per-client storage (IaC)
 
-- [ ] Flesh out `modules/kms` and `modules/s3`
-- [ ] Provision bucket + KMS key for seed client (All-American Fitness)
-- [ ] Prefix layout: `raw/`, `derived/`, `context/`, `audit/` (TDD §7.2)
-- [ ] Per-client cost tags from day one (TDD §9)
-- [ ] Bucket policy: access only via Lambda execution roles, scoped per client
+- [DONE] `modules/kms` and `modules/s3` (via `vault-client`)
+- [DONE] Bucket + KMS for seed client (All-American Fitness)
+- [DONE] Prefix layout: `raw/`, `derived/`, `context/`, `audit/` (virtual)
+- [DONE] Per-client cost tags
+- [DONE] Bucket policy: Lambda execution roles only, scoped per client
 
 ### P1.2 — AccessBroker Lambda
 
-- [DONE] Implement in `apps/access-broker` (validate, pre-sign, audit append)
-- [DONE] Terraform module `infra/modules/access-broker-lambda` (no VPC — needs Supabase HTTPS; private subnets have no NAT)
-- [DONE] API routes `POST /client/vault/presign-upload` and `presign-download`
-- [ ] Build + `terraform apply` with `supabase_service_role_key` in tfvars
-- [ ] Create Railway IAM access keys (`corduroy-dev-railway-invoke`) + env on API
-- [ ] Scope Railway credential to `lambda:InvokeFunction` only (auto when Lambda deploys)
+- [DONE] `apps/access-broker` (validate, pre-sign, audit append)
+- [DONE] Terraform `infra/modules/access-broker-lambda` (no VPC — Supabase HTTPS)
+- [DONE] API `POST /client/vault/presign-upload`, `presign-download`
+- [DONE] API `POST /staff/vault/presign-upload`, `presign-download` (assigned client)
+- [DONE] Build + `terraform apply` with `supabase_service_role_key` in tfvars
+- [DONE] Railway IAM keys + `ACCESS_BROKER_LAMBDA_NAME` on API (production)
+- [DONE] Staff telltale: `GET /staff/vault/access-broker-status` (DryRun invoke)
 
 ### P1.3 — Upload flow
 
-- [DONE] API route: client requests upload → invoke AccessBroker → return PUT URL
-- [DONE] Browser PUTs directly to S3 (client `/vault` upload + `npm run test:vault-upload`)
-- [DONE] S3 bucket CORS for browser PUT (Terraform `modules/s3`)
-- [DONE] S3 ObjectCreated on `raw/` triggers ContentProcessor (P1.4)
+- [DONE] Client: Next.js proxy → API → AccessBroker → browser PUT to S3
+- [DONE] Staff: same path with `client_id` + assignment check
+- [DONE] S3 bucket CORS — **both** `app.*` and `staff.*` origins (local + production)
+- [DONE] S3 ObjectCreated on `raw/` → ContentProcessor
 
 ### P1.4 — ContentProcessor Lambda
 
-- [DONE] S3 event trigger on `raw/` ObjectCreated (`modules/s3` + `content-processor-lambda`)
-- [DONE] Type sniff via HeadObject content-type → `object_type` on catalog row
+- [DONE] S3 event trigger on `raw/` ObjectCreated
+- [DONE] HeadObject → content-type → `object_type` on catalog row
 - [ ] Write derived artifacts to `derived/` and `context/` (deferred)
-- [DONE] Upsert `vault_objects`; append `vault.ingest_raw` audit row (append-only)
-- [DONE] Supabase via env vars on Lambda (same PostgREST pattern as AccessBroker)
-- [DONE] Build + `terraform apply`; verify with `npm run test:vault-ingest`
+- [DONE] Upsert `vault_objects`; append `vault.ingest_raw` audit row
+- [DONE] Supabase via env vars (PostgREST, same pattern as AccessBroker)
+- [DONE] `npm run test:vault-ingest`
 
 ### P1.5 — Catalog reconciliation
 
@@ -203,15 +204,35 @@ v1 TDD: one **primary** bucket per client (`purpose = 'primary'`). Table allows 
 
 ### P1.6 — Vault UI
 
-- [DONE] Client `/vault`: add-source pane (upload + metadata) and data repository (catalog grouped by source)
-- [DONE] Client download: presign GET + browser fetch (`/api/client/vault/presign-download`, catalog Download button)
-- [ ] Staff: upload/download for selected client via same broker path
-- [DONE] Wire to live catalog (`vault_objects` via Supabase RLS + `/api/client/vault/objects`)
+- [DONE] Client `/vault`: upload pane + live repository (grouped by source)
+- [DONE] Client download on catalog rows
+- [DONE] Staff dashboard: vault panel on selected client (upload + catalog + download)
+- [DONE] Live catalog via Supabase RLS + `/api/client/vault/objects`, `/api/staff/vault/objects`
+
+### P1.6.1 — UI polish (open)
+
+Functional MVP shipped; polish pass in progress:
+- [ ] Upon upload, extract filename and use as Source label (Source label override not required)
+- [ ] Show progress indicator as small stripe under app-topbar-inner, whille waiting for functions to complete, show animation in stripe; hide when complete
+- [ ] Catalog:Be sure name of file (from database) is shown in vault-source-row title
+- [ ] Catalog: vault-source-icon should indicate the type of file (PDF, DOCx, etc.)
+- [ ] Catalog: Download button in file listing should have an icon
+- [ ] Catalog row title: show original filename where available (may need metadata column or key parsing)
+- [ ] Build universal toaster interface for result messages of all types (slide-in div from upper right corner containing message/type (warning, danger, info, etc)
+- [ ] Success message: friendly filename, not raw `s3_key` / audit UUID
+- [ ] Catalog: Disable or clearly mark placeholder fields (category, date, integrations grid)
+- [ ] Catalog: Empty / error states copy review (client + staff)
+- [ ] Hover over vault-dropzone highlights div
+- [ ] Remove all checkboxes for now
+
+<<DEFERRED>>
+- [ ] Source label **above** dropzone (or sensible default e.g. `manual-upload`) <<N/A: INFER FILE NAME DURING UPLOAD>>
+- [ ] Staff console: vault panel layout pass (fits under engagement preview without scroll fatigue) <<leave this for now>>
 
 ### P1.7 — Security checkpoint
 
 - [ ] Cross-client access review (no token/bucket/key leakage across clients)
-- [ ] Canary: mint and use pre-signed URL against canary object end-to-end
+- [ ] Canary: mint and use pre-signed URL end-to-end (partially covered by test scripts)
 - [ ] Break-glass runbook: account owner reaches data without Lambda (TDD §5.7)
 - [ ] KMS never-delete rule documented and enforced in IAM
 
@@ -221,28 +242,32 @@ v1 TDD: one **primary** bucket per client (`purpose = 'primary'`). Table allows 
 
 ```mermaid
 flowchart LR
-  B3[B3 VPC + IAM stubs] --> B4[B4 audit_events + vault_objects]
-  B4 --> P1a[Phase 1: per-client bucket + KMS IaC]
-  P1a --> P1b[AccessBroker Lambda]
-  P1b --> P1c[Upload flow + ObjectCreated]
-  P1c --> P1d[ContentDispatcher + catalog + reconciliation]
-  P1d --> P1e[Vault UI + security checkpoint]
+  B3[B3 VPC + IAM] --> B4[B4 schema]
+  B4 --> P1a[P1.1 bucket + KMS]
+  P1a --> P1b[AccessBroker]
+  P1b --> P1c[Upload + CORS]
+  P1c --> P1d[ContentProcessor + catalog]
+  P1d --> P1e[Vault UI client + staff]
+  P1e --> P1f[Polish]
+  P1f --> P1g[Reconciliation + security]
 ```
 
 | Track | Focus |
 |-------|--------|
-| **Today (B3)** | Account hygiene → `infra/` scaffold → VPC + endpoints → IAM stubs → plan/apply/verify |
-| **Parallel** | B4 Supabase migrations |
-| **Next** | Phase 1.1 — first real bucket for seed client |
+| **Done** | B3/B4, P1.1–P1.4, P1.6 core (client + staff file exchange) |
+| **Now** | P1.6.1 UI polish |
+| **Next** | P1.5 reconciliation, P1.7 security checkpoint |
+| **Deferred** | Derived/context extraction, automated vault provisioning |
 
 ---
 
-## Suggested first session (B3 only)
+## Key env / ops reminders
 
-1. Steps 1–7 — account hygiene + `aws sts get-caller-identity`
-2. Steps 8–11 — `infra/` scaffold + state backend
-3. Steps 12–18 — VPC + endpoints
-4. Steps 19–22 — IAM stubs
-5. Steps 27–30 — plan / apply / verify
+| Surface | Vault-related config |
+|---------|---------------------|
+| Railway API | `ACCESS_BROKER_LAMBDA_NAME`, AWS invoke creds, `SUPABASE_*`, `CORS_ORIGINS` (app + staff) |
+| Vercel web | `ORCHESTRATION_API_URL`, `SUPABASE_*` |
+| Terraform tfvars | `supabase_service_role_key`, `vault_clients` map |
+| S3 CORS | Must include **both** client and staff browser origins |
 
-That yields a mergeable `infra/` PR with no Vault data plane — exactly what B3 requires before Phase 1 work begins.
+See also: [railway-deploy.md](./railway-deploy.md), [apps/api/docs/lambda-ops.md](../apps/api/docs/lambda-ops.md).

@@ -41,3 +41,17 @@ export function resolveVaultContentType(file: File): string | null {
   const extension = file.name.split(".").pop()?.toLowerCase() ?? "";
   return EXTENSION_CONTENT_TYPE[extension] ?? null;
 }
+
+/** Filename stem used as Vault source label (slugified server-side). */
+export function vaultSourceFromFilename(filename: string): string {
+  const trimmed = filename.trim();
+  if (!trimmed) {
+    return "upload";
+  }
+
+  const stem = trimmed.includes(".")
+    ? trimmed.slice(0, trimmed.lastIndexOf("."))
+    : trimmed;
+
+  return stem.trim() || trimmed;
+}

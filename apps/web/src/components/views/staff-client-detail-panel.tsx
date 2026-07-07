@@ -1,5 +1,6 @@
 import { withImageCacheBuster } from "@/lib/platform-images-client";
 import type { StaffDashboardClient } from "@/lib/staff-dashboard-types";
+import { StaffClientVaultPanel } from "@/components/vault/staff-client-vault-panel";
 
 const kpis = [
   {
@@ -220,6 +221,12 @@ export function StaffClientDetailPanel({
           </button>
         </div>
       </div>
+
+      <StaffClientVaultPanel
+        clientId={client.id}
+        clientName={client.name}
+        vaultStorage={client.vault_storage}
+      />
     </div>
   );
 }

@@ -3,6 +3,11 @@ import type {
   VaultDownloadResult,
 } from "@/lib/vault-download-types";
 import { vaultObjectDownloadFilename } from "@/lib/vault-catalog";
+import type { VaultCatalogObject } from "@/lib/vault-catalog-types";
+import {
+  type VaultApiContext,
+  vaultPresignDownloadPath,
+} from "@/lib/vault-api-context";
 
 export class VaultDownloadError extends Error {
   constructor(
@@ -16,38 +21,45 @@ export class VaultDownloadError extends Error {
 
 async function requestPresignDownload(
   s3Key: string,
+  context: VaultApiContext,
 ): Promise<VaultPresignDownloadResponse> {
-  const res = await fetch("/api/client/vault/presign-download", {
+  const body =
+    context.scope === "staff"
+      ? { s3_key: s3Key, client_id: context.clientId }
+      : { s3_key: s3Key };
+
+  const res = await fetch(vaultPresignDownloadPath(context), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ s3_key: s3Key }),
+    body: JSON.stringify(body),
   });
 
-  const body = (await res.json().catch(() => ({}))) as
+  const responseBody = (await res.json().catch(() => ({}))) as
     | VaultPresignDownloadResponse
     | { error?: string };
 
   if (!res.ok) {
     throw new VaultDownloadError(
-      "error" in body && body.error
-        ? body.error
+      "error" in responseBody && responseBody.error
+        ? responseBody.error
         : `Presign failed (${res.status})`,
       res.status,
     );
   }
 
-  return body as VaultPresignDownloadResponse;
+  return responseBody as VaultPresignDownloadResponse;
 }
 
 export async function downloadVaultObject(
-  s3Key: string,
+  item: VaultCatalogObject,
+  context: VaultApiContext = { scope: "client" },
 ): Promise<VaultDownloadResult> {
-  const trimmedKey = s3Key.trim();
+  const trimmedKey = item.s3_key.trim();
   if (!trimmedKey) {
     throw new VaultDownloadError("Object key is required");
   }
 
-  const presign = await requestPresignDownload(trimmedKey);
+  const presign = await requestPresignDownload(trimmedKey, context);
 
   const getRes = await fetch(presign.url);
   if (!getRes.ok) {
@@ -61,7 +73,7 @@ export async function downloadVaultObject(
   }
 
   const blob = await getRes.blob();
-  const filename = vaultObjectDownloadFilename(trimmedKey);
+  const filename = vaultObjectDownloadFilename(item);
   const objectUrl = URL.createObjectURL(blob);
 
   try {

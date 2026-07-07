@@ -1,4 +1,6 @@
 import { AppHeader } from "@/components/layout/app-header";
+import { AppProgressBar } from "@/components/ui/app-progress-bar";
+import { AppUiProviders } from "@/components/layout/app-ui-providers";
 import type { StaffNavKey } from "@/components/layout/nav-config";
 
 type StaffLayoutProps = {
@@ -36,21 +38,24 @@ export function StaffLayout(props: StaffLayoutProps) {
   const avatarVersion = guest ? null : (props.avatarVersion ?? null);
 
   return (
-    <div className="app-shell app-shell-staff">
-      <AppHeader
-        surface="staff"
-        subtitle={subtitle}
-        displayName={displayName}
-        email={email}
-        role={role}
-        avatarPath={avatarPath}
-        avatarVersion={avatarVersion}
-        active={active}
-        guest={guest}
-      />
-      <main className={`app-main app-main-staff${guest ? " app-main-guest" : ""}`}>
-        {children}
-      </main>
-    </div>
+    <AppUiProviders>
+      <div className="app-shell app-shell-staff">
+        <AppHeader
+          surface="staff"
+          subtitle={subtitle}
+          displayName={displayName}
+          email={email}
+          role={role}
+          avatarPath={avatarPath}
+          avatarVersion={avatarVersion}
+          active={active}
+          guest={guest}
+        />
+        <AppProgressBar />
+        <main className={`app-main app-main-staff${guest ? " app-main-guest" : ""}`}>
+          {children}
+        </main>
+      </div>
+    </AppUiProviders>
   );
 }

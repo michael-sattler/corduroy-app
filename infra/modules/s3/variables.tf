@@ -37,7 +37,9 @@ variable "browser_upload_origins" {
     "http://localhost:3000",
     "http://127.0.0.1:3000",
     "http://app.localhost:3000",
+    "http://staff.localhost:3000",
     "https://app.corduroytech.ai",
+    "https://staff.corduroytech.ai",
   ]
 }
 

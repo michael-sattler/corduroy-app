@@ -23,6 +23,7 @@
     "test:vault-upload": "node scripts/test-vault-upload.mjs",
     "test:vault-ingest": "node scripts/test-vault-ingest.mjs",
     "test:vault-download": "node scripts/test-vault-download.mjs",
+    "test:vault-staff-download": "node scripts/test-vault-staff-download.mjs",
     "test:supabase-service-key": "node scripts/test-supabase-service-key.mjs",
     "docker:dev": "docker compose up --build web api",
     "docker:down": "docker compose down",

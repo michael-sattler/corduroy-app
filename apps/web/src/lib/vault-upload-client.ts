@@ -3,6 +3,10 @@ import {
   type VaultPresignUploadResponse,
   type VaultUploadResult,
 } from "@/lib/vault-upload-types";
+import {
+  type VaultApiContext,
+  vaultPresignUploadPath,
+} from "@/lib/vault-api-context";
 
 export class VaultUploadError extends Error {
   constructor(
@@ -14,36 +18,54 @@ export class VaultUploadError extends Error {
   }
 }
 
-async function requestPresign(input: {
-  filename: string;
-  content_type: string;
-  source: string;
-}): Promise<VaultPresignUploadResponse> {
-  const res = await fetch("/api/client/vault/presign-upload", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(input),
-  });
+async function requestPresign(
+  input: {
+    filename: string;
+    content_type: string;
+    source: string;
+  },
+  context: VaultApiContext,
+): Promise<VaultPresignUploadResponse> {
+  const body =
+    context.scope === "staff"
+      ? { ...input, client_id: context.clientId }
+      : input;
 
-  const body = (await res.json().catch(() => ({}))) as
+  let res: Response;
+  try {
+    res = await fetch(vaultPresignUploadPath(context), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  } catch (error) {
+    throw new VaultUploadError(
+      context.scope === "staff"
+        ? "Could not reach staff upload API — restart web/api after deploy?"
+        : "Could not reach upload API",
+    );
+  }
+
+  const responseBody = (await res.json().catch(() => ({}))) as
     | VaultPresignUploadResponse
     | { error?: string };
 
   if (!res.ok) {
     throw new VaultUploadError(
-      "error" in body && body.error
-        ? body.error
+      "error" in responseBody && responseBody.error
+        ? responseBody.error
         : `Presign failed (${res.status})`,
       res.status,
     );
   }
 
-  return body as VaultPresignUploadResponse;
+  return responseBody as VaultPresignUploadResponse;
 }
 
 export async function uploadVaultFile(
   file: File,
   source: string,
+  context: VaultApiContext = { scope: "client" },
 ): Promise<VaultUploadResult> {
   const trimmedSource = source.trim();
   if (!trimmedSource) {
@@ -57,17 +79,29 @@ export async function uploadVaultFile(
     );
   }
 
-  const presign = await requestPresign({
-    filename: file.name,
-    content_type: contentType,
-    source: trimmedSource,
-  });
+  const presign = await requestPresign(
+    {
+      filename: file.name,
+      content_type: contentType,
+      source: trimmedSource,
+    },
+    context,
+  );
 
-  const putRes = await fetch(presign.url, {
-    method: "PUT",
-    headers: { "Content-Type": contentType },
-    body: file,
-  });
+  let putRes: Response;
+  try {
+    putRes = await fetch(presign.url, {
+      method: "PUT",
+      headers: { "Content-Type": contentType },
+      body: file,
+    });
+  } catch {
+    throw new VaultUploadError(
+      context.scope === "staff"
+        ? "Browser blocked upload to storage — staff origin must be on the Vault bucket CORS list (staff.localhost / staff.corduroytech.ai)"
+        : "Browser blocked upload to storage — check Vault bucket CORS for this app origin",
+    );
+  }
 
   if (!putRes.ok) {
     const detail = await putRes.text().catch(() => "");

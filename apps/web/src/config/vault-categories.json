@@ -1,0 +1,8 @@
+[
+  { "id": "financial", "label": "Financial" },
+  { "id": "legal", "label": "Legal & contracts" },
+  { "id": "operations", "label": "Operations" },
+  { "id": "sales", "label": "Sales & pipeline" },
+  { "id": "hr", "label": "HR & people" },
+  { "id": "other", "label": "Other" }
+]

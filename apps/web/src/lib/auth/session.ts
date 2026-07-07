@@ -9,6 +9,8 @@ export type ClientContext = {
   user: User;
   displayName: string;
   organization: string;
+  organizationLogoPath: string | null;
+  organizationLogoUpdatedAt: string | null;
   avatarPath: string | null;
   avatarUpdatedAt: string | null;
 };
@@ -39,34 +41,38 @@ export async function requireClientSession(): Promise<ClientContext> {
 
   const { data: profile, error: profileError } = await supabase
     .from("client_users")
-    .select("display_name, avatar_path, avatar_updated_at, clients(name)")
+    .select(
+      "display_name, avatar_path, avatar_updated_at, clients(name, logo_path, logo_updated_at)",
+    )
     .eq("user_id", user.id)
     .maybeSingle();
 
   let resolvedProfile = profile;
-  if (profileError?.message.includes("avatar_")) {
+  if (
+    profileError?.message.includes("avatar_") ||
+    profileError?.message.includes("logo_")
+  ) {
     const { data: fallbackProfile } = await supabase
       .from("client_users")
       .select("display_name, clients(name)")
       .eq("user_id", user.id)
       .maybeSingle();
     resolvedProfile = fallbackProfile
-      ? {
+      ? ({
           ...fallbackProfile,
           avatar_path: null,
           avatar_updated_at: null,
-        }
+        } as NonNullable<typeof profile>)
       : null;
   }
 
   const clientsJoin = resolvedProfile?.clients as
-    | { name: string }
-    | { name: string }[]
+    | { name: string; logo_path?: string | null; logo_updated_at?: string | null }
+    | { name: string; logo_path?: string | null; logo_updated_at?: string | null }[]
     | null
     | undefined;
-  const organization = Array.isArray(clientsJoin)
-    ? (clientsJoin[0]?.name ?? "Your organization")
-    : (clientsJoin?.name ?? "Your organization");
+  const clientRecord = Array.isArray(clientsJoin) ? clientsJoin[0] : clientsJoin;
+  const organization = clientRecord?.name ?? "Your organization";
 
   return {
     surface: "client",
@@ -77,6 +83,8 @@ export async function requireClientSession(): Promise<ClientContext> {
       user.email ??
       "Client",
     organization,
+    organizationLogoPath: clientRecord?.logo_path ?? null,
+    organizationLogoUpdatedAt: clientRecord?.logo_updated_at ?? null,
     avatarPath: resolvedProfile?.avatar_path ?? null,
     avatarUpdatedAt: resolvedProfile?.avatar_updated_at ?? null,
   };

@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/server";
 export const dynamic = "force-dynamic";
 
 export default async function VaultPage() {
-  const { organization, displayName, user, avatarPath, avatarUpdatedAt } =
+  const { organization, displayName, user, avatarPath, avatarUpdatedAt, organizationLogoPath, organizationLogoUpdatedAt } =
     await requireClientSession();
 
   const supabase = await createClient();
@@ -25,8 +25,14 @@ export default async function VaultPage() {
     >
       <ClientVaultView
         organization={organization}
+        organizationLogoPath={organizationLogoPath}
+        organizationLogoUpdatedAt={organizationLogoUpdatedAt}
         initialGroups={catalog.groups}
+        initialHiddenGroups={catalog.hiddenGroups}
         initialCount={catalog.count}
+        initialHiddenCount={catalog.hiddenCount}
+        initialVisibleCount={catalog.visibleCount}
+        initialClassificationReady={catalog.classificationReady}
       />
     </ClientLayout>
   );

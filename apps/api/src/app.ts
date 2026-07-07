@@ -28,7 +28,7 @@ export async function buildApp(config: ApiConfig) {
   await registerClientRoutes(app);
   await registerVaultClientRoutes(app);
   await registerStaffRoutes(app);
-  await registerStaffVaultRoutes(app);
+  await registerStaffVaultRoutes(app, config);
   await registerStaffAdminRoutes(app, config);
 
   return app;

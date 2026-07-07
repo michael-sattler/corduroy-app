@@ -1,8 +1,49 @@
 import type { FastifyInstance } from "fastify";
-import { checkAccessBrokerHealth } from "../lib/access-broker.js";
+import type { ApiConfig } from "../config.js";
+import {
+  AccessBrokerError,
+  checkAccessBrokerHealth,
+  invokeAccessBroker,
+  type AccessBrokerUploadInput,
+  type VaultPrefix,
+} from "../lib/access-broker.js";
 import { requireRole } from "../lib/auth.js";
+import {
+  assertStaffCanAccessClient,
+  StaffClientAccessError,
+} from "../lib/staff-client-access.js";
 
-export async function registerStaffVaultRoutes(app: FastifyInstance) {
+type PresignUploadBody = AccessBrokerUploadInput & {
+  client_id: string;
+  reason?: string;
+};
+
+type PresignDownloadBody = {
+  client_id: string;
+  s3_key: string;
+  reason?: string;
+};
+
+function vaultError(
+  reply: { code: (status: number) => { send: (body: unknown) => unknown } },
+  error: unknown,
+) {
+  if (error instanceof StaffClientAccessError) {
+    return reply.code(error.statusCode).send({ error: error.message });
+  }
+
+  if (error instanceof AccessBrokerError) {
+    return reply.code(error.statusCode).send({ error: error.message });
+  }
+
+  const message = error instanceof Error ? error.message : "Vault request failed";
+  return reply.code(500).send({ error: message });
+}
+
+export async function registerStaffVaultRoutes(
+  app: FastifyInstance,
+  config: ApiConfig,
+) {
   await app.register(
     async (staff) => {
       staff.addHook("onRequest", requireRole("staff"));
@@ -10,6 +51,67 @@ export async function registerStaffVaultRoutes(app: FastifyInstance) {
       staff.get("/vault/access-broker-status", async () => {
         return checkAccessBrokerHealth();
       });
+
+      staff.post<{ Body: PresignUploadBody }>(
+        "/vault/presign-upload",
+        async (request, reply) => {
+          const user = request.authUser!;
+          const body = request.body ?? ({} as PresignUploadBody);
+
+          if (!body.client_id?.trim()) {
+            return reply.code(400).send({ error: "client_id is required" });
+          }
+
+          try {
+            await assertStaffCanAccessClient(config, request, body.client_id);
+
+            return await invokeAccessBroker({
+              operation: "presign_put",
+              client_id: body.client_id.trim(),
+              actor_user_id: user.id,
+              reason: body.reason,
+              upload: {
+                filename: body.filename,
+                content_type: body.content_type,
+                source: body.source,
+                prefix: (body.prefix ?? "raw") as VaultPrefix,
+              },
+            });
+          } catch (error) {
+            return vaultError(reply, error);
+          }
+        },
+      );
+
+      staff.post<{ Body: PresignDownloadBody }>(
+        "/vault/presign-download",
+        async (request, reply) => {
+          const user = request.authUser!;
+          const body = request.body ?? ({} as PresignDownloadBody);
+
+          if (!body.client_id?.trim()) {
+            return reply.code(400).send({ error: "client_id is required" });
+          }
+
+          if (!body.s3_key?.trim()) {
+            return reply.code(400).send({ error: "s3_key is required" });
+          }
+
+          try {
+            await assertStaffCanAccessClient(config, request, body.client_id);
+
+            return await invokeAccessBroker({
+              operation: "presign_get",
+              client_id: body.client_id.trim(),
+              actor_user_id: user.id,
+              reason: body.reason,
+              s3_key: body.s3_key.trim(),
+            });
+          } catch (error) {
+            return vaultError(reply, error);
+          }
+        },
+      );
     },
     { prefix: "/staff" },
   );

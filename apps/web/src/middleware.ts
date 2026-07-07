@@ -37,6 +37,16 @@ function resolveRouting(host: string, pathname: string): ResolvedRouting | null 
     };
   }
 
+  // Staff vault API routes — presign/catalog proxy; handler verifies staff JWT.
+  if (pathname.startsWith("/api/staff/vault")) {
+    return {
+      surface: "staff",
+      pathPrefix: "",
+      internalPath: pathname,
+      pathBased: false,
+    };
+  }
+
   const subdomainSurface = getSurfaceFromHost(host);
 
   if (subdomainSurface === "client" || subdomainSurface === "staff") {

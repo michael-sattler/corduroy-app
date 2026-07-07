@@ -6,6 +6,13 @@ export type VaultCatalogObject = {
   source: string;
   size_bytes: number | null;
   created_at: string;
+  category: string | null;
+  is_latest: boolean;
+  is_ignored: boolean;
+  is_processed: boolean;
+  is_hidden: boolean;
+  classified_at: string | null;
+  classified_by: string | null;
 };
 
 export type VaultCatalogGroup = {
@@ -17,5 +24,9 @@ export type VaultCatalogGroup = {
 export type VaultCatalogResponse = {
   objects: VaultCatalogObject[];
   groups: VaultCatalogGroup[];
+  hiddenGroups: VaultCatalogGroup[];
   count: number;
+  visibleCount: number;
+  hiddenCount: number;
+  classificationReady: boolean;
 };

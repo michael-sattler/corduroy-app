@@ -1,4 +1,6 @@
 import { AppHeader } from "@/components/layout/app-header";
+import { AppProgressBar } from "@/components/ui/app-progress-bar";
+import { AppUiProviders } from "@/components/layout/app-ui-providers";
 import { MasqueradeBanner } from "@/components/layout/masquerade-banner";
 import type { ClientNavKey } from "@/components/layout/nav-config";
 import { buildEndMasqueradePath, readMasqueradeSession } from "@/lib/masquerade";
@@ -37,21 +39,24 @@ export async function ClientLayout(props: ClientLayoutProps) {
   const endMasqueradeHref = masquerade ? await buildEndMasqueradePath() : null;
 
   return (
-    <div className="app-shell app-shell-client">
-      {masquerade && endMasqueradeHref ? (
-        <MasqueradeBanner session={masquerade} endHref={endMasqueradeHref} />
-      ) : null}
-      <AppHeader
-        surface="client"
-        subtitle={organization}
-        displayName={displayName}
-        email={email}
-        avatarPath={avatarPath}
-        avatarVersion={avatarVersion}
-        active={active}
-        guest={guest}
-      />
-      <main className={`app-main${guest ? " app-main-guest" : ""}`}>{children}</main>
-    </div>
+    <AppUiProviders>
+      <div className="app-shell app-shell-client">
+        {masquerade && endMasqueradeHref ? (
+          <MasqueradeBanner session={masquerade} endHref={endMasqueradeHref} />
+        ) : null}
+        <AppHeader
+          surface="client"
+          subtitle={organization}
+          displayName={displayName}
+          email={email}
+          avatarPath={avatarPath}
+          avatarVersion={avatarVersion}
+          active={active}
+          guest={guest}
+        />
+        <AppProgressBar />
+        <main className={`app-main${guest ? " app-main-guest" : ""}`}>{children}</main>
+      </div>
+    </AppUiProviders>
   );
 }
