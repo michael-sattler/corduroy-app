@@ -334,13 +334,13 @@ export function ClientVaultContent({
 
         <div className="col-lg-4">
 
-          <div className="app-card h-100">
+          <div className="app-card">
 
             <h2 className="h5 mb-1">Add data source</h2>
 
             <p className="text-body-secondary small mb-4">
 
-              Upload files or connect a system
+              Upload files to your Vault
 
             </p>
 
@@ -352,79 +352,43 @@ export function ClientVaultContent({
 
             />
 
+          </div>
 
 
-            <div className="vault-placeholder-block mb-3">
+
+          <div className="app-card mt-4">
+
+            <h2 className="h5 mb-1">Connect a system</h2>
+
+            <p className="text-body-secondary small mb-4">
+
+              Link external tools to sync data automatically
+
+            </p>
+
+
+
+            <div className="vault-placeholder-block mb-0">
 
               <div className="vault-placeholder-label">Coming soon</div>
 
-              <div className="row g-2 mb-3">
+              <div className="row g-2">
 
-                <div className="col-6">
+                {integrations.map((item) => (
 
-                  <label className="form-label small fw-medium">Category</label>
+                  <div key={item.name} className="col-6">
 
-                  <select
+                    <div className="integration-tile integration-tile-placeholder">
 
-                    className="form-select form-select-sm"
+                      <span>{item.name}</span>
 
-                    defaultValue="financial"
-
-                    disabled
-
-                  >
-
-                    <option value="financial">Financial</option>
-
-                  </select>
-
-                </div>
-
-                <div className="col-6">
-
-                  <label className="form-label small fw-medium">Date of data</label>
-
-                  <input
-
-                    className="form-control form-control-sm"
-
-                    defaultValue="Mar 2026"
-
-                    readOnly
-
-                    disabled
-
-                  />
-
-                </div>
-
-              </div>
-
-
-
-              <div className="mb-0">
-
-                <div className="small fw-medium mb-2">Connect a system</div>
-
-                <div className="row g-2">
-
-                  {integrations.map((item) => (
-
-                    <div key={item.name} className="col-6">
-
-                      <div className="integration-tile integration-tile-placeholder">
-
-                        <span>{item.name}</span>
-
-                        <span className="small text-body-secondary">Soon</span>
-
-                      </div>
+                      <span className="small text-body-secondary">Soon</span>
 
                     </div>
 
-                  ))}
+                  </div>
 
-                </div>
+                ))}
 
               </div>
 

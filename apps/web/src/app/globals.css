@@ -354,6 +354,10 @@ body {
   align-items: center;
   gap: 0.65rem;
   margin-left: auto;
+  margin-right: 0px;
+  background: var(--app-medium);
+  padding: 0.5rem;
+  border-radius: 0.5rem;
 }
 
 .vault-header-org-avatar {
