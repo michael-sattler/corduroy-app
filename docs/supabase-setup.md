@@ -43,6 +43,52 @@ npm run db:push
 
 If `db:push` says **"Cannot find project ref. Have you run supabase link?"**, step 2 didn’t complete — run `npm run db:link` again after `supabase login`.
 
+### `db:push` fails with `unexpected login role status 403`
+
+Recent Supabase CLI versions create a temporary database role via the **Management API** (`Initialising login role...`). That call returns 403 when:
+
+- Your Supabase login is not a **member of the project org** with sufficient privileges, or
+- You are linked to a project you cannot manage (check with `npx supabase projects list` — `iggvqbqqzujixshiffqe` / corduroy-app must appear).
+
+**Fix A — use the correct Supabase account**
+
+```bash
+npx supabase login
+npx supabase projects list   # corduroy-app must be listed
+npm run db:link
+npm run db:push
+```
+
+**Fix B — bypass the login-role API with the database password**
+
+Dashboard → **Project Settings → Database** → database password (reset if unknown).
+
+PowerShell:
+
+```powershell
+$env:SUPABASE_DB_PASSWORD = "your-database-password"
+npm run db:push
+```
+
+Or add `SUPABASE_DB_PASSWORD=...` to `.env` and run from a shell that loads it.
+
+**Fix C — direct connection string (CI / stubborn pooler issues)**
+
+Dashboard → **Project Settings → Database** → **Connection string** → **Session pooler** (IPv4) or **Direct** (IPv6). Then:
+
+```powershell
+npx supabase db push --linked --yes --db-url "postgresql://postgres.iggvqbqqzujixshiffqe:[PASSWORD]@[HOST]:5432/postgres"
+```
+
+URL-encode special characters in the password (`@` → `%40`, etc.).
+
+**Fix D — SQL Editor (no CLI)**
+
+Paste each pending file under `supabase/migrations/` into  
+[SQL Editor](https://supabase.com/dashboard/project/iggvqbqqzujixshiffqe/sql/new) and run in filename order.
+
+---
+
 This applies `supabase/migrations/20260623170000_core_auth_schema.sql`:
 
 | Table | Purpose |

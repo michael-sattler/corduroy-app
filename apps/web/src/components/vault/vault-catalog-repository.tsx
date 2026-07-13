@@ -64,30 +64,28 @@ function VaultCatalogRow({
 
   return (
     <div className={`vault-source-row-wrap${pending ? " pending" : ""}`}>
-      <div className="vault-source-row">
-        <span className="vault-source-icon" aria-hidden>
-          <FontAwesomeIcon icon={vaultObjectIconDefinition(item.object_type)} />
-        </span>
-        <span
-          className="vault-source-title"
-          title={vaultObjectDisplayTitle(item)}
-        >
-          {vaultObjectDisplayTitle(item)}
-        </span>
-        <VaultClassificationBadges item={item} />
-        <span className={`source-tag ${vaultObjectTagClass(item.object_type)}`}>
-          {vaultObjectTagLabel(item)}
-        </span>
-        {isStaff ? (
-          <VaultClassificationEditor
-            item={item}
-            clientId={vaultContext.clientId}
-            onUpdated={(object) => onObjectUpdated?.(object)}
-          />
-        ) : null}
+      <div className="vault-source-primary">
+        <div className="vault-source-file">
+          <div className="vault-source-file-line">
+            <span className="vault-source-icon" aria-hidden>
+              <FontAwesomeIcon icon={vaultObjectIconDefinition(item.object_type)} />
+            </span>
+            <span
+              className="vault-source-title"
+              title={vaultObjectDisplayTitle(item)}
+            >
+              {vaultObjectDisplayTitle(item)}
+            </span>
+            <VaultClassificationBadges item={item} />
+            <span className={`source-tag ${vaultObjectTagClass(item.object_type)}`}>
+              {vaultObjectTagLabel(item)}
+            </span>
+          </div>
+          <div className="vault-source-meta">{formatVaultObjectMeta(item)}</div>
+        </div>
         <button
           type="button"
-          className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1 vault-source-download"
+          className="btn btn-xs btn-outline-secondary d-inline-flex align-items-center gap-1 vault-source-download"
           onClick={() => void handleDownload()}
           disabled={downloading || pending}
           aria-label={`Download ${vaultObjectDisplayTitle(item)}`}
@@ -96,7 +94,15 @@ function VaultCatalogRow({
           {downloading ? "…" : "Download"}
         </button>
       </div>
-      <div className="vault-source-meta">{formatVaultObjectMeta(item)}</div>
+      {isStaff ? (
+        <div className="vault-source-actions">
+          <VaultClassificationEditor
+            item={item}
+            clientId={vaultContext.clientId}
+            onUpdated={(object) => onObjectUpdated?.(object)}
+          />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -119,9 +125,9 @@ function VaultCatalogSections({
   return (
     <>
       {groups.map((group) => (
-        <section key={group.source} className="mb-4 mt-4">
+        <section key={group.source} className="vault-catalog-section">
           <h3 className="vault-section-label">{group.label}</h3>
-          <div className="d-flex flex-column gap-2">
+          <div className="vault-catalog-rows">
             {group.items.map((item) => (
               <VaultCatalogRow
                 key={item.id}
@@ -169,30 +175,28 @@ export function VaultCatalogRepository({
 
   return (
     <div className="app-card vault-catalog">
-      <div className="d-flex justify-content-between align-items-start mb-1">
-        <div>
-          <h2 className="h5 mb-1">Data repository</h2>
-          <p className="text-body-secondary small mb-0">{subtitle}</p>
-        </div>
+      <div className="vault-catalog-header">
+        <h2 className="vault-catalog-title">Data repository</h2>
+        <p className="vault-catalog-subtitle">{subtitle}</p>
       </div>
 
       {pendingS3Key ? (
-        <div className="alert alert-light border py-2 small my-3" role="status">
+        <div className="alert alert-light border vault-catalog-alert" role="status">
           Finishing upload — your file will appear in the catalog shortly.
         </div>
       ) : null}
 
       {!classificationReady ? (
-        <div className="alert alert-warning py-2 small my-3" role="status">
+        <div className="alert alert-warning vault-catalog-alert" role="status">
           Classification is not available until the vault catalog migration is applied
           (20260706213000_vault_object_classification.sql). Staff cannot save changes yet.
         </div>
       ) : null}
 
       {loading ? (
-        <div className="text-body-secondary small my-4">Loading your Vault catalog…</div>
+        <div className="vault-catalog-empty">Loading your Vault catalog…</div>
       ) : count === 0 ? (
-        <div className="text-body-secondary small my-4">
+        <div className="vault-catalog-empty">
           {emptyMessage ?? defaultEmptyMessage}
         </div>
       ) : (
@@ -205,7 +209,7 @@ export function VaultCatalogRepository({
           />
 
           {hiddenCount > 0 ? (
-            <section className="vault-hidden-section mt-4">
+            <section className="vault-hidden-section">
               <button
                 type="button"
                 className="vault-hidden-toggle"

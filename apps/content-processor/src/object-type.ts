@@ -7,6 +7,9 @@ export function objectTypeFromContentType(contentType: string | undefined): stri
   if (normalized === "text/csv") {
     return "csv";
   }
+  if (normalized === "application/json") {
+    return "json";
+  }
   if (
     normalized === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
     normalized === "application/vnd.ms-excel"

@@ -73,6 +73,15 @@ export async function AdminDashboardView() {
             </Link>
           </div>
           <div className="col-md-6">
+            <Link href={withAppPath("/admin/metrics", pathPrefix)} className="admin-tool-card">
+              <div className="fw-semibold">Metric catalog</div>
+              <p className="small text-body-secondary mb-0">
+                Manage the universal KPI library and client-specific bespoke
+                metrics.
+              </p>
+            </Link>
+          </div>
+          <div className="col-md-6">
             <Link href={withAppPath("/admin/prompts", pathPrefix)} className="admin-tool-card">
               <div className="fw-semibold">Prompt library</div>
               <p className="small text-body-secondary mb-0">

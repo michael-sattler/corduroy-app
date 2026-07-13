@@ -6,7 +6,7 @@
 -- Table
 -- ---------------------------------------------------------------------------
 
-create table public.client_vault_storage (
+create table if not exists public.client_vault_storage (
   id uuid primary key default gen_random_uuid(),
   client_id uuid not null references public.clients (id) on delete cascade,
   bucket_name text not null,
@@ -29,7 +29,7 @@ comment on table public.client_vault_storage is
 comment on column public.client_vault_storage.purpose is
   'primary = live Vault bucket; archive/migration reserved for future multi-bucket cases.';
 
-create index client_vault_storage_client_id_idx
+create index if not exists client_vault_storage_client_id_idx
   on public.client_vault_storage (client_id);
 
 -- ---------------------------------------------------------------------------
@@ -38,18 +38,21 @@ create index client_vault_storage_client_id_idx
 
 alter table public.client_vault_storage enable row level security;
 
+drop policy if exists "client_vault_storage_select_client" on public.client_vault_storage;
 create policy "client_vault_storage_select_client"
   on public.client_vault_storage
   for select
   to authenticated
   using (client_id = public.current_client_id());
 
+drop policy if exists "client_vault_storage_select_assigned_staff" on public.client_vault_storage;
 create policy "client_vault_storage_select_assigned_staff"
   on public.client_vault_storage
   for select
   to authenticated
   using (public.staff_assigned_to(client_id));
 
+drop policy if exists "client_vault_storage_select_approved_staff" on public.client_vault_storage;
 create policy "client_vault_storage_select_approved_staff"
   on public.client_vault_storage
   for select

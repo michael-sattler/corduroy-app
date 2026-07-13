@@ -1,11 +1,16 @@
 export {
   faCheck,
   faCloudArrowUp,
+  faDiagramProject,
   faDownload,
   faFile,
   faFileCsv,
   faFileExcel,
   faFileLines,
   faFilePdf,
+  faListCheck,
+  faPen,
+  faPlus,
   faShield,
+  faTags,
 } from "@fortawesome/free-solid-svg-icons";

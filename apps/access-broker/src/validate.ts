@@ -5,6 +5,7 @@ const ALLOWED_PREFIXES: VaultPrefix[] = ["raw", "derived", "context", "audit"];
 const ALLOWED_CONTENT_TYPES = new Set([
   "application/pdf",
   "text/csv",
+  "application/json",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -14,6 +15,7 @@ const ALLOWED_CONTENT_TYPES = new Set([
 const CONTENT_TYPE_EXTENSION: Record<string, string> = {
   "application/pdf": "pdf",
   "text/csv": "csv",
+  "application/json": "json",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": "xlsx",
   "application/vnd.ms-excel": "xls",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document": "docx",

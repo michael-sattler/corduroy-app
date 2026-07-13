@@ -44,7 +44,7 @@ export function VaultClassificationEditor({
   return (
     <div className="vault-class-editor">
       <select
-        className="form-select form-select-sm vault-class-editor-category"
+        className="form-select form-select-xs vault-class-editor-category"
         value={item.category ?? ""}
         disabled={saving}
         aria-label="Category"
@@ -103,7 +103,7 @@ function ToggleButton({
   return (
     <button
       type="button"
-      className={`btn btn-sm vault-class-editor-toggle-btn ${active ? "btn-primary" : "btn-outline-secondary"}`}
+      className={`btn btn-xs vault-class-editor-toggle-btn ${active ? "btn-primary" : "btn-outline-secondary"}`}
       disabled={disabled}
       onClick={onToggle}
     >

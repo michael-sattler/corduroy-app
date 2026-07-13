@@ -75,7 +75,7 @@ export async function uploadVaultFile(
   const contentType = resolveVaultContentType(file);
   if (!contentType) {
     throw new VaultUploadError(
-      "Unsupported file type. Use PDF, CSV, XLSX, XLS, DOCX, or DOC.",
+      "Unsupported file type. Use PDF, CSV, JSON, XLSX, XLS, DOCX, or DOC.",
     );
   }
 

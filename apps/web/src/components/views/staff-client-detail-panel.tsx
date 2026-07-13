@@ -1,106 +1,66 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { withImageCacheBuster } from "@/lib/platform-images-client";
 import type { StaffDashboardClient } from "@/lib/staff-dashboard-types";
-import { StaffClientVaultPanel } from "@/components/vault/staff-client-vault-panel";
-
-const kpis = [
-  {
-    label: "Revenue MTD",
-    value: "$44.2K",
-    sub: "Target $50K — on pace",
-    risk: false,
-  },
-  {
-    label: "Conversion rate",
-    value: "59.2%",
-    sub: "Target 62% — improving",
-    risk: false,
-  },
-  {
-    label: "Commercial revenue %",
-    value: "14%",
-    sub: "Target 25% Q4 — below pace",
-    risk: true,
-  },
-  {
-    label: "Open quote age",
-    value: "218d",
-    sub: "Was 255d — improving",
-    risk: true,
-  },
-];
-
-const observations = [
-  {
-    label: "Strong",
-    text: "Priority outreach is landing with key accounts. Execution on daily tasks is consistent.",
-  },
-  {
-    label: "Watch",
-    text: "Pipeline visibility still depends on manual logging until systems are fully connected.",
-  },
-  {
-    label: "At risk",
-    text: "Commercial mix is below target pace for this point in the engagement.",
-  },
-  {
-    label: "Momentum",
-    text: "Multi-day execution streak on plan tasks. Most milestones are on track.",
-  },
-];
-
-const actions = [
-  {
-    n: 1,
-    title: "Injected coaching message on pipeline reactivation",
-    sub: "Sent — Apr 17, 9:14am",
-    badge: "Sent",
-    tone: "success",
-  },
-  {
-    n: 2,
-    title: "Prepare follow-up talking points for priority account",
-    sub: "In progress — due before 2pm today",
-    badge: "Today",
-    tone: "warning",
-  },
-  {
-    n: 3,
-    title: "Update next-week plan based on completion rate",
-    sub: "Plan edit — due Thu EOD",
-    badge: "Plan edit",
-    tone: "success",
-  },
-  {
-    n: 4,
-    title: "Weekly review call with client lead",
-    sub: "Scheduled Fri 9am",
-    badge: "Fri 9am",
-    tone: "warning",
-  },
-];
-
-const milestones = [
-  { label: "Pull & score all outstanding quotes >$5K", status: "Complete", tone: "success" },
-  { label: "Client lead calls all Priority 1 outstanding quotes", status: "Complete", tone: "success" },
-  { label: "Re-engage all active partner accounts", status: "2 of 4 done", tone: "warning" },
-  { label: "Follow up all Priority 2 quotes by phone + email", status: "4 of 10 done", tone: "warning" },
-  { label: "CRM reactivated & pipeline owner assigned", status: "Not started", tone: "danger" },
-];
+import {
+  STAFF_CLIENT_DETAIL_TABS,
+  isStaffClientDetailTabKey,
+  staffClientDetailTabTitle,
+  type StaffClientDetailTabKey,
+} from "@/lib/staff-client-detail-tabs";
+import { StaffClientDashboardTab } from "@/components/views/staff-client-dashboard-tab";
+import { StaffClientPlanAdminTab } from "@/components/views/staff-client-plan-admin-tab";
+import { StaffClientPlanDashboardTab } from "@/components/views/staff-client-plan-dashboard-tab";
 
 type StaffClientDetailPanelProps = {
   client: StaffDashboardClient | null;
   consultantName: string;
 };
 
+const TAB_QUERY_PARAM = "tab";
+
 export function StaffClientDetailPanel({
   client,
   consultantName,
 }: StaffClientDetailPanelProps) {
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState<StaffClientDetailTabKey>(() => {
+    const raw = searchParams.get(TAB_QUERY_PARAM);
+    return raw && isStaffClientDetailTabKey(raw) ? raw : "dashboard";
+  });
+
+  // Keep the browser tab title and URL in sync with the active tab so each
+  // view has a shareable URL (e.g. /dashboard?tab=plan) and a dedicated title.
+  useEffect(() => {
+    document.title = staffClientDetailTabTitle(activeTab);
+
+    const url = new URL(window.location.href);
+    if (activeTab === "dashboard") {
+      url.searchParams.delete(TAB_QUERY_PARAM);
+    } else {
+      url.searchParams.set(TAB_QUERY_PARAM, activeTab);
+    }
+    window.history.replaceState(window.history.state, "", url);
+  }, [activeTab]);
+
+  // Reset to the dashboard tab when switching clients, but respect the tab
+  // supplied via the URL on the initial mount.
+  const hasMountedRef = useRef(false);
+  useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
+    setActiveTab("dashboard");
+  }, [client?.id]);
+
   if (!client) {
     return (
-      <div className="app-card mb-4">
-        <h2 className="h5 mb-2">Select a client</h2>
-        <p className="text-body-secondary mb-0">
+      <div className="app-card staff-dashboard-card">
+        <h2 className="staff-dashboard-title mb-1">Select a client</h2>
+        <p className="staff-dashboard-muted mb-0">
           Choose an organization from the list, or create one with{" "}
           <strong>Add client</strong>.
         </p>
@@ -111,9 +71,9 @@ export function StaffClientDetailPanel({
   const logoSrc = withImageCacheBuster(client.logo_path, client.logo_updated_at);
 
   return (
-    <div className="app-card mb-4" key={client.id}>
-      <div className="d-flex flex-wrap justify-content-between gap-3 mb-4">
-        <div className="d-flex gap-3">
+    <div className="app-card staff-dashboard-card" key={client.id}>
+      <div className="staff-dashboard-client-header">
+        <div className="d-flex gap-2 align-items-center min-w-0">
           <span className="staff-client-avatar-lg">
             {logoSrc ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -122,111 +82,71 @@ export function StaffClientDetailPanel({
               client.initials
             )}
           </span>
-          <div>
-            <h2 className="h5 mb-1">{client.name}</h2>
-            <p className="small text-body-secondary mb-0">
-              {client.meta} · Consultant: {consultantName}
+          <div className="min-w-0">
+            <h2 className="staff-dashboard-title mb-0 text-truncate">{client.name}</h2>
+            <p className="staff-dashboard-subtitle text-body-secondary mb-0 text-truncate">
+              {client.meta} · {consultantName}
             </p>
           </div>
         </div>
-        <div className="d-flex gap-2 flex-wrap align-items-start">
-          <span className="badge staff-badge-on-track">Engagement preview</span>
-        </div>
+        <span className="badge staff-badge-on-track staff-dashboard-badge">Live</span>
       </div>
 
-      <div className="row g-3 mb-4">
-        {kpis.map((kpi) => (
-          <div key={`${client.id}-${kpi.label}`} className="col-md-6 col-xl-3">
-            <div className={`staff-kpi-card${kpi.risk ? " at-risk" : ""}`}>
-              <div className="small text-body-secondary">{kpi.label}</div>
-              <div className="staff-kpi-value">{kpi.value}</div>
-              <div className="small text-body-secondary">{kpi.sub}</div>
-            </div>
-          </div>
-        ))}
+      <div className="staff-client-detail-tabs-wrap">
+        <ul className="nav nav-tabs staff-client-detail-tabs" role="tablist">
+          {STAFF_CLIENT_DETAIL_TABS.map((tab) => {
+            const selected = activeTab === tab.key;
+
+            return (
+              <li key={tab.key} className="nav-item" role="presentation">
+                <button
+                  type="button"
+                  id={`staff-client-tab-${tab.key}`}
+                  className={`nav-link${selected ? " active" : ""}`}
+                  role="tab"
+                  aria-selected={selected}
+                  aria-controls={`staff-client-tabpanel-${tab.key}`}
+                  onClick={() => setActiveTab(tab.key)}
+                >
+                  {tab.label}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
       </div>
 
-      <div className="row g-4 mb-4">
-        <div className="col-lg-6">
-          <h3 className="h6 mb-3">
-            Consultant observations{" "}
-            <span className="text-body-secondary fw-normal">· Updated Apr 17</span>
-          </h3>
-          <div className="d-flex flex-column gap-3">
-            {observations.map((item) => (
-              <div key={item.label} className="staff-observation">
-                <span className="fw-semibold">{item.label}:</span> {item.text}
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="col-lg-6">
-          <h3 className="h6 mb-3">
-            My actions this week{" "}
-            <span className="text-body-secondary fw-normal">· 4 items</span>
-          </h3>
-          <div className="d-flex flex-column gap-3">
-            {actions.map((action) => (
-              <div key={action.n} className="staff-action-row">
-                <span className="staff-action-num">{action.n}</span>
-                <div className="flex-grow-1">
-                  <div className="fw-medium">{action.title}</div>
-                  <div className="small text-body-secondary">{action.sub}</div>
-                </div>
-                <span className={`badge staff-action-badge ${action.tone}`}>
-                  {action.badge}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+      <div
+        id="staff-client-tabpanel-dashboard"
+        role="tabpanel"
+        aria-labelledby="staff-client-tab-dashboard"
+        hidden={activeTab !== "dashboard"}
+      >
+        {activeTab === "dashboard" ? <StaffClientDashboardTab client={client} /> : null}
       </div>
 
-      <div className="d-flex justify-content-between align-items-center mb-3">
-        <h3 className="h6 mb-0">Milestones — consultant view</h3>
-        <div className="d-flex gap-2 align-items-center">
-          <span className="small text-body-secondary">3 of 5 on track</span>
-          <button type="button" className="btn btn-sm btn-outline-secondary" disabled>
-            Edit plan
-          </button>
-        </div>
+      <div
+        id="staff-client-tabpanel-plan"
+        role="tabpanel"
+        aria-labelledby="staff-client-tab-plan"
+        hidden={activeTab !== "plan"}
+      >
+        {activeTab === "plan" ? (
+          <StaffClientPlanDashboardTab
+            clientId={client.id}
+            clientName={client.name}
+          />
+        ) : null}
       </div>
 
-      <div className="d-flex flex-column gap-2 mb-4">
-        {milestones.map((m) => (
-          <div key={m.label} className="staff-milestone-row">
-            <span className={`staff-milestone-dot ${m.tone}`} aria-hidden />
-            <span className="flex-grow-1">{m.label}</span>
-            <span className="small text-body-secondary">This week</span>
-            <span className={`badge staff-milestone-badge ${m.tone}`}>{m.status}</span>
-          </div>
-        ))}
+      <div
+        id="staff-client-tabpanel-admin"
+        role="tabpanel"
+        aria-labelledby="staff-client-tab-admin"
+        hidden={activeTab !== "admin"}
+      >
+        {activeTab === "admin" ? <StaffClientPlanAdminTab client={client} /> : null}
       </div>
-
-      <div className="staff-coach-draft">
-        <div className="staff-coach-draft-label">
-          Draft coach message — inject to {client.name}
-        </div>
-        <p className="mb-3">
-          Quick check-in for {client.name}: focus this week on clearing the
-          oldest open pipeline items and confirming owners for each follow-up.
-          Momentum is solid — keep daily plan execution tight.
-        </p>
-        <div className="d-flex gap-2">
-          <button type="button" className="btn btn-sm btn-outline-secondary" disabled>
-            Edit draft
-          </button>
-          <button type="button" className="btn btn-sm btn-success" disabled>
-            Send now
-          </button>
-        </div>
-      </div>
-
-      <StaffClientVaultPanel
-        clientId={client.id}
-        clientName={client.name}
-        vaultStorage={client.vault_storage}
-      />
     </div>
   );
 }

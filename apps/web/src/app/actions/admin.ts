@@ -9,6 +9,18 @@ import { getSurfacePathPrefix } from "@/lib/surface-path";
 import { createClient } from "@/lib/supabase/server";
 import { savePlatformImage } from "@/lib/platform-images";
 import { createServiceRoleClient } from "@/lib/supabase/admin";
+import { assertStaffCanAccessClient } from "@/lib/staff-client-access";
+import { validateObservationInput } from "@/lib/metrics/observation-rules";
+import {
+  METRIC_FAMILIES,
+  METRIC_KINDS,
+  METRIC_STOCK_FLOWS,
+  METRIC_TIERS,
+  METRIC_UNITS,
+  METRIC_UPDATE_INTERVALS,
+  METRIC_WIDGET_TYPES,
+  type MetricDefinitionInput,
+} from "@/lib/metric-catalog-types";
 
 function readUploadFile(formData: FormData): File {
   const file = formData.get("file");
@@ -513,6 +525,235 @@ export async function uploadStaffAvatarAction(
   revalidatePath("/admin/staff");
 
   return { path: saved.path, version: saved.updatedAt };
+}
+
+function assertMetricEnum(
+  allowed: readonly string[],
+  value: string,
+  field: string,
+): void {
+  if (!allowed.includes(value)) {
+    throw new Error(`Invalid ${field}: ${value}`);
+  }
+}
+
+function normalizeMetricInput(data: MetricDefinitionInput) {
+  const metric_key = data.metric_key.trim();
+  const label = data.label.trim();
+
+  if (!metric_key) throw new Error("Metric key is required");
+  if (!/^[a-z0-9_]+$/.test(metric_key)) {
+    throw new Error(
+      "Metric key must use only lowercase letters, numbers, and underscores",
+    );
+  }
+  if (!label) throw new Error("Label is required");
+
+  assertMetricEnum(METRIC_TIERS, data.tier, "tier");
+  assertMetricEnum(METRIC_KINDS, data.kind, "kind");
+  assertMetricEnum(METRIC_UNITS, data.unit, "unit");
+  assertMetricEnum(METRIC_WIDGET_TYPES, data.widget_type, "widget type");
+  assertMetricEnum(
+    METRIC_UPDATE_INTERVALS,
+    data.update_interval,
+    "update interval",
+  );
+
+  // family is optional; the core catalog groups by category instead.
+  const family =
+    typeof data.family === "string" && data.family.trim()
+      ? data.family.trim()
+      : null;
+  if (family) assertMetricEnum(METRIC_FAMILIES, family, "family");
+
+  // category is free text (suggested vocabulary offered in the UI).
+  const category =
+    typeof data.category === "string" && data.category.trim()
+      ? data.category.trim()
+      : null;
+
+  // stock_flow only applies to observed metrics.
+  let stock_flow =
+    typeof data.stock_flow === "string" && data.stock_flow.trim()
+      ? data.stock_flow.trim()
+      : null;
+  if (stock_flow) assertMetricEnum(METRIC_STOCK_FLOWS, stock_flow, "stock/flow");
+  if (data.kind !== "observed") stock_flow = null;
+
+  const description =
+    typeof data.description === "string" ? data.description.trim() : "";
+
+  // formula_expression only makes sense for derived/ratio metrics.
+  let formula_expression =
+    typeof data.formula_expression === "string" && data.formula_expression.trim()
+      ? data.formula_expression.trim()
+      : null;
+  if (data.kind === "observed") formula_expression = null;
+
+  const client_id =
+    typeof data.client_id === "string" && data.client_id.trim()
+      ? data.client_id.trim()
+      : null;
+
+  // Schema guardrail: benchmarkable is only permitted for library metrics.
+  const benchmarkable = client_id === null ? Boolean(data.benchmarkable) : false;
+
+  const applicable_ccps = Array.isArray(data.applicable_ccps)
+    ? data.applicable_ccps.filter((n) => Number.isInteger(n))
+    : [];
+
+  return {
+    client_id,
+    metric_key,
+    label,
+    family,
+    category,
+    stock_flow,
+    description,
+    formula_expression,
+    tier: data.tier,
+    kind: data.kind,
+    unit: data.unit,
+    widget_type: data.widget_type,
+    update_interval: data.update_interval,
+    applicable_ccps,
+    benchmarkable,
+    needs_review: Boolean(data.needs_review),
+  };
+}
+
+export async function createMetricDefinitionAction(
+  data: MetricDefinitionInput,
+): Promise<{ id: string }> {
+  await requireStaffSession();
+  const values = normalizeMetricInput(data);
+
+  const admin = createServiceRoleClient();
+  const { data: row, error } = await admin
+    .from("metric_definitions")
+    .insert(values)
+    .select("id")
+    .single();
+
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/admin/metrics");
+  return { id: row.id };
+}
+
+export async function updateMetricDefinitionAction(
+  id: string,
+  data: MetricDefinitionInput,
+): Promise<void> {
+  await requireStaffSession();
+  const values = normalizeMetricInput(data);
+
+  const admin = createServiceRoleClient();
+  const { error } = await admin
+    .from("metric_definitions")
+    .update(values)
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/metrics");
+}
+
+export async function deleteMetricDefinitionAction(id: string): Promise<void> {
+  await requireStaffSession();
+
+  const admin = createServiceRoleClient();
+  const { error } = await admin
+    .from("metric_definitions")
+    .delete()
+    .eq("id", id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/metrics");
+}
+
+type ObservationTargetRow = {
+  id: string;
+  client_id: string;
+  metric_definitions:
+    | { kind: string; unit: string; stock_flow: string | null }
+    | { kind: string; unit: string; stock_flow: string | null }[]
+    | null;
+};
+
+export type RecordMetricObservationInput = {
+  clientMetricId: string;
+  value: string;
+  periodStart: string;
+  periodEnd: string;
+  sourceDocument: string;
+};
+
+/**
+ * Manually record a metric observation (staff advisor path). The observation
+ * table is append-only; an insert trigger folds the reading into
+ * client_metrics.current_value. Business rules live in the shared, pure
+ * observation-rules module so the coming LLM ingestion layer reuses them.
+ */
+export async function recordMetricObservationAction(
+  input: RecordMetricObservationInput,
+): Promise<void> {
+  await requireStaffSession();
+
+  const admin = createServiceRoleClient();
+  const { data, error } = await admin
+    .from("client_metrics")
+    .select("id, client_id, metric_definitions ( kind, unit, stock_flow )")
+    .eq("id", input.clientMetricId)
+    .maybeSingle();
+
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Metric not found for this client");
+
+  const target = data as ObservationTargetRow;
+
+  // Enforce per-client staff authorization, not just the staff surface.
+  await assertStaffCanAccessClient(target.client_id);
+
+  const definition = Array.isArray(target.metric_definitions)
+    ? (target.metric_definitions[0] ?? null)
+    : target.metric_definitions;
+  if (!definition) throw new Error("Metric definition not found");
+
+  const result = validateObservationInput(
+    {
+      kind: definition.kind,
+      unit: definition.unit,
+      stock_flow: definition.stock_flow ?? null,
+    },
+    {
+      value: input.value,
+      periodStart: input.periodStart,
+      periodEnd: input.periodEnd,
+      sourceDocument: input.sourceDocument,
+    },
+  );
+
+  if (!result.ok) {
+    throw new Error(result.errors.join(" "));
+  }
+
+  const { value, periodStart, periodEnd, observedOn, sourceDocument } =
+    result.observation;
+
+  const { error: insertError } = await admin
+    .from("metric_observations")
+    .insert({
+      client_metric_id: input.clientMetricId,
+      value,
+      dimension: {},
+      observed_on: observedOn,
+      period_start: periodStart,
+      period_end: periodEnd,
+      change_source: "manual_advisor",
+      source_document: sourceDocument,
+    });
+
+  if (insertError) throw new Error(insertError.message);
 }
 
 export async function startClientImpersonationAction(

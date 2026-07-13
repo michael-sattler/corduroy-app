@@ -1,12 +1,35 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { ClientLayout, StaffLayout } from "@/components/layout";
+import { ClientMessagingPanel } from "@/components/messaging/client-messaging-panel";
 import { StaffDashboardView } from "@/components/views/staff-dashboard-view";
 import { requireClientSession, requireStaffSession } from "@/lib/auth/session";
 import { requireSurface } from "@/lib/require-surface";
 import {
+  isStaffClientDetailTabKey,
+  staffClientDetailTabTitle,
+} from "@/lib/staff-client-detail-tabs";
+import {
   fetchStaffDashboardClients,
 } from "@/lib/staff-client-directory";
 import { resolveAppHref } from "@/lib/surface-path";
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ tab?: string }>;
+}): Promise<Metadata> {
+  const surface = await requireSurface();
+  if (surface !== "staff") {
+    return {};
+  }
+
+  const { tab } = await searchParams;
+  const activeTab =
+    tab && isStaffClientDetailTabKey(tab) ? tab : "dashboard";
+
+  return { title: staffClientDetailTabTitle(activeTab) };
+}
 
 export default async function DashboardPage() {
   const surface = await requireSurface();
@@ -42,6 +65,10 @@ export default async function DashboardPage() {
                 90-day plan
               </Link>
             </div>
+          </div>
+
+          <div className="mt-4">
+            <ClientMessagingPanel />
           </div>
         </div>
       </ClientLayout>

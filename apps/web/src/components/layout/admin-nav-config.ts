@@ -3,7 +3,8 @@ export type AdminNavKey =
   | "prompts"
   | "waitlist"
   | "clients"
-  | "staff";
+  | "staff"
+  | "metrics";
 
 export const adminNavItems: {
   key: AdminNavKey;
@@ -28,6 +29,12 @@ export const adminNavItems: {
     label: "Staff",
     href: "/admin/staff",
     description: "Corduroy team accounts",
+  },
+  {
+    key: "metrics",
+    label: "Metric catalog",
+    href: "/admin/metrics",
+    description: "Universal KPI library and bespoke metrics",
   },
   {
     key: "prompts",

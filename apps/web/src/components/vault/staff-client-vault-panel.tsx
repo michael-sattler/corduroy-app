@@ -2,10 +2,14 @@
 
 import { VaultCatalogRepository } from "@/components/vault/vault-catalog-repository";
 import { VaultFileUpload } from "@/components/vault/vault-file-upload";
+import { VaultFilesDrawer } from "@/components/vault/vault-files-drawer";
 import type {
   VaultCatalogGroup,
+  VaultCatalogObject,
   VaultCatalogResponse,
 } from "@/lib/vault-catalog-types";
+import { FontAwesomeIcon } from "@/lib/fontawesome";
+import { faTags } from "@/lib/fontawesome-icons";
 import type { VaultUploadResult } from "@/lib/vault-upload-types";
 import type { ClientVaultStorageSummary } from "@/lib/staff-dashboard-types";
 import { vaultObjectsPath } from "@/lib/vault-api-context";
@@ -17,6 +21,7 @@ type StaffClientVaultPanelProps = {
   clientId: string;
   clientName: string;
   vaultStorage: ClientVaultStorageSummary | null;
+  layout?: "section" | "tab";
 };
 
 type CatalogStatus = "idle" | "loading" | "ready" | "error";
@@ -29,6 +34,7 @@ export function StaffClientVaultPanel({
   clientId,
   clientName,
   vaultStorage,
+  layout = "section",
 }: StaffClientVaultPanelProps) {
   const vaultContext = useMemo(
     () => ({ scope: "staff" as const, clientId }),
@@ -36,6 +42,8 @@ export function StaffClientVaultPanel({
   );
   const [groups, setGroups] = useState<VaultCatalogGroup[]>([]);
   const [hiddenGroups, setHiddenGroups] = useState<VaultCatalogGroup[]>([]);
+  const [objects, setObjects] = useState<VaultCatalogObject[]>([]);
+  const [drawerOpen, setDrawerOpen] = useState(false);
   const [count, setCount] = useState(0);
   const [hiddenCount, setHiddenCount] = useState(0);
   const [visibleCount, setVisibleCount] = useState(0);
@@ -51,6 +59,7 @@ export function StaffClientVaultPanel({
   const applyCatalog = useCallback((catalog: VaultCatalogResponse) => {
     setGroups(catalog.groups);
     setHiddenGroups(catalog.hiddenGroups);
+    setObjects(catalog.objects);
     setCount(catalog.count);
     setHiddenCount(catalog.hiddenCount);
     setVisibleCount(catalog.visibleCount);
@@ -146,37 +155,56 @@ export function StaffClientVaultPanel({
   }, [applyCatalog, fetchCatalog, pushToast]);
 
   return (
-    <section className="staff-vault-panel mt-4 pt-4 border-top">
-      <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-3">
+    <section
+      className={
+        layout === "tab"
+          ? "staff-vault-panel"
+          : "staff-vault-panel mt-4 pt-4 border-top"
+      }
+    >
+      <div className="d-flex flex-wrap justify-content-between align-items-start gap-2 mb-2">
         <div>
-          <h3 className="h6 mb-1">Client vault</h3>
-          <p className="small text-body-secondary mb-0">
+          <h3 className="staff-section-heading mb-1">Client vault</h3>
+          <p className="staff-dashboard-muted mb-0">
             Upload and download files for {clientName}
           </p>
         </div>
-        {vaultStorage ? (
-          <span
-            className={`staff-vault-indicator small${provisioned ? " provisioned" : ""}`}
-            title={
-              provisioned
-                ? vaultStorage.bucket_name
-                : `Vault status: ${vaultStorage.status}`
-            }
-          >
-            {provisioned ? "Bucket ready" : `Vault ${vaultStorage.status}`}
-          </span>
-        ) : (
-          <span className="staff-vault-indicator small">Not provisioned</span>
-        )}
+        <div className="d-flex align-items-center gap-2">
+          {provisioned ? (
+            <button
+              type="button"
+              className="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1"
+              onClick={() => setDrawerOpen(true)}
+              disabled={count === 0}
+            >
+              <FontAwesomeIcon icon={faTags} />
+              Manage files
+            </button>
+          ) : null}
+          {vaultStorage ? (
+            <span
+              className={`staff-vault-indicator small${provisioned ? " provisioned" : ""}`}
+              title={
+                provisioned
+                  ? vaultStorage.bucket_name
+                  : `Vault status: ${vaultStorage.status}`
+              }
+            >
+              {provisioned ? "Bucket ready" : `Vault ${vaultStorage.status}`}
+            </span>
+          ) : (
+            <span className="staff-vault-indicator small">Not provisioned</span>
+          )}
+        </div>
       </div>
 
       {!provisioned ? (
-        <div className="small text-body-secondary">
+        <div className="staff-dashboard-muted">
           Vault storage is not active for this client yet. Provision the bucket in
           Terraform before exchanging files here.
         </div>
       ) : (
-        <div className="row g-4">
+        <div className="row g-2">
           <div className="col-lg-5">
             <VaultFileUpload
               vaultContext={vaultContext}
@@ -217,6 +245,15 @@ export function StaffClientVaultPanel({
           </div>
         </div>
       )}
+
+      <VaultFilesDrawer
+        open={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        clientId={clientId}
+        clientName={clientName}
+        objects={objects}
+        onObjectUpdated={() => void handleObjectUpdated()}
+      />
     </section>
   );
 }

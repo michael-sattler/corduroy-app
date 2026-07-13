@@ -1,5 +1,6 @@
 -- Allow signed-in users to update their own profile row (avatar uploads via server actions).
 
+drop policy if exists "client_users_update_self" on public.client_users;
 create policy "client_users_update_self"
   on public.client_users
   for update
@@ -7,6 +8,7 @@ create policy "client_users_update_self"
   using (user_id = auth.uid())
   with check (user_id = auth.uid());
 
+drop policy if exists "staff_update_self" on public.staff;
 create policy "staff_update_self"
   on public.staff
   for update

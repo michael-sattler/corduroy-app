@@ -21,11 +21,14 @@ export type VaultUploadResult = VaultPresignUploadResponse & {
 };
 
 export const VAULT_UPLOAD_ACCEPT =
-  ".pdf,.csv,.xlsx,.xls,.docx,.doc,application/pdf,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword";
+  ".pdf,.csv,.json,.xlsx,.xls,.docx,.doc,application/pdf,text/csv,application/json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword";
+
+export const PLAN_UPLOAD_ACCEPT = ".json,application/json";
 
 const EXTENSION_CONTENT_TYPE: Record<string, string> = {
   pdf: "application/pdf",
   csv: "text/csv",
+  json: "application/json",
   xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   xls: "application/vnd.ms-excel",
   docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

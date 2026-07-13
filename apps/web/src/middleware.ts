@@ -47,6 +47,26 @@ function resolveRouting(host: string, pathname: string): ResolvedRouting | null 
     };
   }
 
+  // Staff plan API routes — ingest proxy; handler verifies staff JWT.
+  if (pathname.startsWith("/api/staff/plan")) {
+    return {
+      surface: "staff",
+      pathPrefix: "",
+      internalPath: pathname,
+      pathBased: false,
+    };
+  }
+
+  // Staff LLM API routes — dialogue/status; handler verifies staff role.
+  if (pathname.startsWith("/api/staff/llm")) {
+    return {
+      surface: "staff",
+      pathPrefix: "",
+      internalPath: pathname,
+      pathBased: false,
+    };
+  }
+
   const subdomainSurface = getSurfaceFromHost(host);
 
   if (subdomainSurface === "client" || subdomainSurface === "staff") {

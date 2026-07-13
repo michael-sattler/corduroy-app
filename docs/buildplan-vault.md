@@ -242,6 +242,13 @@ Functional MVP shipped; polish pass in progress:
 - [ ] Break-glass runbook: account owner reaches data without Lambda (TDD §5.7)
 - [ ] KMS never-delete rule documented and enforced in IAM
 
+### P1.8 — Front-end vault management
+
+- [ ] Tool to change file name for classification/grouping system
+- [ ] Tag files with metrics: vault_object_metric
+- [ ] Analyze button: ingest the file, read it, tag it for source data,  rename it for proper classification
+
+- [ ] metric manager for client
 ---
 
 ## Build order

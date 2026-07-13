@@ -1,12 +1,20 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type CSSProperties } from "react";
 import {
   StaffClientManagementPanel,
   type StaffClientRecord,
 } from "@/components/management/staff-client-management-panel";
 import { StaffClientDetailPanel } from "@/components/views/staff-client-detail-panel";
+import {
+  StaffClientMessagingSidebar,
+  useStaffMessagesWidth,
+} from "@/components/views/staff-client-messaging-sidebar";
+import {
+  StaffLlmDialogueSidebar,
+  useStaffLlmDialogueWidth,
+} from "@/components/views/staff-llm-dialogue-sidebar";
 import {
   toStaffClientRecord,
   type ClientVaultStorageSummary,
@@ -32,6 +40,8 @@ export function StaffDashboardView({
     null,
   );
   const [search, setSearch] = useState("");
+  const [messagesWidth, setMessagesWidth] = useStaffMessagesWidth();
+  const [llmWidth, setLlmWidth] = useStaffLlmDialogueWidth();
 
   const filteredClients = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -89,61 +99,80 @@ export function StaffDashboardView({
 
   return (
     <>
-      <div className="container-fluid py-4">
-        <div className="row g-4">
-          <div className="col-lg-3">
-            <div className="app-card staff-client-sidebar h-100 d-flex flex-column">
-              <h2 className="h6 mb-1">My clients</h2>
-              <p className="small text-body-secondary mb-3">
-                {displayName} — {engagementLabel}
-              </p>
-              <input
-                className="form-control form-control-sm mb-4"
-                placeholder="Search clients…"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                disabled={clients.length === 0}
-              />
-
-              {clients.length === 0 ? (
-                <div className="small text-body-secondary flex-grow-1">
-                  No assigned clients yet. Create your first organization below.
-                </div>
-              ) : filteredClients.length === 0 ? (
-                <div className="small text-body-secondary flex-grow-1">
-                  No clients match your search.
-                </div>
-              ) : (
-                <div className="d-flex flex-column gap-2 flex-grow-1">
-                  {filteredClients.map((client) => (
-                    <ClientSidebarItem
-                      key={client.id}
-                      client={client}
-                      selected={selectedId === client.id}
-                      onSelect={() => selectClient(client.id)}
-                      onEdit={() => openEditPanel(client)}
-                    />
-                  ))}
-                </div>
-              )}
-
-              <button
-                type="button"
-                className="btn btn-outline-primary btn-sm w-100 mt-4"
-                onClick={openNewClient}
-              >
-                + Add client
-              </button>
-            </div>
-          </div>
-
-          <div className="col-lg-9">
-            <StaffClientDetailPanel
-              client={selectedClient}
-              consultantName={displayName}
+      <div
+        className="staff-dashboard"
+        style={
+          {
+            "--staff-msg-width": `${messagesWidth}px`,
+            "--staff-llm-width": `${llmWidth}px`,
+          } as CSSProperties
+        }
+      >
+        <aside className="staff-dashboard-sidebar">
+          <div className="app-card staff-client-sidebar h-100 d-flex flex-column">
+            <h2 className="staff-dashboard-heading mb-1">My clients</h2>
+            <p className="staff-dashboard-subtitle text-body-secondary mb-2">
+              {displayName} · {engagementLabel}
+            </p>
+            <input
+              className="form-control form-control-sm staff-dashboard-search mb-2"
+              placeholder="Search…"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              disabled={clients.length === 0}
             />
+
+            {clients.length === 0 ? (
+              <div className="staff-dashboard-muted flex-grow-1">
+                No assigned clients yet. Create your first organization below.
+              </div>
+            ) : filteredClients.length === 0 ? (
+              <div className="staff-dashboard-muted flex-grow-1">
+                No clients match your search.
+              </div>
+            ) : (
+              <div className="staff-client-list d-flex flex-column flex-grow-1">
+                {filteredClients.map((client) => (
+                  <ClientSidebarItem
+                    key={client.id}
+                    client={client}
+                    selected={selectedId === client.id}
+                    onSelect={() => selectClient(client.id)}
+                    onEdit={() => openEditPanel(client)}
+                  />
+                ))}
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="btn btn-outline-primary btn-sm w-100 staff-dashboard-add-btn"
+              onClick={openNewClient}
+            >
+              + Add client
+            </button>
           </div>
+        </aside>
+
+        <div className="staff-dashboard-main">
+          <StaffClientDetailPanel
+            client={selectedClient}
+            consultantName={displayName}
+          />
         </div>
+
+        <StaffClientMessagingSidebar
+          width={messagesWidth}
+          onWidthChange={setMessagesWidth}
+          clientId={selectedClient?.id ?? null}
+          clientName={selectedClient?.name ?? null}
+        />
+
+        <StaffLlmDialogueSidebar
+          width={llmWidth}
+          onWidthChange={setLlmWidth}
+          clientName={selectedClient?.name ?? null}
+        />
       </div>
 
       <StaffClientManagementPanel
@@ -174,6 +203,7 @@ function ClientSidebarItem({
       <button
         type="button"
         className="staff-client-item-select"
+        title={`${client.name} — ${client.meta}`}
         onClick={onSelect}
         aria-current={selected ? "true" : undefined}
       >
@@ -185,9 +215,9 @@ function ClientSidebarItem({
             client.initials
           )}
         </span>
-        <div className="min-w-0 text-start">
-          <div className="fw-medium text-truncate">{client.name}</div>
-          <div className="small text-body-secondary text-truncate">
+          <div className="staff-client-item-text text-start">
+            <div className="staff-client-item-name">{client.name}</div>
+            <div className="staff-client-item-meta" title={client.meta}>
             {client.meta}
           </div>
         </div>
@@ -195,7 +225,8 @@ function ClientSidebarItem({
       </button>
       <button
         type="button"
-        className="btn btn-link btn-sm staff-client-edit-btn"
+        className="btn btn-link staff-client-edit-btn"
+        title="Edit client"
         onClick={(event) => {
           event.stopPropagation();
           onEdit();

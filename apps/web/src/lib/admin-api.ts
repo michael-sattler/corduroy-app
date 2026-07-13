@@ -11,6 +11,10 @@ import type {
   ClientUserRecord,
   StaffRecord,
 } from "@/lib/admin-api-types";
+import type {
+  MetricClientOption,
+  MetricDefinitionRecord,
+} from "@/lib/metric-catalog-types";
 
 export type {
   HealthCheck,
@@ -214,6 +218,62 @@ export async function fetchClientUsers(
   }
 
   throw new Error(error.message);
+}
+
+type MetricDefinitionRow = Omit<
+  MetricDefinitionRecord,
+  "client_name" | "applicable_ccps"
+> & {
+  applicable_ccps: number[] | null;
+  clients: { name: string } | { name: string }[] | null;
+};
+
+export async function fetchMetricDefinitions(): Promise<{
+  metrics: MetricDefinitionRecord[];
+}> {
+  const { supabase } = await staffSupabase();
+  const { data, error } = await supabase
+    .from("metric_definitions")
+    .select(
+      `
+      id, client_id, metric_key, label, family, category, stock_flow,
+      description, formula_expression, tier, kind, unit,
+      widget_type, palette, update_interval, applicable_ccps,
+      benchmarkable, needs_review, created_at,
+      clients ( name )
+      `,
+    )
+    .order("tier")
+    .order("family")
+    .order("metric_key");
+
+  if (error) throw new Error(error.message);
+
+  const metrics = ((data ?? []) as MetricDefinitionRow[]).map((row) => {
+    const client = Array.isArray(row.clients)
+      ? (row.clients[0] ?? null)
+      : row.clients;
+    return {
+      ...row,
+      applicable_ccps: row.applicable_ccps ?? [],
+      client_name: client?.name ?? null,
+    } satisfies MetricDefinitionRecord;
+  });
+
+  return { metrics };
+}
+
+export async function fetchMetricClientOptions(): Promise<{
+  clients: MetricClientOption[];
+}> {
+  const { supabase } = await staffSupabase();
+  const { data, error } = await supabase
+    .from("clients")
+    .select("id, name")
+    .order("name");
+
+  if (error) throw new Error(error.message);
+  return { clients: (data ?? []) as MetricClientOption[] };
 }
 
 export async function fetchStaff(): Promise<{ staff: StaffRecord[] }> {
