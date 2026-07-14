@@ -28,6 +28,9 @@ export type StaffPlanDashboardInitiative = {
   owner: string;
   budget_usd: number | null;
   success_criteria: string;
+  progress_pct: number;
+  task_total: number;
+  task_done: number;
 };
 
 export type StaffPlanDashboardGoal = {

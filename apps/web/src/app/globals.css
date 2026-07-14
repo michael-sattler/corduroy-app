@@ -2144,6 +2144,56 @@ body {
 .staff-milestone-dot.muted { background: #9ca3af; }
 .staff-milestone-dot.warning { background: #f97316; }
 
+.staff-initiative-progress-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.45rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.staff-initiative-progress-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.staff-initiative-progress-row .staff-milestone-dot {
+  margin-top: 0.35rem;
+}
+
+.staff-initiative-progress-body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.staff-initiative-progress-pct {
+  flex: 0 0 auto;
+  font-size: 0.68rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.staff-initiative-progress-bar {
+  margin: 0.35rem 0 0.3rem;
+  background: #e5e7eb;
+}
+
+.staff-initiative-progress-fill.is-success {
+  background: #22c55e;
+}
+
+.staff-initiative-progress-fill.is-info {
+  background: #3b82f6;
+}
+
+.staff-initiative-progress-fill.is-danger {
+  background: #ef4444;
+}
+
+.staff-initiative-progress-fill.is-muted {
+  background: #9ca3af;
+}
+
 .staff-coach-draft {
   background: var(--app-staff-blue-soft);
   border: 1px solid #b8dcc8;

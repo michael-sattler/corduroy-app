@@ -80,12 +80,23 @@ type TaskRow = {
   priority: string;
   owner: string;
   category: string;
+  initiative_id: string | null;
   task_week_refs:
     | {
         week_id: string | null;
         plan_weeks: PlanWeekInfo | PlanWeekInfo[] | null;
       }[]
     | null;
+};
+
+type InitiativeRow = {
+  id: string;
+  initiative_id: string;
+  label: string;
+  status: string;
+  owner: string;
+  budget_usd: number | null;
+  success_criteria: string;
 };
 
 function firstOrValue<T>(value: T | T[] | null | undefined): T | null {
@@ -350,7 +361,7 @@ export async function loadStaffPlanDashboard(
     supabase
       .from("plan_initiatives")
       .select(
-        "initiative_id, label, status, owner, budget_usd, success_criteria",
+        "id, initiative_id, label, status, owner, budget_usd, success_criteria",
       )
       .eq("plan_id", plan.id)
       .order("initiative_id"),
@@ -364,6 +375,7 @@ export async function loadStaffPlanDashboard(
         priority,
         owner,
         category,
+        initiative_id,
         task_week_refs (
           week_id,
           plan_weeks ( id, week_id, week_number, start_date, end_date )
@@ -431,6 +443,31 @@ export async function loadStaffPlanDashboard(
 
   const focusWeeks = buildFocusWeeks(taskRows, weekRows, today);
 
+  const mappedInitiatives: StaffPlanDashboardInitiative[] = (
+    (initiatives ?? []) as InitiativeRow[]
+  ).map((initiative) => {
+    const initiativeTasks = taskRows.filter(
+      (task) => task.initiative_id === initiative.id,
+    );
+    const taskDone = initiativeTasks.filter(
+      (task) => task.status === "done",
+    ).length;
+    const taskTotal = initiativeTasks.length;
+
+    return {
+      initiative_id: initiative.initiative_id,
+      label: initiative.label,
+      status: initiative.status,
+      owner: initiative.owner,
+      budget_usd: initiative.budget_usd,
+      success_criteria: initiative.success_criteria,
+      progress_pct:
+        taskTotal === 0 ? 0 : Math.round((taskDone / taskTotal) * 100),
+      task_total: taskTotal,
+      task_done: taskDone,
+    };
+  });
+
   const dashboard: StaffPlanDashboard = {
     plan: {
       plan_id: plan.plan_id,
@@ -444,7 +481,7 @@ export async function loadStaffPlanDashboard(
       : null,
     goals: goals ?? [],
     kpis: featuredKpis,
-    initiatives: (initiatives ?? []) as StaffPlanDashboardInitiative[],
+    initiatives: mappedInitiatives,
     task_counts: countTasks(mappedTasks),
     task_progress: taskProgress,
     focus_tasks: pickFocusTasks(mappedTasks),

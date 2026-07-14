@@ -122,7 +122,12 @@ export function StaffClientDetailPanel({
         aria-labelledby="staff-client-tab-dashboard"
         hidden={activeTab !== "dashboard"}
       >
-        {activeTab === "dashboard" ? <StaffClientDashboardTab client={client} /> : null}
+        {activeTab === "dashboard" ? (
+          <StaffClientDashboardTab
+            client={client}
+            onOpenPlan={() => setActiveTab("plan")}
+          />
+        ) : null}
       </div>
 
       <div

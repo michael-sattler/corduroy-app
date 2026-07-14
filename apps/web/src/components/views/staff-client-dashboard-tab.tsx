@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import { EditorDrawer } from "@/components/ui/editor-drawer";
 import { StaffClientKpiEditorPanel } from "@/components/plan/staff-client-kpi-editor-panel";
+import { StaffInitiativeProgressCard } from "@/components/plan/staff-initiative-progress-card";
 import { StaffTaskProgressCard } from "@/components/plan/staff-task-progress-card";
 import { FontAwesomeIcon } from "@/lib/fontawesome";
 import { faPen } from "@/lib/fontawesome-icons";
 import { formatMetricValue } from "@/lib/plan/staff-plan-dashboard-format";
 import type {
   StaffPlanDashboard,
+  StaffPlanDashboardInitiative,
   StaffPlanDashboardResponse,
 } from "@/lib/plan/staff-plan-dashboard-types";
 import type { StaffPlanTaskProgress } from "@/lib/plan/staff-task-progress";
@@ -17,6 +19,7 @@ import type { StaffDashboardClient } from "@/lib/staff-dashboard-types";
 
 type StaffClientDashboardTabProps = {
   client: StaffDashboardClient;
+  onOpenPlan?: () => void;
 };
 
 function kpiSubtext(kpi: StaffPlanDashboard["kpis"][number]): string {
@@ -52,8 +55,14 @@ function formatLastLogin(iso: string | null): string {
   });
 }
 
-export function StaffClientDashboardTab({ client }: StaffClientDashboardTabProps) {
+export function StaffClientDashboardTab({
+  client,
+  onOpenPlan,
+}: StaffClientDashboardTabProps) {
   const [kpis, setKpis] = useState<StaffPlanDashboard["kpis"]>([]);
+  const [initiatives, setInitiatives] = useState<StaffPlanDashboardInitiative[]>(
+    [],
+  );
   const [taskProgress, setTaskProgress] = useState<StaffPlanTaskProgress>({
     overdue: 0,
     pending: 0,
@@ -103,6 +112,7 @@ export function StaffClientDashboardTab({ client }: StaffClientDashboardTabProps
         if (!cancelled) {
           setHasPlan(Boolean(planBody.plan));
           setKpis(planBody.plan?.kpis ?? []);
+          setInitiatives(planBody.plan?.initiatives ?? []);
           setTaskProgress(
             planBody.plan?.task_progress ?? {
               overdue: 0,
@@ -115,6 +125,7 @@ export function StaffClientDashboardTab({ client }: StaffClientDashboardTabProps
       } catch (err) {
         if (!cancelled) {
           setKpis([]);
+          setInitiatives([]);
           setTaskProgress({ overdue: 0, pending: 0, blocked: 0 });
           setActivity(null);
           setError(err instanceof Error ? err.message : "Could not load dashboard");
@@ -244,8 +255,17 @@ export function StaffClientDashboardTab({ client }: StaffClientDashboardTabProps
       </div>
 
       <div className="row g-2">
+        <div className="col-lg-8">
+          <StaffInitiativeProgressCard
+            initiatives={initiatives}
+            onOpenPlan={onOpenPlan}
+          />
+        </div>
         <div className="col-lg-4">
-          <StaffTaskProgressCard progress={taskProgress} />
+          <StaffTaskProgressCard
+            progress={taskProgress}
+            onOpenTasks={onOpenPlan}
+          />
         </div>
       </div>
 

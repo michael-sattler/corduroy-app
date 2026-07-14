@@ -4,8 +4,29 @@ import { useEffect, useState, type ReactNode } from "react";
 import type {
   ClientPlanDashboard,
   ClientPlanDashboardResponse,
+  ClientPlanInitiative,
 } from "@/lib/plan/client-plan-dashboard-types";
+import { planStatusTone } from "@/lib/plan/staff-plan-dashboard-format";
 import { PlanKpiWidgets } from "@/components/views/plan-kpi-widgets";
+
+function progressBarTone(initiative: ClientPlanInitiative): string {
+  if (initiative.progress_pct >= 100 || initiative.status === "done") {
+    return "success";
+  }
+  if (initiative.status === "blocked") {
+    return "danger";
+  }
+  if (initiative.progress_pct > 0 || initiative.status === "in_progress") {
+    return "info";
+  }
+  return "muted";
+}
+
+/** Priority 1 (highest) is fullest; higher ranks fade out. */
+function priorityCircleOpacity(priority: number): number {
+  const rank = Math.max(1, Math.round(priority));
+  return Math.max(0.28, Math.min(1, 1.05 - (rank - 1) * 0.18));
+}
 
 export function ClientDashboardView() {
   const [dashboard, setDashboard] = useState<ClientPlanDashboard | null>(null);
@@ -80,10 +101,6 @@ export function ClientDashboardView() {
     );
   }
 
-  const initiativesComplete = dashboard.initiatives.filter(
-    (i) => i.progress_pct >= 100 || i.status === "done",
-  ).length;
-
   return (
     <div className="container-fluid py-3 client-dashboard-view">
       <div className="d-flex flex-column gap-3">
@@ -100,11 +117,26 @@ export function ClientDashboardView() {
             <CollapsibleCard
               title={<div className="plan-sidebar-label">Goals</div>}
             >
-              <div className="d-flex flex-column gap-2">
+              <div className="staff-stack-tight">
                 {dashboard.goals.map((goal) => (
-                  <div key={goal.goal_id} className="small">
-                    <div className="fw-medium">{goal.label}</div>
-                    <div className="text-body-secondary">{goal.description}</div>
+                  <div key={goal.goal_id} className="staff-goal-row">
+                    <div className="staff-goal-body min-w-0">
+                      <div className="staff-goal-label">{goal.label}</div>
+                      {goal.description ? (
+                        <div className="staff-goal-meta">{goal.description}</div>
+                      ) : null}
+                      {goal.target ? (
+                        <div className="staff-goal-meta">{goal.target}</div>
+                      ) : null}
+                    </div>
+                    <span
+                      className="staff-goal-priority-dot"
+                      style={{
+                        opacity: priorityCircleOpacity(goal.priority),
+                      }}
+                      title={`Priority ${goal.priority}`}
+                      aria-label={`Priority ${goal.priority}`}
+                    />
                   </div>
                 ))}
               </div>
@@ -116,36 +148,52 @@ export function ClientDashboardView() {
                 <div className="plan-sidebar-label">Initiative progress</div>
               }
             >
-              <div className="small text-body-secondary mb-2">
-                {initiativesComplete} of {dashboard.initiatives.length} complete
-              </div>
-              <div className="d-flex flex-column gap-2">
-                {dashboard.initiatives.map((initiative) => (
-                  <div key={initiative.initiative_id}>
-                    <div className="d-flex justify-content-between small mb-1">
-                      <span>{initiative.label}</span>
-                      <span className="text-body-secondary">
-                        {initiative.progress_pct >= 100
-                          ? "Done"
-                          : `${initiative.progress_pct}%`}
-                      </span>
-                    </div>
-                    <div className="progress plan-milestone-bar">
-                      <div
-                        className={`progress-bar bg-${
-                          initiative.progress_pct >= 100
-                            ? "success"
-                            : initiative.status === "blocked"
-                              ? "danger"
-                              : initiative.progress_pct > 0
-                                ? "primary"
-                                : "secondary"
-                        }`}
-                        style={{ width: `${initiative.progress_pct}%` }}
+              <div className="staff-stack-tight">
+                {dashboard.initiatives.map((initiative) => {
+                  const tone = planStatusTone(initiative.status);
+                  const barTone = progressBarTone(initiative);
+
+                  return (
+                    <div
+                      key={initiative.initiative_id}
+                      className="staff-initiative-progress-row"
+                    >
+                      <span
+                        className={`staff-milestone-dot ${tone}`}
+                        aria-hidden
                       />
+                      <div className="staff-initiative-progress-body min-w-0">
+                        <div className="d-flex align-items-center gap-2 min-w-0">
+                          <div className="fw-medium text-truncate flex-grow-1">
+                            {initiative.label}
+                          </div>
+                          <span className="staff-initiative-progress-pct text-body-secondary">
+                            {initiative.progress_pct >= 100
+                              ? "Done"
+                              : `${initiative.progress_pct}%`}
+                          </span>
+                          <span className={`badge staff-milestone-badge ${tone}`}>
+                            {initiative.status.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                        <div className="progress plan-milestone-bar staff-initiative-progress-bar">
+                          <div
+                            className={`progress-bar staff-initiative-progress-fill is-${barTone}`}
+                            style={{
+                              width: `${Math.min(100, initiative.progress_pct)}%`,
+                            }}
+                          />
+                        </div>
+                        <div className="small text-body-secondary text-truncate">
+                          {initiative.owner}
+                          {initiative.success_criteria
+                            ? ` · ${initiative.success_criteria}`
+                            : ""}
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </CollapsibleCard>
           </div>
