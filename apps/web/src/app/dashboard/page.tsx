@@ -1,18 +1,17 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { ClientLayout, StaffLayout } from "@/components/layout";
-import { ClientMessagingPanel } from "@/components/messaging/client-messaging-panel";
+import { ClientDashboardShell } from "@/components/views/client-dashboard-shell";
 import { StaffDashboardView } from "@/components/views/staff-dashboard-view";
 import { requireClientSession, requireStaffSession } from "@/lib/auth/session";
+import { getMessagingContact } from "@/lib/messaging/messaging-contact";
 import { requireSurface } from "@/lib/require-surface";
 import {
   isStaffClientDetailTabKey,
   staffClientDetailTabTitle,
 } from "@/lib/staff-client-detail-tabs";
-import {
-  fetchStaffDashboardClients,
-} from "@/lib/staff-client-directory";
-import { resolveAppHref } from "@/lib/surface-path";
+import { fetchStaffDashboardClients } from "@/lib/staff-client-directory";
+
+const CORDUROY_CONTACT_USER_ID = "54cc7c22-7263-4935-9357-5a288b7285ca";
 
 export async function generateMetadata({
   searchParams,
@@ -21,7 +20,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const surface = await requireSurface();
   if (surface !== "staff") {
-    return {};
+    return { title: "Dashboard" };
   }
 
   const { tab } = await searchParams;
@@ -44,8 +43,8 @@ export default async function DashboardPage() {
       organizationLogoPath,
       organizationLogoUpdatedAt,
     } = await requireClientSession();
-    const vaultHref = await resolveAppHref("/vault", "client");
-    const planHref = await resolveAppHref("/plan", "client");
+
+    const messagingContact = await getMessagingContact(CORDUROY_CONTACT_USER_ID);
 
     return (
       <ClientLayout
@@ -58,28 +57,7 @@ export default async function DashboardPage() {
         orgLogoVersion={organizationLogoUpdatedAt}
         active="dashboard"
       >
-        <div className="container-fluid py-4">
-          <div className="app-card">
-            <h2 className="h4 mb-2">Welcome, {displayName}</h2>
-            <p className="text-body-secondary mb-4">{organization}</p>
-            <p className="mb-4">
-              Your KPI dashboard and coaching insights will live here. For now,
-              explore your data sources and weekly plan.
-            </p>
-            <div className="d-flex flex-wrap gap-3">
-              <Link href={vaultHref} className="btn btn-primary">
-                Vault
-              </Link>
-              <Link href={planHref} className="btn btn-outline-primary">
-                90-day plan
-              </Link>
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <ClientMessagingPanel />
-          </div>
-        </div>
+        <ClientDashboardShell messagingContact={messagingContact} />
       </ClientLayout>
     );
   }

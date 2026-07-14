@@ -1,5 +1,9 @@
 "use server";
 
+import {
+  clearLandingPresence,
+  recordLandingPresence,
+} from "@/lib/auth/landing-presence";
 import { isStaffEmail, readUserRole, roleForSurface } from "@/lib/auth/roles";
 import { resolveAppHref } from "@/lib/surface-path";
 import { createClient } from "@/lib/supabase/server";
@@ -75,11 +79,18 @@ export async function signIn(
     }
   }
 
+  const displayName =
+    (user.user_metadata?.display_name as string | undefined) ??
+    user.email ??
+    (surface === "staff" ? "Staff" : "Client");
+  await recordLandingPresence(surface, displayName);
+
   redirect(await resolveAppHref("/dashboard", surface));
 }
 
 export async function signOut(surface: "client" | "staff") {
   const supabase = await createClient();
   await supabase.auth.signOut();
+  await clearLandingPresence(surface);
   redirect(await resolveAppHref("/login", surface));
 }

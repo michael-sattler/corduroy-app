@@ -58,13 +58,27 @@ export function computeProgressPct(
   return Math.max(0, Math.min(100, Math.round(pct)));
 }
 
-export function initiativeStatusTone(
-  status: string,
-): "success" | "warning" | "danger" {
-  if (status === "done") return "success";
-  if (status === "in_progress") return "warning";
-  if (status === "blocked") return "danger";
-  return "warning";
+export type PlanStatusTone = "muted" | "info" | "danger" | "success";
+
+/** Shared status pill colors: grey / blue / red / green. */
+export function planStatusTone(status: string): PlanStatusTone {
+  switch (status) {
+    case "done":
+      return "success";
+    case "in_progress":
+      return "info";
+    case "blocked":
+      return "danger";
+    case "not_started":
+    case "skipped":
+    default:
+      return "muted";
+  }
+}
+
+/** @deprecated Prefer planStatusTone — kept as an alias for existing call sites. */
+export function initiativeStatusTone(status: string): PlanStatusTone {
+  return planStatusTone(status);
 }
 
 export function taskStatusLabel(status: string): string {

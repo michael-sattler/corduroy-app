@@ -1,7 +1,7 @@
 export const STAFF_CLIENT_DETAIL_TABS = [
   { key: "dashboard", label: "Dashboard", documentTitle: "Staff Dashboard" },
   { key: "plan", label: "Current Plan", documentTitle: "Current Plan" },
-  { key: "admin", label: "Documents", documentTitle: "Vault" },
+  { key: "admin", label: "Vault", documentTitle: "Vault" },
 ] as const;
 
 export type StaffClientDetailTabKey =

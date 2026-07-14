@@ -1,5 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { type NextRequest, NextResponse } from "next/server";
+import {
+  PRESENCE_BRIDGE_COOKIE,
+  PRESENCE_BRIDGE_REF_COOKIE,
+} from "@/lib/auth/landing-presence-cookies";
 import { readUserRole, roleForSurface } from "@/lib/auth/roles";
 import { getPublicSupabaseConfig } from "@/lib/supabase/env";
 import {
@@ -67,6 +71,19 @@ function resolveRouting(host: string, pathname: string): ResolvedRouting | null 
     };
   }
 
+  // Staff messaging + activity APIs — handler verifies staff JWT / assignment.
+  if (
+    pathname.startsWith("/api/staff/messages") ||
+    pathname.startsWith("/api/staff/client-activity")
+  ) {
+    return {
+      surface: "staff",
+      pathPrefix: "",
+      internalPath: pathname,
+      pathBased: false,
+    };
+  }
+
   const subdomainSurface = getSurfaceFromHost(host);
 
   if (subdomainSurface === "client" || subdomainSurface === "staff") {
@@ -124,6 +141,28 @@ function copyResponseCookies(from: NextResponse, to: NextResponse) {
   });
 }
 
+function captureBridgeRef(request: NextRequest, response: NextResponse) {
+  const bridge = request.nextUrl.searchParams.get("bridge");
+  if (!bridge) {
+    return response;
+  }
+
+  response.cookies.set(PRESENCE_BRIDGE_REF_COOKIE, bridge, {
+    path: "/",
+    sameSite: "lax",
+    httpOnly: true,
+    maxAge: 60 * 60 * 24 * 365,
+  });
+  return response;
+}
+
+function bridgeSearchParams(request: NextRequest): Record<string, string> | undefined {
+  const bridge =
+    request.nextUrl.searchParams.get("bridge") ??
+    request.cookies.get(PRESENCE_BRIDGE_REF_COOKIE)?.value;
+  return bridge ? { bridge } : undefined;
+}
+
 function redirectTo(
   request: NextRequest,
   path: string,
@@ -171,6 +210,26 @@ export async function middleware(request: NextRequest) {
   const routing = resolveRouting(host, pathname);
 
   if (!routing) {
+    // Apex landing: ensure a stable bridge id so staff/app sessions can
+    // report presence back to this browser.
+    if (pathname === "/" || pathname === "") {
+      const bridge =
+        request.cookies.get(PRESENCE_BRIDGE_COOKIE)?.value ?? crypto.randomUUID();
+      const requestHeaders = new Headers(request.headers);
+      requestHeaders.set("x-corduroy-bridge", bridge);
+      const response = NextResponse.next({
+        request: { headers: requestHeaders },
+      });
+      if (!request.cookies.get(PRESENCE_BRIDGE_COOKIE)?.value) {
+        response.cookies.set(PRESENCE_BRIDGE_COOKIE, bridge, {
+          path: "/",
+          sameSite: "lax",
+          httpOnly: true,
+          maxAge: 60 * 60 * 24 * 365,
+        });
+      }
+      return response;
+    }
     return NextResponse.next();
   }
 
@@ -192,16 +251,19 @@ export async function middleware(request: NextRequest) {
   const isProtected = isProtectedPath(internalPath, surface);
 
   if (!isLoginPage && !isProtected) {
-    return nextWithSurface(request, routing);
+    return captureBridgeRef(request, nextWithSurface(request, routing));
   }
 
   const supabaseConfig = getPublicSupabaseConfig();
 
   if (!supabaseConfig) {
     if (isProtected) {
-      return redirectTo(request, "/login", pathPrefix);
+      return captureBridgeRef(
+        request,
+        redirectTo(request, "/login", pathPrefix, undefined, bridgeSearchParams(request)),
+      );
     }
-    return nextWithSurface(request, routing);
+    return captureBridgeRef(request, nextWithSurface(request, routing));
   }
 
   const { url: supabaseUrl, anonKey: supabaseAnonKey } = supabaseConfig;
@@ -241,19 +303,35 @@ export async function middleware(request: NextRequest) {
 
     if (role !== expectedRole && !isLoginPage) {
       await supabase.auth.signOut();
-      return redirectTo(request, "/login", pathPrefix, response, {
-        error: "wrong_surface",
-      });
+      return captureBridgeRef(
+        request,
+        redirectTo(request, "/login", pathPrefix, response, {
+          error: "wrong_surface",
+          ...bridgeSearchParams(request),
+        }),
+      );
     }
 
     if (isLoginPage) {
-      return redirectTo(request, defaultLandingPath(surface), pathPrefix, response);
+      return captureBridgeRef(
+        request,
+        redirectTo(request, defaultLandingPath(surface), pathPrefix, response),
+      );
     }
   } else if (isProtected) {
-    return redirectTo(request, "/login", pathPrefix, response);
+    return captureBridgeRef(
+      request,
+      redirectTo(
+        request,
+        "/login",
+        pathPrefix,
+        response,
+        bridgeSearchParams(request),
+      ),
+    );
   }
 
-  return response;
+  return captureBridgeRef(request, response);
 }
 
 export const config = {

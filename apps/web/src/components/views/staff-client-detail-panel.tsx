@@ -71,7 +71,7 @@ export function StaffClientDetailPanel({
   const logoSrc = withImageCacheBuster(client.logo_path, client.logo_updated_at);
 
   return (
-    <div className="app-card staff-dashboard-card" key={client.id}>
+    <div className="p-4 staff-dashboard-card" key={client.id}>
       <div className="staff-dashboard-client-header">
         <div className="d-flex gap-2 align-items-center min-w-0">
           <span className="staff-client-avatar-lg">

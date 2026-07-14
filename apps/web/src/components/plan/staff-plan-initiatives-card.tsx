@@ -2,7 +2,7 @@
 
 import { FontAwesomeIcon } from "@/lib/fontawesome";
 import { faDiagramProject } from "@/lib/fontawesome-icons";
-import { initiativeStatusTone } from "@/lib/plan/staff-plan-dashboard-format";
+import { planStatusTone } from "@/lib/plan/staff-plan-dashboard-format";
 import type { StaffPlanDashboardInitiative } from "@/lib/plan/staff-plan-dashboard-types";
 
 type StaffPlanInitiativesCardProps = {
@@ -15,7 +15,7 @@ export function StaffPlanInitiativesCard({
   onManage,
 }: StaffPlanInitiativesCardProps) {
   return (
-    <div className="plan-initiatives col-lg-7">
+    <div className="app-card staff-dashboard-panel h-100 staff-initiatives-card">
       <div className="d-flex justify-content-between align-items-center mb-2">
         <h3 className="staff-section-heading mb-0">Initiatives</h3>
         <button
@@ -31,7 +31,7 @@ export function StaffPlanInitiativesCard({
       </div>
       <div className="staff-stack-tight">
         {initiatives.map((initiative) => {
-          const tone = initiativeStatusTone(initiative.status);
+          const tone = planStatusTone(initiative.status);
           return (
             <div key={initiative.initiative_id} className="staff-milestone-row">
               <span className={`staff-milestone-dot ${tone}`} aria-hidden />

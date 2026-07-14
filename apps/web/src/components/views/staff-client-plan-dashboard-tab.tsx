@@ -6,14 +6,15 @@ import { StaffClientKpiEditorPanel } from "@/components/plan/staff-client-kpi-ed
 import { StaffClientPlanStructurePanel } from "@/components/plan/staff-client-plan-structure-panel";
 import { StaffClientTasksPanel } from "@/components/plan/staff-client-tasks-panel";
 import { StaffKpiObservationPanel } from "@/components/plan/staff-kpi-observation-panel";
+import { StaffFocusTasksCard } from "@/components/plan/staff-focus-tasks-card";
 import { StaffPlanGoalsCard } from "@/components/plan/staff-plan-goals-card";
 import { StaffPlanInitiativesCard } from "@/components/plan/staff-plan-initiatives-card";
+import { StaffTaskProgressCard } from "@/components/plan/staff-task-progress-card";
 import { FontAwesomeIcon } from "@/lib/fontawesome";
-import { faListCheck, faPen, faPlus } from "@/lib/fontawesome-icons";
+import { faPen, faPlus } from "@/lib/fontawesome-icons";
 import {
   formatMetricValue,
   formatPlanPeriod,
-  taskStatusLabel,
 } from "@/lib/plan/staff-plan-dashboard-format";
 import type {
   StaffPlanDashboard,
@@ -139,8 +140,16 @@ export function StaffClientPlanDashboardTab({
     );
   }
 
-  const { plan, current_month, kpis, initiatives, goals, task_counts, focus_tasks } =
-    dashboard;
+  const {
+    plan,
+    current_month,
+    kpis,
+    initiatives,
+    goals,
+    task_progress,
+    focus_tasks,
+    focus_weeks,
+  } = dashboard;
 
   return (
     <div className="staff-plan-dashboard">
@@ -155,8 +164,12 @@ export function StaffClientPlanDashboardTab({
             <p className="small text-body-secondary mb-0 mt-1">{current_month.theme}</p>
           ) : null}
         </div>
-        <div className="d-flex align-items-center gap-2">
-          <span className="badge staff-badge-on-track text-capitalize">{plan.status}</span>
+        <span className="badge staff-badge-on-track text-capitalize">{plan.status}</span>
+      </div>
+
+      <div className="app-card staff-dashboard-panel mb-2">
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <h3 className="staff-section-heading mb-0">Plan KPIs</h3>
           <button
             type="button"
             className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
@@ -168,87 +181,57 @@ export function StaffClientPlanDashboardTab({
             Edit KPIs
           </button>
         </div>
-      </div>
-
-      <div className="row g-2 staff-kpi-grid mb-3">
-        {kpis.map((kpi) => (
-          <div key={kpi.kpi_id} className="col-6 col-xl-3">
-            <div className={`staff-kpi-card${kpi.at_risk ? " at-risk" : ""}`}>
-              <button
-                type="button"
-                className="staff-kpi-observe"
-                onClick={() => setObserveKpi(kpi)}
-                title={`Record observation for ${kpi.label}`}
-                aria-label={`Record observation for ${kpi.label}`}
-              >
-                <FontAwesomeIcon icon={faPlus} />
-              </button>
-              <div className="small text-body-secondary text-truncate" title={kpi.label}>
-                {kpi.label}
-              </div>
-              <div className="staff-kpi-value">
-                {formatMetricValue(kpi.current_value, kpi.unit)}
-              </div>
-              <div className="small text-body-secondary">{kpiSubtext(kpi)}</div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      <div className="row g-3 mb-3">
-        <StaffPlanInitiativesCard
-          initiatives={initiatives}
-          onManage={() => setInitiativesEditorOpen(true)}
-        />
-        <StaffPlanGoalsCard
-          goals={goals}
-          taskCounts={task_counts}
-          onManage={() => setGoalsEditorOpen(true)}
-        />
-      </div>
-
-      <div>
-        <div className="d-flex justify-content-between align-items-center mb-2">
-          <h3 className="staff-section-heading mb-0">Focus tasks</h3>
-          <div className="d-flex align-items-center gap-2">
-            <span className="staff-dashboard-muted">
-              {focus_tasks.length} of {task_counts.total} open
-            </span>
-            <button
-              type="button"
-              className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
-              onClick={() => setTasksEditorOpen(true)}
-              title="Manage tasks"
-              aria-label="Manage tasks"
-            >
-              <FontAwesomeIcon icon={faListCheck} />
-              Manage
-            </button>
-          </div>
-        </div>
-        <div className="staff-milestone-list">
-          {focus_tasks.map((task, index) => (
-            <div key={task.task_id} className="staff-action-row">
-              <span className="staff-action-num">{index + 1}</span>
-              <div className="flex-grow-1 min-w-0">
-                <div className="fw-medium text-truncate">{task.label}</div>
-                <div className="small text-body-secondary text-truncate">
-                  {task.category} · {task.owner}
+        <div className="row g-2 staff-kpi-grid">
+          {kpis.map((kpi) => (
+            <div key={kpi.kpi_id} className="col-6 col-xl-3">
+              <div className={`staff-kpi-card${kpi.at_risk ? " at-risk" : ""}`}>
+                <button
+                  type="button"
+                  className="staff-kpi-observe"
+                  onClick={() => setObserveKpi(kpi)}
+                  title={`Record observation for ${kpi.label}`}
+                  aria-label={`Record observation for ${kpi.label}`}
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                </button>
+                <div className="small text-body-secondary text-truncate" title={kpi.label}>
+                  {kpi.label}
                 </div>
+                <div className="staff-kpi-value">
+                  {formatMetricValue(kpi.current_value, kpi.unit)}
+                </div>
+                <div className="small text-body-secondary">{kpiSubtext(kpi)}</div>
               </div>
-              <span
-                className={`badge staff-action-badge ${
-                  task.priority === "high"
-                    ? "warning"
-                    : task.status === "blocked"
-                      ? "danger"
-                      : "success"
-                }`}
-              >
-                {taskStatusLabel(task.status)}
-              </span>
             </div>
           ))}
+        </div>
+      </div>
+
+      <div className="row g-2 mb-2">
+        <div className="col-lg-7">
+          <StaffPlanInitiativesCard
+            initiatives={initiatives}
+            onManage={() => setInitiativesEditorOpen(true)}
+          />
+        </div>
+        <div className="col-lg-5">
+          <StaffPlanGoalsCard
+            goals={goals}
+            onManage={() => setGoalsEditorOpen(true)}
+          />
+        </div>
+      </div>
+
+      <div className="row g-2">
+        <div className="col-lg-8">
+          <StaffFocusTasksCard
+            weeks={focus_weeks ?? []}
+            fallbackTasks={focus_tasks}
+            onManage={() => setTasksEditorOpen(true)}
+          />
+        </div>
+        <div className="col-lg-4">
+          <StaffTaskProgressCard progress={task_progress} />
         </div>
       </div>
 
@@ -257,6 +240,7 @@ export function StaffClientPlanDashboardTab({
         onClose={() => setKpiEditorOpen(false)}
         title="Client KPIs"
         subtitle={clientName}
+        className="editor-drawer-kpis"
       >
         <StaffClientKpiEditorPanel clientId={clientId} active={kpiEditorOpen} />
       </EditorDrawer>
@@ -266,6 +250,7 @@ export function StaffClientPlanDashboardTab({
         onClose={() => setInitiativesEditorOpen(false)}
         title="Initiatives"
         subtitle={clientName}
+        className="editor-drawer-initiatives"
       >
         <StaffClientPlanStructurePanel
           clientId={clientId}
@@ -279,6 +264,7 @@ export function StaffClientPlanDashboardTab({
         onClose={() => setGoalsEditorOpen(false)}
         title="Plan goals"
         subtitle={clientName}
+        className="editor-drawer-goals"
       >
         <StaffClientPlanStructurePanel
           clientId={clientId}
@@ -292,6 +278,7 @@ export function StaffClientPlanDashboardTab({
         onClose={() => setTasksEditorOpen(false)}
         title="Tasks"
         subtitle={clientName}
+        className="editor-drawer-tasks"
       >
         <StaffClientTasksPanel clientId={clientId} active={tasksEditorOpen} />
       </EditorDrawer>
@@ -302,6 +289,7 @@ export function StaffClientPlanDashboardTab({
         title="Record observation"
         subtitle={observeKpi ? observeKpi.label : clientName}
         width="440px"
+        className="editor-drawer-observation"
       >
         {observeKpi ? (
           <StaffKpiObservationPanel

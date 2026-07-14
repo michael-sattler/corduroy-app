@@ -4,6 +4,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   computeProgressPct,
 } from "@/lib/plan/staff-plan-dashboard-format";
+import { computeStaffTaskProgress } from "@/lib/plan/staff-task-progress";
 import type {
   StaffPlanDashboard,
   StaffPlanDashboardInitiative,
@@ -11,6 +12,7 @@ import type {
   StaffPlanDashboardResponse,
   StaffPlanDashboardTask,
   StaffPlanDashboardTaskCounts,
+  StaffPlanFocusWeek,
 } from "@/lib/plan/staff-plan-dashboard-types";
 
 type PlanRow = {
@@ -61,6 +63,124 @@ function metricDefinitionForKpi(
   const definition = metric.metric_definitions;
   if (!definition) return null;
   return Array.isArray(definition) ? (definition[0] ?? null) : definition;
+}
+
+type PlanWeekInfo = {
+  id: string;
+  week_id: string;
+  week_number: number;
+  start_date: string;
+  end_date: string;
+};
+
+type TaskRow = {
+  task_id: string;
+  label: string;
+  status: string;
+  priority: string;
+  owner: string;
+  category: string;
+  task_week_refs:
+    | {
+        week_id: string | null;
+        plan_weeks: PlanWeekInfo | PlanWeekInfo[] | null;
+      }[]
+    | null;
+};
+
+function firstOrValue<T>(value: T | T[] | null | undefined): T | null {
+  if (!value) return null;
+  return Array.isArray(value) ? (value[0] ?? null) : value;
+}
+
+function taskDueDate(row: TaskRow): string | null {
+  let best: string | null = null;
+  for (const ref of row.task_week_refs ?? []) {
+    const week = firstOrValue(ref.plan_weeks);
+    if (!week?.end_date) continue;
+    if (!best || week.end_date > best) {
+      best = week.end_date;
+    }
+  }
+  return best;
+}
+
+function formatWeekTabLabel(weekNumber: number, start: string, end: string): string {
+  const startDate = new Date(`${start}T12:00:00`);
+  const endDate = new Date(`${end}T12:00:00`);
+  const startFmt = startDate.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+  });
+  const endFmt =
+    startDate.getMonth() === endDate.getMonth()
+      ? endDate.toLocaleDateString("en-US", { day: "numeric" })
+      : endDate.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  return `W${weekNumber} · ${startFmt}–${endFmt}`;
+}
+
+function buildFocusWeeks(
+  taskRows: TaskRow[],
+  weeks: PlanWeekInfo[],
+  today: string,
+): StaffPlanFocusWeek[] {
+  const weekById = new Map(weeks.map((week) => [week.id, week]));
+  const tasksByWeek = new Map<string, StaffPlanDashboardTask[]>();
+
+  for (const row of taskRows) {
+    const task: StaffPlanDashboardTask = {
+      task_id: row.task_id,
+      label: row.label,
+      status: row.status,
+      priority: row.priority,
+      owner: row.owner,
+      category: row.category,
+    };
+
+    const seen = new Set<string>();
+    for (const ref of row.task_week_refs ?? []) {
+      const week = firstOrValue(ref.plan_weeks);
+      const weekId = week?.id ?? ref.week_id;
+      if (!weekId || seen.has(weekId)) continue;
+      seen.add(weekId);
+
+      const existing = tasksByWeek.get(weekId) ?? [];
+      existing.push(task);
+      tasksByWeek.set(weekId, existing);
+    }
+  }
+
+  const priorityRank: Record<string, number> = {
+    high: 0,
+    medium: 1,
+    low: 2,
+  };
+
+  return [...tasksByWeek.entries()]
+    .map(([weekId, tasks]) => {
+      const week = weekById.get(weekId);
+      if (!week) return null;
+
+      const sortedTasks = [...tasks].sort((a, b) => {
+        const pa = priorityRank[a.priority] ?? 9;
+        const pb = priorityRank[b.priority] ?? 9;
+        if (pa !== pb) return pa - pb;
+        return a.label.localeCompare(b.label);
+      });
+
+      return {
+        id: week.id,
+        week_id: week.week_id,
+        week_number: week.week_number,
+        start_date: week.start_date,
+        end_date: week.end_date,
+        label: formatWeekTabLabel(week.week_number, week.start_date, week.end_date),
+        is_current: week.start_date <= today && today <= week.end_date,
+        tasks: sortedTasks,
+      } satisfies StaffPlanFocusWeek;
+    })
+    .filter((week): week is StaffPlanFocusWeek => week !== null)
+    .sort((a, b) => a.start_date.localeCompare(b.start_date));
 }
 
 function emptyTaskCounts(): StaffPlanDashboardTaskCounts {
@@ -170,23 +290,33 @@ export async function loadStaffPlanDashboard(
   const plan = planRow as PlanRow;
   const today = new Date().toISOString().slice(0, 10);
 
+  const { data: monthRows, error: monthsError } = await supabase
+    .from("plan_months")
+    .select("id, name, theme, start_date, end_date")
+    .eq("plan_id", plan.id)
+    .order("start_date");
+
+  if (monthsError) {
+    throw new Error(`months query failed: ${monthsError.message}`);
+  }
+
+  const months = monthRows ?? [];
+  const monthIds = months.map((month) => month.id as string);
+  const currentMonth =
+    months.find(
+      (month) => month.start_date <= today && today <= month.end_date,
+    ) ?? null;
+
   const [
-    { data: months, error: monthsError },
     { data: goals, error: goalsError },
     { data: kpiRows, error: kpiError },
     { data: initiatives, error: initiativesError },
     { data: tasks, error: tasksError },
+    { data: weeks, error: weeksError },
   ] = await Promise.all([
     supabase
-      .from("plan_months")
-      .select("name, theme, start_date, end_date")
-      .eq("plan_id", plan.id)
-      .lte("start_date", today)
-      .gte("end_date", today)
-      .maybeSingle(),
-    supabase
       .from("plan_goals")
-      .select("goal_id, label, target, priority")
+      .select("goal_id, label, description, target, priority")
       .eq("plan_id", plan.id)
       .order("priority"),
     supabase
@@ -226,23 +356,52 @@ export async function loadStaffPlanDashboard(
       .order("initiative_id"),
     supabase
       .from("plan_tasks")
-      .select("task_id, label, status, priority, owner, category")
+      .select(
+        `
+        task_id,
+        label,
+        status,
+        priority,
+        owner,
+        category,
+        task_week_refs (
+          week_id,
+          plan_weeks ( id, week_id, week_number, start_date, end_date )
+        )
+      `,
+      )
       .eq("plan_id", plan.id),
+    monthIds.length > 0
+      ? supabase
+          .from("plan_weeks")
+          .select("id, week_id, week_number, start_date, end_date")
+          .in("month_id", monthIds)
+          .order("start_date")
+      : Promise.resolve({ data: [] as PlanWeekInfo[], error: null }),
   ]);
 
   for (const [label, error] of [
-    ["months", monthsError],
     ["goals", goalsError],
     ["kpis", kpiError],
     ["initiatives", initiativesError],
     ["tasks", tasksError],
+    ["weeks", weeksError],
   ] as const) {
     if (error) {
       throw new Error(`${label} query failed: ${error.message}`);
     }
   }
 
-  const mappedTasks = (tasks ?? []) as StaffPlanDashboardTask[];
+  const taskRows = (tasks ?? []) as TaskRow[];
+  const weekRows = (weeks ?? []) as PlanWeekInfo[];
+  const mappedTasks: StaffPlanDashboardTask[] = taskRows.map((row) => ({
+    task_id: row.task_id,
+    label: row.label,
+    status: row.status,
+    priority: row.priority,
+    owner: row.owner,
+    category: row.category,
+  }));
   const mappedKpis = ((kpiRows ?? []) as KpiRow[]).map(mapKpi);
 
   const featuredKpiIds = [
@@ -261,6 +420,17 @@ export async function loadStaffPlanDashboard(
     ...mappedKpis.filter((k) => !featuredKpiIds.includes(k.kpi_id)),
   ].slice(0, 8);
 
+  const taskProgress = computeStaffTaskProgress(
+    taskRows.map((row) => ({
+      status: row.status,
+      due_date: taskDueDate(row),
+    })),
+    weekRows,
+    today,
+  );
+
+  const focusWeeks = buildFocusWeeks(taskRows, weekRows, today);
+
   const dashboard: StaffPlanDashboard = {
     plan: {
       plan_id: plan.plan_id,
@@ -269,14 +439,16 @@ export async function loadStaffPlanDashboard(
       period_end: plan.period_end,
       schema_version: plan.schema_version,
     },
-    current_month: months
-      ? { name: months.name, theme: months.theme }
+    current_month: currentMonth
+      ? { name: currentMonth.name, theme: currentMonth.theme }
       : null,
     goals: goals ?? [],
     kpis: featuredKpis,
     initiatives: (initiatives ?? []) as StaffPlanDashboardInitiative[],
     task_counts: countTasks(mappedTasks),
+    task_progress: taskProgress,
     focus_tasks: pickFocusTasks(mappedTasks),
+    focus_weeks: focusWeeks,
   };
 
   return { plan: dashboard };

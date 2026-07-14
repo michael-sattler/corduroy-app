@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { FontAwesomeIcon } from "@/lib/fontawesome";
 import { faPen } from "@/lib/fontawesome-icons";
-import { initiativeStatusTone } from "@/lib/plan/staff-plan-dashboard-format";
+import { planStatusTone } from "@/lib/plan/staff-plan-dashboard-format";
 import {
   updatePlanGoal,
   updatePlanInitiative,
@@ -102,10 +102,10 @@ function InitiativeCard({
     }
   }
 
-  const tone = initiativeStatusTone(initiative.status);
+  const tone = planStatusTone(initiative.status);
 
   return (
-    <div className="staff-structure-card">
+    <div className={`staff-structure-card status-${initiative.status}`}>
       <div className="staff-structure-card-main">
         <div className="staff-structure-card-head">
           {editing ? (
@@ -163,7 +163,7 @@ function InitiativeCard({
             <label className="staff-structure-edit-field w-100">
               <span className="staff-kpi-editor-label">Status</span>
               <select
-                className="form-select form-select-sm staff-structure-pill-select"
+                className={`form-select form-select-sm staff-structure-pill-select staff-status-select ${planStatusTone(status)}`}
                 value={status}
                 disabled={saving}
                 onChange={(event) => setStatus(event.target.value)}

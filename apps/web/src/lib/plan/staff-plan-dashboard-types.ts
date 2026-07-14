@@ -1,3 +1,7 @@
+import type { StaffPlanTaskProgress } from "@/lib/plan/staff-task-progress";
+
+export type { StaffPlanTaskProgress } from "@/lib/plan/staff-task-progress";
+
 export type StaffPlanDashboardKpi = {
   kpi_id: string;
   label: string;
@@ -29,6 +33,7 @@ export type StaffPlanDashboardInitiative = {
 export type StaffPlanDashboardGoal = {
   goal_id: string;
   label: string;
+  description: string;
   target: string;
   priority: number;
 };
@@ -40,6 +45,17 @@ export type StaffPlanDashboardTask = {
   priority: string;
   owner: string;
   category: string;
+};
+
+export type StaffPlanFocusWeek = {
+  id: string;
+  week_id: string;
+  week_number: number;
+  start_date: string;
+  end_date: string;
+  label: string;
+  is_current: boolean;
+  tasks: StaffPlanDashboardTask[];
 };
 
 export type StaffPlanDashboardTaskCounts = {
@@ -67,7 +83,9 @@ export type StaffPlanDashboard = {
   kpis: StaffPlanDashboardKpi[];
   initiatives: StaffPlanDashboardInitiative[];
   task_counts: StaffPlanDashboardTaskCounts;
+  task_progress: StaffPlanTaskProgress;
   focus_tasks: StaffPlanDashboardTask[];
+  focus_weeks: StaffPlanFocusWeek[];
 };
 
 export type StaffPlanDashboardResponse =

@@ -7,6 +7,7 @@ import {
   sanitizeMessages,
   STATUS_BY_CODE,
 } from "@/lib/llm/llm-provider";
+import { recordLlmPromptEvent } from "@/lib/llm/llm-prompt-events";
 import type {
   StaffLlmDialogueRequest,
   StaffLlmDialogueResponse,
@@ -49,15 +50,18 @@ function buildStubReply(
   );
 }
 
-async function resolveOrganization(
+async function resolveClientContext(
   supabase: Awaited<ReturnType<typeof createClient>>,
   userId: string,
-): Promise<string | null> {
+): Promise<{ organization: string | null; clientId: string | null }> {
   const { data } = await supabase
     .from("client_users")
-    .select("clients(name)")
+    .select("client_id, clients(name)")
     .eq("user_id", userId)
     .maybeSingle();
+
+  const clientId =
+    typeof data?.client_id === "string" ? data.client_id : null;
 
   const clientsJoin = (data as { clients?: unknown } | null)?.clients as
     | { name?: string | null }
@@ -65,7 +69,7 @@ async function resolveOrganization(
     | null
     | undefined;
   const record = Array.isArray(clientsJoin) ? clientsJoin[0] : clientsJoin;
-  return record?.name ?? null;
+  return { organization: record?.name ?? null, clientId };
 }
 
 export async function POST(request: Request) {
@@ -98,8 +102,19 @@ export async function POST(request: Request) {
 
     // Ground context is derived server-side from the session, never trusted
     // from the request body.
-    const organization = await resolveOrganization(supabase, user.id);
+    const { organization, clientId } = await resolveClientContext(
+      supabase,
+      user.id,
+    );
     const systemPrompt = buildSystemPrompt(organization);
+
+    if (clientId) {
+      await recordLlmPromptEvent(supabase, {
+        clientId,
+        userId: user.id,
+        surface: "client",
+      });
+    }
 
     const apiKey = getApiKey();
     const model = resolveModel();

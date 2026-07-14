@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { taskStatusLabel } from "@/lib/plan/staff-plan-dashboard-format";
+import { planStatusTone, taskStatusLabel } from "@/lib/plan/staff-plan-dashboard-format";
 import type {
   StaffPlanTaskItem,
   StaffPlanTasksResponse,
@@ -21,19 +21,6 @@ function formatDate(value: string | null): string {
     month: "short",
     day: "numeric",
   });
-}
-
-function statusTone(status: string): string {
-  switch (status) {
-    case "done":
-      return "success";
-    case "blocked":
-      return "danger";
-    case "in_progress":
-      return "warning";
-    default:
-      return "secondary";
-  }
 }
 
 function priorityTone(priority: string): string {
@@ -59,7 +46,9 @@ function TaskCard({ task }: { task: StaffPlanTaskItem }) {
           <span className={`badge text-bg-${priorityTone(task.priority)}`}>
             {task.priority}
           </span>
-          <span className={`badge staff-milestone-badge ${statusTone(task.status)}`}>
+          <span
+            className={`badge staff-milestone-badge ${planStatusTone(task.status)}`}
+          >
             {taskStatusLabel(task.status)}
           </span>
         </div>

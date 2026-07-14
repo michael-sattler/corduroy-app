@@ -14,6 +14,8 @@ type EditorDrawerProps = {
    */
   width?: string | number;
   footer?: React.ReactNode;
+  /** Extra class on the drawer root (e.g. editor-drawer-tasks). */
+  className?: string;
 };
 
 function resolveWidth(width: string | number | undefined): string {
@@ -40,6 +42,7 @@ export function EditorDrawer({
   children,
   width,
   footer,
+  className,
 }: EditorDrawerProps) {
   const titleId = useId();
 
@@ -71,7 +74,7 @@ export function EditorDrawer({
         aria-hidden={!open}
       />
       <aside
-        className={`editor-drawer${open ? " show" : ""}`}
+        className={`editor-drawer${open ? " show" : ""}${className ? ` ${className}` : ""}`}
         style={{ width: resolveWidth(width) }}
         role="dialog"
         aria-modal="true"

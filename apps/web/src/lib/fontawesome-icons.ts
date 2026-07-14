@@ -1,5 +1,9 @@
 export {
+  faBuilding,
+  faChartPie,
   faCheck,
+  faChevronLeft,
+  faChevronRight,
   faCloudArrowUp,
   faDiagramProject,
   faDownload,
@@ -13,4 +17,5 @@ export {
   faPlus,
   faShield,
   faTags,
+  faUserTie,
 } from "@fortawesome/free-solid-svg-icons";

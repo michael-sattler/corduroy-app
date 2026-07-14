@@ -32,7 +32,7 @@ export function AdminSidebar({ active, pathPrefix }: AdminSidebarProps) {
       </ul>
       <hr className="my-4" />
       <Link href={withAppPath("/dashboard", pathPrefix)} className="small admin-back-link">
-        ← Back to client portfolio
+        ← Back to clients
       </Link>
     </nav>
   );

@@ -5,6 +5,7 @@ import {
   signIn,
   type AuthActionState,
 } from "@/app/actions/auth";
+import { BrandCardHeader } from "@/components/brand-card-header";
 
 type LoginFormProps = {
   surface: "client" | "staff";
@@ -21,10 +22,19 @@ export function LoginForm({ surface, errorFromQuery }: LoginFormProps) {
 
   const error = state.error ?? errorFromQuery;
   const submitClass = surface === "client" ? "btn btn-warning" : "btn btn-dark";
+  const title = surface === "client" ? "Sign in" : "Staff sign in";
 
   return (
-    <form action={formAction} className="card shadow-sm" style={{ maxWidth: "28rem" }}>
+    <form
+      action={formAction}
+      className="card shadow-sm overflow-hidden w-100"
+      style={{ maxWidth: "28rem" }}
+    >
+      <BrandCardHeader />
       <div className="card-body p-4">
+        <h1 className="h6 text-uppercase text-body-secondary fw-semibold mb-3">
+          {title}
+        </h1>
         {error ? (
           <div className="alert alert-danger py-2" role="alert">
             {error}

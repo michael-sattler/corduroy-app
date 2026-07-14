@@ -1,3 +1,4 @@
+import { recordLandingPresence } from "@/lib/auth/landing-presence";
 import { requireSurface } from "@/lib/require-surface";
 import { resolveAppHref } from "@/lib/surface-path";
 import { createClient } from "@/lib/supabase/server";
@@ -74,14 +75,18 @@ export async function requireClientSession(): Promise<ClientContext> {
   const clientRecord = Array.isArray(clientsJoin) ? clientsJoin[0] : clientsJoin;
   const organization = clientRecord?.name ?? "Your organization";
 
+  const displayName =
+    resolvedProfile?.display_name ??
+    (user.user_metadata?.display_name as string | undefined) ??
+    user.email ??
+    "Client";
+
+  await recordLandingPresence("client", displayName);
+
   return {
     surface: "client",
     user,
-    displayName:
-      resolvedProfile?.display_name ??
-      (user.user_metadata?.display_name as string | undefined) ??
-      user.email ??
-      "Client",
+    displayName,
     organization,
     organizationLogoPath: clientRecord?.logo_path ?? null,
     organizationLogoUpdatedAt: clientRecord?.logo_updated_at ?? null,
@@ -123,13 +128,17 @@ export async function requireStaffSession(): Promise<StaffContext> {
       : null;
   }
 
+  const displayName =
+    (user.user_metadata?.display_name as string | undefined) ??
+    user.email ??
+    "Staff";
+
+  await recordLandingPresence("staff", displayName);
+
   return {
     surface: "staff",
     user,
-    displayName:
-      (user.user_metadata?.display_name as string | undefined) ??
-      user.email ??
-      "Staff",
+    displayName,
     role: resolvedStaff?.role ?? (user.app_metadata?.staff_role as string) ?? "staff",
     avatarPath: resolvedStaff?.avatar_path ?? null,
     avatarUpdatedAt: resolvedStaff?.avatar_updated_at ?? null,
