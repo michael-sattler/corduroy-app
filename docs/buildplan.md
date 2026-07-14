@@ -185,6 +185,7 @@ See [buildplan-vault.md](./buildplan-vault.md) for detailed steps.
 
    - [ ] Make widgets visual
    - [ ] Make tasks completable
+   - [ ] Test observability logging on KPIs
 
 
 
