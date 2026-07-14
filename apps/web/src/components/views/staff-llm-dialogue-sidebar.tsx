@@ -1,10 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   fetchStaffLlmStatus,
   requestStaffLlmDialogue,
   StaffLlmDialogueError,
+  type StaffLlmSurface,
 } from "@/lib/llm/staff-llm-dialogue-client";
 import type {
   StaffLlmConnectionState,
@@ -17,6 +18,9 @@ export const STAFF_LLM_DIALOGUE_MIN_WIDTH = 240;
 export const STAFF_LLM_DIALOGUE_MAX_WIDTH = 520;
 export const STAFF_LLM_DIALOGUE_WIDE_WIDTH = 480;
 
+const DEFAULT_STAFF_GREETING =
+  "I don't have any client context yet, but when I do I can help draft coach messages, summarize vault uploads, and suggest plan adjustments.";
+
 function clampWidth(width: number): number {
   return Math.min(
     STAFF_LLM_DIALOGUE_MAX_WIDTH,
@@ -24,12 +28,12 @@ function clampWidth(width: number): number {
   );
 }
 
-function readStoredWidth(): number {
+function readStoredWidth(storageKey: string): number {
   if (typeof window === "undefined") {
     return STAFF_LLM_DIALOGUE_DEFAULT_WIDTH;
   }
 
-  const stored = window.localStorage.getItem(STORAGE_KEY);
+  const stored = window.localStorage.getItem(storageKey);
   if (!stored) {
     return STAFF_LLM_DIALOGUE_DEFAULT_WIDTH;
   }
@@ -44,16 +48,23 @@ type StaffLlmDialogueSidebarProps = {
   width: number;
   onWidthChange: (width: number) => void;
   clientName?: string | null;
+  /** Which portal endpoints to talk to. Defaults to the staff console. */
+  surface?: StaffLlmSurface;
+  /** Assistant display name shown in the header. */
+  title?: string;
+  /** Header subtitle. When omitted, falls back to client-selection copy. */
+  subtitle?: string;
+  /** Opening assistant message. */
+  greeting?: string;
+  /** Composer placeholder text. */
+  placeholder?: string;
+  /** Accessible label for the pane. */
+  ariaLabel?: string;
+  /** localStorage key used to persist the pane width. */
+  storageKey?: string;
 };
 
 type DialogueEntry = StaffLlmMessage & { id: string };
-
-const GREETING: DialogueEntry = {
-  id: "greeting",
-  role: "assistant",
-  content:
-    "I don't have any client context yet, but when I do I can help draft coach messages, summarize vault uploads, and suggest plan adjustments.",
-};
 
 let messageCounter = 0;
 function nextMessageId(): string {
@@ -84,12 +95,24 @@ export function StaffLlmDialogueSidebar({
   width,
   onWidthChange,
   clientName,
+  surface = "staff",
+  title = "Zophia",
+  subtitle,
+  greeting = DEFAULT_STAFF_GREETING,
+  placeholder = "Ask about plan progress, draft coaching, or vault context…",
+  ariaLabel = "Zophia dialogue",
+  storageKey = STORAGE_KEY,
 }: StaffLlmDialogueSidebarProps) {
   const asideRef = useRef<HTMLElement>(null);
   const threadRef = useRef<HTMLDivElement>(null);
   const [isResizing, setIsResizing] = useState(false);
 
-  const [messages, setMessages] = useState<DialogueEntry[]>([GREETING]);
+  const greetingEntry = useMemo<DialogueEntry>(
+    () => ({ id: "greeting", role: "assistant", content: greeting }),
+    [greeting],
+  );
+
+  const [messages, setMessages] = useState<DialogueEntry[]>([greetingEntry]);
   const [draft, setDraft] = useState("");
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -100,7 +123,7 @@ export function StaffLlmDialogueSidebar({
   const refreshConnection = useCallback(async (signal?: AbortSignal) => {
     setConnection("checking");
     try {
-      const status = await fetchStaffLlmStatus(signal);
+      const status = await fetchStaffLlmStatus(signal, surface);
       setConnection(status.state);
       setConnectionDetail(status.detail ?? null);
       setConnectionModel(status.model);
@@ -112,7 +135,7 @@ export function StaffLlmDialogueSidebar({
       setConnectionDetail("Could not reach the assistant status endpoint.");
       setConnectionModel(null);
     }
-  }, []);
+  }, [surface]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -146,12 +169,16 @@ export function StaffLlmDialogueSidebar({
     setIsSending(true);
 
     try {
-      const result = await requestStaffLlmDialogue({
-        messages: history
-          .filter((entry) => entry.id !== GREETING.id)
-          .map(({ role, content }) => ({ role, content })),
-        clientName: clientName ?? null,
-      });
+      const result = await requestStaffLlmDialogue(
+        {
+          messages: history
+            .filter((entry) => entry.id !== greetingEntry.id)
+            .map(({ role, content }) => ({ role, content })),
+          clientName: clientName ?? null,
+        },
+        undefined,
+        surface,
+      );
 
       setMessages((current) => [
         ...current,
@@ -191,7 +218,7 @@ export function StaffLlmDialogueSidebar({
     } finally {
       setIsSending(false);
     }
-  }, [draft, isSending, messages, clientName]);
+  }, [draft, isSending, messages, clientName, surface, greetingEntry.id]);
 
   const canSend = draft.trim().length > 0 && !isSending;
 
@@ -199,9 +226,9 @@ export function StaffLlmDialogueSidebar({
     (nextWidth: number) => {
       const clamped = clampWidth(nextWidth);
       onWidthChange(clamped);
-      window.localStorage.setItem(STORAGE_KEY, String(clamped));
+      window.localStorage.setItem(storageKey, String(clamped));
     },
-    [onWidthChange],
+    [onWidthChange, storageKey],
   );
 
   useEffect(() => {
@@ -246,7 +273,7 @@ export function StaffLlmDialogueSidebar({
     <aside
       ref={asideRef}
       className={`staff-llm-dialogue-sidebar${isResizing ? " is-resizing" : ""}`}
-      aria-label="Zophia dialogue"
+      aria-label={ariaLabel}
     >
       <div
         className="staff-llm-dialogue-resize-handle"
@@ -297,11 +324,12 @@ export function StaffLlmDialogueSidebar({
 
         <header className="staff-llm-dialogue-header">
           <div className="min-w-0">
-            <div className="staff-llm-dialogue-title">Zophia</div>
+            <div className="staff-llm-dialogue-title">{title}</div>
             <div className="staff-llm-dialogue-subtitle text-truncate">
-              {clientName
-                ? `Context: ${clientName}`
-                : "Select a client for grounded responses"}
+              {subtitle ??
+                (clientName
+                  ? `Context: ${clientName}`
+                  : "Select a client for grounded responses")}
             </div>
           </div>
           <div className="staff-llm-dialogue-width-controls">
@@ -331,7 +359,7 @@ export function StaffLlmDialogueSidebar({
               className={`staff-llm-message staff-llm-message-${message.role}`}
             >
               <div className="staff-llm-message-label">
-                {message.role === "assistant" ? "Zophia" : "You"}
+                {message.role === "assistant" ? title : "You"}
               </div>
               <div className="staff-llm-message-bubble">{message.content}</div>
             </div>
@@ -339,7 +367,7 @@ export function StaffLlmDialogueSidebar({
 
           {isSending ? (
             <div className="staff-llm-message staff-llm-message-assistant">
-              <div className="staff-llm-message-label">Zophia</div>
+              <div className="staff-llm-message-label">{title}</div>
               <div className="staff-llm-message-bubble staff-llm-message-typing">
                 <span />
                 <span />
@@ -366,8 +394,8 @@ export function StaffLlmDialogueSidebar({
             <textarea
               className="staff-llm-composer-input"
               rows={2}
-              placeholder="Ask about plan progress, draft coaching, or vault context…"
-              aria-label="Message Zophia"
+              placeholder={placeholder}
+              aria-label={`Message ${title}`}
               value={draft}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
@@ -379,7 +407,7 @@ export function StaffLlmDialogueSidebar({
             />
             <button
               type="submit"
-              className="btn btn-sm btn-primary"
+              className="btn btn-sm btn-primary plan-send-btn"
               disabled={!canSend}
             >
               {isSending ? "…" : "Send"}
@@ -394,12 +422,14 @@ export function StaffLlmDialogueSidebar({
   );
 }
 
-export function useStaffLlmDialogueWidth(): [number, (width: number) => void] {
+export function useStaffLlmDialogueWidth(
+  storageKey: string = STORAGE_KEY,
+): [number, (width: number) => void] {
   const [width, setWidth] = useState(STAFF_LLM_DIALOGUE_DEFAULT_WIDTH);
 
   useEffect(() => {
-    setWidth(readStoredWidth());
-  }, []);
+    setWidth(readStoredWidth(storageKey));
+  }, [storageKey]);
 
   return [width, setWidth];
 }

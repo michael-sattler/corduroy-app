@@ -41,7 +41,7 @@
 ### A2. Supabase (identity)
 
 - [DONE] Create/link Supabase project `corduroy-app` — ref `iggvqbqqzujixshiffqe` (see [supabase-setup.md](./supabase-setup.md); run `npx supabase login` + `npx supabase link` locally)
-- [ ] Enable Supabase Auth (email/password for v1; magic link optional) — **Dashboard step** (documented in supabase-setup.md)
+- [DONE] Enable Supabase Auth (email/password for v1; magic link optional) — **Dashboard step** (documented in supabase-setup.md); live sign-in works on both subdomains
 - [DONE] Define roles in `app_metadata`: `client` | `staff` (`staff_role` for sub-roles)
 - [DONE] Staff sign-in path (v1 pragmatic): `@corduroytech.ai` + `staff.approved` — enforced in A4 login UI
 - [DONE] Seed script: `npm run db:seed` → All-American Fitness, client user, staff user, assignment
@@ -57,7 +57,7 @@ Run as version-controlled SQL migrations in `supabase/migrations/`:
 - [DONE] Enable RLS on all tables; policies:
   - Client users: read own `client_users` row and own `clients` row only
   - Staff: read assigned clients via `staff_assignments` (broader staff policies come with Vault)
-- [ ] Apply migration to remote: `npm run db:push` (after `supabase link`)
+- [DONE] Apply migration to remote: `npm run db:push` (after `supabase link`)
 - [DONE] Defer for now: `audit_events`, `vault_objects`, `plans`, `milestones`, `tasks`
 
 ### A4. Auth integration in Next.js
@@ -134,16 +134,16 @@ See [railway-deploy.md](./railway-deploy.md).
 ### B2. CI/CD / Continuous Integration and Continuous Delivery
 
 - [DONE] GitHub Actions: lint + typecheck on PR
-- [ ] Supabase migrations applied via CI or documented CLI workflow
-- [ ] Railway: connect GitHub repo + deploy `apps/api` per [railway-deploy.md](./railway-deploy.md) (`railway.toml` at repo root)
+- [DONE] Supabase migrations applied via documented CLI workflow (`npm run db:push`; see supabase-setup.md) — CI-driven apply still optional
+- [DONE] Railway: connect GitHub repo + deploy `apps/api` per [railway-deploy.md](./railway-deploy.md) (`railway.toml` at repo root) — production vault presign/download runs through the deployed API
 
 ### B3. AWS account skeleton (no Vault yet)
 
 See [buildplan-vault.md](./buildplan-vault.md) for the full B3 + Phase 1 step-by-step checklist.
 
-- [ ] Dedicated VPC, S3 and KMS VPC endpoints (TDD §5.1)
-- [ ] IAM role stub for future Lambda execution role
-- [ ] Terraform or CDK layout in `infra/` — empty modules for buckets/Lambdas
+- [DONE] Dedicated VPC, S3 gateway + KMS interface endpoints (TDD §5.1) — applied in `dev`
+- [DONE] IAM execution-role stubs for AccessBroker + ContentProcessor Lambdas
+- [DONE] Terraform layout in `infra/` (`network`, `iam`, `kms`, `s3`, `vault-client`, `access-broker-lambda`, `content-processor-lambda`) + remote state backend
 
 ### B4. Remaining Phase 0 schema
 
@@ -158,30 +158,42 @@ See [buildplan-vault.md](./buildplan-vault.md) for the full B3 + Phase 1 step-by
 
 See [buildplan-vault.md](./buildplan-vault.md) for detailed steps.
 
-- [ ] IaC: per-client S3 bucket + KMS key provisioning
-- [ ] AccessBroker Lambda: pre-signed GET/PUT URLs, server-built keys, audit append
-- [ ] Upload flow: API → broker → browser PUT → S3 ObjectCreated trigger
-- [ ] ContentDispatcher Lambda: extract, derived writes, catalog upsert
+- [DONE] IaC: per-client S3 bucket + KMS key provisioning (seed client All-American Fitness)
+- [DONE] AccessBroker Lambda: pre-signed GET/PUT URLs, server-built keys, audit append
+- [DONE] Upload flow: API → broker → browser PUT → S3 ObjectCreated trigger
+- [DONE] ContentProcessor Lambda: type sniff + catalog upsert + ingest audit (derived/context writes deferred)
 - [ ] Catalog reconciliation job
-- [ ] vault UI (add-source + repository views)
+- [DONE] Vault UI (client add-source + repository; staff vault panel for selected client)
 - [ ] Security checkpoint: cross-client access review, canary, break-glass runbook
+
+
+   - [ ] group documents by the new classification system
+   - [ ] Add a div under the Add data source that explains which files are needed and when
+   - [ ] make card headers (Add data source, Data Repository) smaller and all caps - same as plan-sidebar-label
 
 ---
 
 ## Phase 2 — 90-Day Planner (TDD §12 items 12–16)
 
-- [ ] Generation pipeline (Audit + Vault context → structured plan JSON)
-- [ ] Plan schema in Postgres (`plans`, `milestones`, `tasks`, `plan_edits`)
-- [ ] Advisor review queue + edit-rate tracking
-- [ ] Client plan view (read, mark complete, comment)
+- [ ] Generation pipeline (Audit + Vault context → structured plan JSON) — **partial:** JSON validation + ingest **stub** only (`lib/plan/validate-plan-document.ts`, `lib/plan/ingest-plan.ts`); no LLM/audit generation. Plan data currently loaded via a hand-authored AAF seed (`scripts/generate-aaf-plan-seed.mjs`)
+- [DONE] Plan schema in Postgres — `plans`, `plan_goals`, `plan_initiatives`, `plan_months`, `plan_weeks`, `plan_tasks`, `plan_kpis`, `plan_check_ins`, status history + join tables (`supabase/migrations/20260710120000_plan_metric_schema.sql`). `plan_edits`/edit-rate tracking deferred
+- [DONE] Metric layer — `metric_definitions`, `metric_observations`, `client_metrics`, `dashboard_widgets` with append-only valid-time observations (stock/flow, derived formulas, current-value cache); core catalog seeded. Implements [docs-howwetrackmetrics.md](./docs-howwetrackmetrics.md) across migrations `20260710120000`, `20260713150000`, `20260713160000`, `20260713170000`
+- [ ] Advisor review queue + edit-rate tracking — **partial:** staff can edit goals/initiatives (`PATCH /api/staff/plan/structure`) and record metric observations; no review queue or edit-rate metric yet
+- [ ] Client plan view (read, mark complete, comment) — **partial:** read-only live dashboard shipped (weeks, goals, initiatives, KPIs, tasks via `/api/client/plan/dashboard`); mark-complete + comment not yet wired (task checkboxes are read-only)
+- [DONE] Client ↔ staff messaging thread — `client_messages` table + `GET/POST /api/{client,staff}/messages` + shared messaging sidebar (`20260713140000_client_messages.sql`)
 - [ ] End-to-end test with Elevated Concrete Solutions
+
+   - [ ] Make widgets visual
+   - [ ] Make tasks completable
+
+
 
 ---
 
 ## Deferred (Launch 2 per TDD §11)
 
-- KPI Dashboard (`dashboard_widgets`)
-- Daily Coaching + HITL escalation queue
+- KPI Dashboard (`dashboard_widgets`) — **partial:** single-stat KPI cards live on client + staff plan dashboards (`plan-kpi-widgets.tsx`); rich chart widgets (`trend_line`/`bar`/`traffic_light` via `dashboard_widgets`) still deferred
+- Daily Coaching + HITL escalation queue — **partial:** staff + client LLM assistant ("Zophia", L0 in-web dialogue) shipped; coaching automation + escalation queue still deferred (see [buildplan-llm.md](./buildplan-llm.md))
 - QuickBooks / connector integrations
 - Desktop agentic retrieval
 

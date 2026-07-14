@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { requireStaffApiUser, StaffApiAuthError } from "@/lib/auth/staff-api";
 import {
   getApiKey,
   ProviderError,
@@ -14,46 +13,71 @@ import type {
   StaffLlmErrorCode,
   StaffLlmMessage,
 } from "@/lib/llm/staff-llm-dialogue-types";
+import { createClient } from "@/lib/supabase/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function buildSystemPrompt(clientName?: string | null): string {
+function buildSystemPrompt(organization?: string | null): string {
   const base =
-    "You are Zophia, an operations assistant embedded in the Corduroy staff dashboard. " +
-    "You help coaches draft client messages, summarize vault uploads, and reason about 90-day plan execution. " +
-    "Keep responses concise, practical, and grounded in the staff context. Use plain language and short paragraphs.";
+    "You are Zophia, an assistant embedded in the Corduroy client portal. " +
+    "You help the client understand and execute their 90-day plan: explaining tasks, weekly focus, initiative themes, milestones, and KPI progress. " +
+    "Keep responses concise, encouraging, and practical. Use plain language and short paragraphs, and never invent plan details you have not been given.";
 
-  if (clientName) {
-    return `${base} The staff member is currently viewing the client "${clientName}"; ground your answers in that client's engagement context when relevant.`;
+  if (organization) {
+    return `${base} The client belongs to the organization "${organization}"; ground your answers in their 90-day plan when relevant.`;
   }
 
-  return `${base} No client is currently selected, so answer generally and suggest selecting a client for grounded responses.`;
+  return base;
 }
 
 function buildStubReply(
   messages: StaffLlmMessage[],
-  clientName?: string | null,
+  organization?: string | null,
 ): string {
   const lastUser = [...messages].reverse().find((m) => m.role === "user");
   const question = lastUser?.content.trim() ?? "";
-  const context = clientName
-    ? `for ${clientName}`
-    : "once a client is selected";
+  const context = organization ? `for ${organization}` : "for your plan";
 
   return (
     `Preview mode — no LLM provider is configured yet, so this is a placeholder response.\n\n` +
-    `When wired to a live model I'll answer ${context} by pulling milestone status, KPI deltas, ` +
-    `open tasks, and recent vault uploads.\n\n` +
+    `When wired to a live model I'll answer ${context} by walking through your weekly focus, ` +
+    `open tasks, initiative progress, and KPI trends.\n\n` +
     (question
       ? `You asked: “${question}”.`
       : `Send a message to get started.`)
   );
 }
 
+async function resolveOrganization(
+  supabase: Awaited<ReturnType<typeof createClient>>,
+  userId: string,
+): Promise<string | null> {
+  const { data } = await supabase
+    .from("client_users")
+    .select("clients(name)")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  const clientsJoin = (data as { clients?: unknown } | null)?.clients as
+    | { name?: string | null }
+    | { name?: string | null }[]
+    | null
+    | undefined;
+  const record = Array.isArray(clientsJoin) ? clientsJoin[0] : clientsJoin;
+  return record?.name ?? null;
+}
+
 export async function POST(request: Request) {
   try {
-    await requireStaffApiUser();
+    const supabase = await createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const body = (await request.json().catch(() => ({}))) as StaffLlmDialogueRequest;
     const messages = sanitizeMessages(body.messages);
@@ -72,17 +96,19 @@ export async function POST(request: Request) {
       );
     }
 
-    const clientName = body.clientName?.trim() || null;
-    const systemPrompt = buildSystemPrompt(clientName);
+    // Ground context is derived server-side from the session, never trusted
+    // from the request body.
+    const organization = await resolveOrganization(supabase, user.id);
+    const systemPrompt = buildSystemPrompt(organization);
 
     const apiKey = getApiKey();
     const model = resolveModel();
 
     if (!apiKey) {
       const response: StaffLlmDialogueResponse = {
-        reply: buildStubReply(messages, clientName),
+        reply: buildStubReply(messages, organization),
         model: "preview-stub",
-        grounded: Boolean(clientName),
+        grounded: Boolean(organization),
         live: false,
       };
       return NextResponse.json(response);
@@ -98,16 +124,12 @@ export async function POST(request: Request) {
     const response: StaffLlmDialogueResponse = {
       reply,
       model,
-      grounded: Boolean(clientName),
+      grounded: Boolean(organization),
       live: true,
     };
 
     return NextResponse.json(response);
   } catch (error) {
-    if (error instanceof StaffApiAuthError) {
-      return NextResponse.json({ error: error.message }, { status: error.status });
-    }
-
     if (error instanceof ProviderError) {
       return NextResponse.json(
         { error: error.message, code: error.code },

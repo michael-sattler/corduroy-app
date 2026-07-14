@@ -132,7 +132,7 @@ Done   | # | Step | Note
 -------|---|------|-------|
 [DONE] | 27–29 | init / plan / apply |
 [DONE] | 30 | Smoke checks (VPC, endpoints, role ARNs) |
-[    ] | 31 | Update [buildplan.md](./buildplan.md) B3 section |
+[DONE] | 31 | Update [buildplan.md](./buildplan.md) B3 section |
 
 ---
 

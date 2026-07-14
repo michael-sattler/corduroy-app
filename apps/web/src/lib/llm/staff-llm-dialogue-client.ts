@@ -5,6 +5,10 @@ import type {
   StaffLlmStatusResponse,
 } from "@/lib/llm/staff-llm-dialogue-types";
 
+// Which portal the dialogue endpoints belong to. Both surfaces speak the same
+// wire format; only the auth boundary and system prompt differ server-side.
+export type StaffLlmSurface = "staff" | "client";
+
 export class StaffLlmDialogueError extends Error {
   readonly code: StaffLlmErrorCode;
 
@@ -22,10 +26,11 @@ export class StaffLlmDialogueError extends Error {
 export async function requestStaffLlmDialogue(
   body: StaffLlmDialogueRequest,
   signal?: AbortSignal,
+  surface: StaffLlmSurface = "staff",
 ): Promise<StaffLlmDialogueResponse> {
   let res: Response;
   try {
-    res = await fetch("/api/staff/llm/dialogue", {
+    res = await fetch(`/api/${surface}/llm/dialogue`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
@@ -59,10 +64,11 @@ export async function requestStaffLlmDialogue(
 
 export async function fetchStaffLlmStatus(
   signal?: AbortSignal,
+  surface: StaffLlmSurface = "staff",
 ): Promise<StaffLlmStatusResponse> {
   let res: Response;
   try {
-    res = await fetch("/api/staff/llm/status", {
+    res = await fetch(`/api/${surface}/llm/status`, {
       method: "GET",
       cache: "no-store",
       signal,

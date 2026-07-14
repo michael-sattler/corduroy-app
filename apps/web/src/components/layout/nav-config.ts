@@ -1,3 +1,6 @@
+import type { IconDefinition } from "@/lib/fontawesome";
+import { faListCheck, faShield } from "@/lib/fontawesome-icons";
+
 export type ClientNavKey = "vault" | "plan" | "dashboard" | "coach";
 
 export type StaffNavKey = "portfolio" | "reviews" | "plan-editor" | "admin";
@@ -8,18 +11,19 @@ export const clientNavItems: {
   key: ClientNavKey;
   label: string;
   href: string;
+  icon?: IconDefinition;
   disabled?: boolean;
 }[] = [
-  { key: "dashboard", label: "Dashboard", href: "/dashboard" },
-  { key: "vault", label: "Vault", href: "/vault" },
-  { key: "plan", label: "90-day plan", href: "/plan" },
-  { key: "coach", label: "Coach", href: "/dashboard", disabled: true },
+  // Dashboard and Coach are temporarily hidden; the client portal defaults to the plan.
+  { key: "plan", label: "Current Plan", href: "/plan", icon: faListCheck },
+  { key: "vault", label: "Vault", href: "/vault", icon: faShield },
 ];
 
 export const staffNavItems: {
   key: StaffNavKey;
   label: string;
   href: string;
+  icon?: IconDefinition;
   disabled?: boolean;
 }[] = [
   { key: "portfolio", label: "Client portfolio", href: "/dashboard" },

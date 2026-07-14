@@ -21,12 +21,11 @@ export default async function VaultPage() {
       email={user.email ?? ""}
       avatarPath={avatarPath}
       avatarVersion={avatarUpdatedAt}
+      orgLogoPath={organizationLogoPath}
+      orgLogoVersion={organizationLogoUpdatedAt}
       active="vault"
     >
       <ClientVaultView
-        organization={organization}
-        organizationLogoPath={organizationLogoPath}
-        organizationLogoUpdatedAt={organizationLogoUpdatedAt}
         initialGroups={catalog.groups}
         initialHiddenGroups={catalog.hiddenGroups}
         initialCount={catalog.count}

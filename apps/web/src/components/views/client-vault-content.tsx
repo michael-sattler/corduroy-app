@@ -4,8 +4,6 @@
 
 import { VaultCatalogRepository } from "@/components/vault/vault-catalog-repository";
 import { VaultFileUpload } from "@/components/vault/vault-file-upload";
-import { FontAwesomeIcon } from "@/lib/fontawesome";
-import { faShield } from "@/lib/fontawesome-icons";
 
 import type {
 
@@ -22,13 +20,9 @@ import { vaultObjectsPath } from "@/lib/vault-api-context";
 import { useAppProgress } from "@/lib/app-progress";
 
 import { useToast } from "@/lib/toast";
-import { withImageCacheBuster } from "@/lib/platform-images-client";
 import { useCallback, useEffect, useState } from "react";
 
 type ClientVaultContentProps = {
-  organization: string;
-  organizationLogoPath?: string | null;
-  organizationLogoUpdatedAt?: string | null;
   initialGroups: VaultCatalogGroup[];
   initialHiddenGroups?: VaultCatalogGroup[];
   initialCount: number;
@@ -43,24 +37,6 @@ type CatalogStatus = "idle" | "loading" | "ready" | "error";
 
 
 
-const integrations = [
-
-  { name: "QuickBooks", connected: true },
-
-  { name: "Pipedrive", connected: true },
-
-  { name: "Quotient", connected: true },
-
-  { name: "AnswerConnect", connected: true },
-
-  { name: "Salesforce", connected: false },
-
-  { name: "Google Sheets", connected: false },
-
-];
-
-
-
 function sleep(ms: number) {
 
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -70,9 +46,6 @@ function sleep(ms: number) {
 
 
 export function ClientVaultContent({
-  organization,
-  organizationLogoPath = null,
-  organizationLogoUpdatedAt = null,
   initialGroups,
   initialHiddenGroups = [],
   initialCount,
@@ -304,33 +277,10 @@ export function ClientVaultContent({
 
 
 
-  const organizationLogoSrc = withImageCacheBuster(
-    organizationLogoPath,
-    organizationLogoUpdatedAt,
-  );
-
   return (
 
-    <div className="container-fluid py-4">
-      <div className="vault-header mb-4">
-        <div className="vault-header-title">
-          <span className="vault-header-icon" aria-hidden>
-            <FontAwesomeIcon icon={faShield} />
-          </span>
-          <span className="h1 vault-header-text mb-0">The Vault</span>
-        </div>
-        <div className="vault-header-logo">
-          {organizationLogoSrc ? (
-            <span className="vault-header-org-avatar">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={organizationLogoSrc} alt="" />
-            </span>
-          ) : null}
-          <span className="vault-header-org-name">{organization}</span>
-        </div>
-      </div>
-
-      <div className="row g-4">
+    <div className="container-fluid py-3 vault-page">
+      <div className="row g-3">
 
         <div className="col-lg-4">
 
@@ -338,7 +288,7 @@ export function ClientVaultContent({
 
             <h2 className="h5 mb-1">Add data source</h2>
 
-            <p className="text-body-secondary small mb-4">
+            <p className="text-body-secondary small mb-3">
 
               Upload files to your Vault
 
@@ -351,48 +301,6 @@ export function ClientVaultContent({
               onUploaded={(result, filename) => void handleUploaded(result, filename)}
 
             />
-
-          </div>
-
-
-
-          <div className="app-card mt-4">
-
-            <h2 className="h5 mb-1">Connect a system</h2>
-
-            <p className="text-body-secondary small mb-4">
-
-              Link external tools to sync data automatically
-
-            </p>
-
-
-
-            <div className="vault-placeholder-block mb-0">
-
-              <div className="vault-placeholder-label">Coming soon</div>
-
-              <div className="row g-2">
-
-                {integrations.map((item) => (
-
-                  <div key={item.name} className="col-6">
-
-                    <div className="integration-tile integration-tile-placeholder">
-
-                      <span>{item.name}</span>
-
-                      <span className="small text-body-secondary">Soon</span>
-
-                    </div>
-
-                  </div>
-
-                ))}
-
-              </div>
-
-            </div>
 
           </div>
 

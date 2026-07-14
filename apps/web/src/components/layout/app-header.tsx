@@ -18,6 +18,8 @@ type AppHeaderProps = {
   role?: string;
   avatarPath?: string | null;
   avatarVersion?: string | null;
+  orgLogoPath?: string | null;
+  orgLogoVersion?: string | null;
   active: ClientNavKey | StaffNavKey;
   guest?: boolean;
 };
@@ -30,6 +32,8 @@ export async function AppHeader({
   role,
   avatarPath,
   avatarVersion,
+  orgLogoPath = null,
+  orgLogoVersion = null,
   active,
   guest = false,
 }: AppHeaderProps) {
@@ -43,7 +47,12 @@ export async function AppHeader({
         <PageHead
           surface={surface}
           subtitle={subtitle}
-          homeHref={withAppPath("/dashboard", pathPrefix)}
+          orgLogoPath={orgLogoPath}
+          orgLogoVersion={orgLogoVersion}
+          homeHref={withAppPath(
+            surface === "client" ? "/plan" : "/dashboard",
+            pathPrefix,
+          )}
         />
         {surface === "client" ? (
           <TopNav surface="client" active={active as ClientNavKey} pathPrefix={pathPrefix} />

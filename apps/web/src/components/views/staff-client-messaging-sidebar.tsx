@@ -7,6 +7,7 @@ import {
   sendClientMessage,
 } from "@/lib/messaging/client-messaging-client";
 import type { ClientMessage } from "@/lib/messaging/client-messaging-types";
+import type { MessagingContact } from "@/lib/messaging/messaging-contact";
 
 const STORAGE_KEY = "corduroy.staff-messages-width";
 export const STAFF_MESSAGES_DEFAULT_WIDTH = 300;
@@ -23,12 +24,12 @@ function clampWidth(width: number): number {
   );
 }
 
-function readStoredWidth(): number {
+function readStoredWidth(storageKey: string): number {
   if (typeof window === "undefined") {
     return STAFF_MESSAGES_DEFAULT_WIDTH;
   }
 
-  const stored = window.localStorage.getItem(STORAGE_KEY);
+  const stored = window.localStorage.getItem(storageKey);
   if (!stored) {
     return STAFF_MESSAGES_DEFAULT_WIDTH;
   }
@@ -50,11 +51,33 @@ function formatTimestamp(iso: string): string {
   });
 }
 
+type MessagingSurface = "staff" | "client";
+
 type StaffClientMessagingSidebarProps = {
   width: number;
   onWidthChange: (width: number) => void;
   clientId?: string | null;
   clientName?: string | null;
+  /** Which portal endpoints to talk to. Defaults to the staff console. */
+  surface?: MessagingSurface;
+  /** Pane heading. */
+  title?: string;
+  /** Header subtitle. When omitted, falls back to staff client-selection copy. */
+  subtitle?: string;
+  /** Composer placeholder text. */
+  placeholder?: string;
+  /** Accessible label for the pane. */
+  ariaLabel?: string;
+  /** Accessible label for the composer textarea. */
+  composerAriaLabel?: string;
+  /** Label used for the other party when a message has no sender name. */
+  counterpartLabel?: string;
+  /** Copy shown when the thread has no messages yet. */
+  emptyLabel?: string;
+  /** Optional contact rendered as a chip in the pane header. */
+  contact?: MessagingContact | null;
+  /** localStorage key used to persist the pane width. */
+  storageKey?: string;
 };
 
 export function StaffClientMessagingSidebar({
@@ -62,7 +85,21 @@ export function StaffClientMessagingSidebar({
   onWidthChange,
   clientId,
   clientName,
+  surface = "staff",
+  title = "Messages",
+  subtitle,
+  placeholder,
+  ariaLabel = "Client messages",
+  composerAriaLabel = "Message the client",
+  counterpartLabel = "Client",
+  emptyLabel,
+  contact = null,
+  storageKey = STORAGE_KEY,
 }: StaffClientMessagingSidebarProps) {
+  const isStaff = surface === "staff";
+  // Staff must pick a client first; the client portal always talks to the
+  // logged-in client's own thread, so it is enabled unconditionally.
+  const enabled = isStaff ? Boolean(clientId) : true;
   const threadRef = useRef<HTMLDivElement>(null);
   const [isResizing, setIsResizing] = useState(false);
 
@@ -74,7 +111,7 @@ export function StaffClientMessagingSidebar({
 
   const loadMessages = useCallback(
     async (signal?: AbortSignal, options?: { quiet?: boolean }) => {
-      if (!clientId) {
+      if (isStaff && !clientId) {
         setMessages([]);
         return;
       }
@@ -84,7 +121,7 @@ export function StaffClientMessagingSidebar({
       }
 
       try {
-        const next = await fetchClientMessages("staff", clientId, signal);
+        const next = await fetchClientMessages(surface, clientId ?? null, signal);
         setMessages(next);
         setError(null);
       } catch (caught) {
@@ -104,7 +141,7 @@ export function StaffClientMessagingSidebar({
         }
       }
     },
-    [clientId],
+    [isStaff, surface, clientId],
   );
 
   useEffect(() => {
@@ -116,14 +153,14 @@ export function StaffClientMessagingSidebar({
   }, [loadMessages]);
 
   useEffect(() => {
-    if (!clientId) {
+    if (!enabled) {
       return;
     }
     const interval = window.setInterval(() => {
       void loadMessages(undefined, { quiet: true });
     }, POLL_INTERVAL_MS);
     return () => window.clearInterval(interval);
-  }, [clientId, loadMessages]);
+  }, [enabled, loadMessages]);
 
   useEffect(() => {
     const thread = threadRef.current;
@@ -134,7 +171,7 @@ export function StaffClientMessagingSidebar({
 
   const sendMessage = useCallback(async () => {
     const trimmed = draft.trim();
-    if (!trimmed || isSending || !clientId) {
+    if (!trimmed || isSending || !enabled) {
       return;
     }
 
@@ -143,7 +180,7 @@ export function StaffClientMessagingSidebar({
     setIsSending(true);
 
     try {
-      const created = await sendClientMessage("staff", clientId, trimmed);
+      const created = await sendClientMessage(surface, clientId ?? null, trimmed);
       setMessages((current) =>
         current.some((message) => message.id === created.id)
           ? current
@@ -159,17 +196,17 @@ export function StaffClientMessagingSidebar({
     } finally {
       setIsSending(false);
     }
-  }, [draft, isSending, clientId]);
+  }, [draft, isSending, enabled, surface, clientId]);
 
-  const canSend = draft.trim().length > 0 && !isSending && Boolean(clientId);
+  const canSend = draft.trim().length > 0 && !isSending && enabled;
 
   const setWidth = useCallback(
     (nextWidth: number) => {
       const clamped = clampWidth(nextWidth);
       onWidthChange(clamped);
-      window.localStorage.setItem(STORAGE_KEY, String(clamped));
+      window.localStorage.setItem(storageKey, String(clamped));
     },
-    [onWidthChange],
+    [onWidthChange, storageKey],
   );
 
   useEffect(() => {
@@ -213,7 +250,7 @@ export function StaffClientMessagingSidebar({
   return (
     <aside
       className={`staff-llm-dialogue-sidebar staff-msg-sidebar${isResizing ? " is-resizing" : ""}`}
-      aria-label="Client messages"
+      aria-label={ariaLabel}
     >
       <div
         className="staff-llm-dialogue-resize-handle"
@@ -237,11 +274,12 @@ export function StaffClientMessagingSidebar({
       <div className="staff-llm-dialogue-shell staff-msg-shell">
         <header className="staff-llm-dialogue-header">
           <div className="min-w-0">
-            <div className="staff-llm-dialogue-title">Messages</div>
+            <div className="staff-llm-dialogue-title">{title}</div>
             <div className="staff-llm-dialogue-subtitle text-truncate">
-              {clientName
-                ? `Direct thread with ${clientName}`
-                : "Select a client to message"}
+              {subtitle ??
+                (clientName
+                  ? `Direct thread with ${clientName}`
+                  : "Select a client to message")}
             </div>
           </div>
           <div className="staff-llm-dialogue-width-controls">
@@ -264,8 +302,28 @@ export function StaffClientMessagingSidebar({
           </div>
         </header>
 
+        {contact ? (
+          <div className="staff-msg-contact-chip" title={contact.displayName}>
+            {contact.avatarUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={contact.avatarUrl}
+                alt=""
+                className="staff-msg-contact-avatar"
+              />
+            ) : (
+              <span className="staff-msg-contact-avatar staff-msg-contact-avatar-fallback">
+                {contact.displayName.slice(0, 1).toUpperCase()}
+              </span>
+            )}
+            <span className="staff-msg-contact-name text-truncate">
+              {contact.displayName}
+            </span>
+          </div>
+        ) : null}
+
         <div className="staff-llm-dialogue-thread" ref={threadRef}>
-          {!clientId ? (
+          {!enabled ? (
             <div className="staff-msg-empty">
               Select a client from the list to start a conversation.
             </div>
@@ -273,11 +331,12 @@ export function StaffClientMessagingSidebar({
             <div className="staff-msg-empty">Loading messages…</div>
           ) : messages.length === 0 ? (
             <div className="staff-msg-empty">
-              No messages yet. Say hello to {clientName ?? "your client"}.
+              {emptyLabel ??
+                `No messages yet. Say hello to ${clientName ?? "your client"}.`}
             </div>
           ) : (
             messages.map((message) => {
-              const isOwn = message.sender_role === "staff";
+              const isOwn = message.sender_role === surface;
               return (
                 <div
                   key={message.id}
@@ -286,7 +345,7 @@ export function StaffClientMessagingSidebar({
                   }`}
                 >
                   <div className="staff-llm-message-label">
-                    {message.sender_name || (isOwn ? "You" : "Client")}
+                    {message.sender_name || (isOwn ? "You" : counterpartLabel)}
                     <span className="staff-msg-time">
                       {formatTimestamp(message.created_at)}
                     </span>
@@ -316,13 +375,14 @@ export function StaffClientMessagingSidebar({
               className="staff-llm-composer-input"
               rows={2}
               placeholder={
-                clientId
+                placeholder ??
+                (enabled
                   ? "Write a message to the client…"
-                  : "Select a client to message"
+                  : "Select a client to message")
               }
-              aria-label="Message the client"
+              aria-label={composerAriaLabel}
               value={draft}
-              disabled={!clientId}
+              disabled={!enabled}
               onChange={(event) => setDraft(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter" && !event.shiftKey) {
@@ -333,7 +393,7 @@ export function StaffClientMessagingSidebar({
             />
             <button
               type="submit"
-              className="btn btn-sm btn-primary"
+              className="btn btn-sm btn-primary plan-send-btn"
               disabled={!canSend}
             >
               {isSending ? "…" : "Send"}
@@ -348,12 +408,14 @@ export function StaffClientMessagingSidebar({
   );
 }
 
-export function useStaffMessagesWidth(): [number, (width: number) => void] {
+export function useStaffMessagesWidth(
+  storageKey: string = STORAGE_KEY,
+): [number, (width: number) => void] {
   const [width, setWidth] = useState(STAFF_MESSAGES_DEFAULT_WIDTH);
 
   useEffect(() => {
-    setWidth(readStoredWidth());
-  }, []);
+    setWidth(readStoredWidth(storageKey));
+  }, [storageKey]);
 
   return [width, setWidth];
 }

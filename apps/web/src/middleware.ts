@@ -148,6 +148,12 @@ function redirectTo(
 
 const CLIENT_PROTECTED = new Set(["/dashboard", "/vault", "/plan"]);
 
+// Where each surface lands by default (root redirect + post-login). The client
+// portal defaults to the plan while the dashboard is hidden.
+function defaultLandingPath(surface: "client" | "staff"): string {
+  return surface === "client" ? "/plan" : "/dashboard";
+}
+
 function isStaffProtected(pathname: string): boolean {
   return pathname === "/dashboard" || pathname.startsWith("/admin");
 }
@@ -172,12 +178,14 @@ export async function middleware(request: NextRequest) {
 
   if (routing.pathBased && pathname === pathPrefix) {
     return NextResponse.redirect(
-      new URL(withAppPath("/dashboard", pathPrefix), request.url),
+      new URL(withAppPath(defaultLandingPath(surface), pathPrefix), request.url),
     );
   }
 
   if (!routing.pathBased && pathname === "/") {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    return NextResponse.redirect(
+      new URL(defaultLandingPath(surface), request.url),
+    );
   }
 
   const isLoginPage = internalPath === "/login";
@@ -239,7 +247,7 @@ export async function middleware(request: NextRequest) {
     }
 
     if (isLoginPage) {
-      return redirectTo(request, "/dashboard", pathPrefix, response);
+      return redirectTo(request, defaultLandingPath(surface), pathPrefix, response);
     }
   } else if (isProtected) {
     return redirectTo(request, "/login", pathPrefix, response);

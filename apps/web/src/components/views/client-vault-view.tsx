@@ -2,9 +2,6 @@ import { ClientVaultContent } from "@/components/views/client-vault-content";
 import type { VaultCatalogGroup } from "@/lib/vault-catalog-types";
 
 type ClientVaultViewProps = {
-  organization: string;
-  organizationLogoPath?: string | null;
-  organizationLogoUpdatedAt?: string | null;
   initialGroups: VaultCatalogGroup[];
   initialHiddenGroups?: VaultCatalogGroup[];
   initialCount: number;
@@ -14,9 +11,6 @@ type ClientVaultViewProps = {
 };
 
 export function ClientVaultView({
-  organization,
-  organizationLogoPath = null,
-  organizationLogoUpdatedAt = null,
   initialGroups,
   initialHiddenGroups = [],
   initialCount,
@@ -26,9 +20,6 @@ export function ClientVaultView({
 }: ClientVaultViewProps) {
   return (
     <ClientVaultContent
-      organization={organization}
-      organizationLogoPath={organizationLogoPath}
-      organizationLogoUpdatedAt={organizationLogoUpdatedAt}
       initialGroups={initialGroups}
       initialHiddenGroups={initialHiddenGroups}
       initialCount={initialCount}

@@ -7,7 +7,7 @@
   --app-purple: #6d28d9;
   --app-purple-soft: #ede9fe;
   --app-staff-blue: #1f445f;
-  --app-staff-blue-soft: #748d9f;
+  --app-staff-blue-soft: rgba(31, 68, 95, 0.2);
   --app-staff-pale: #c1d2df;
 
   --app-lightest: #ffffff;
@@ -248,6 +248,25 @@ body {
   font-weight: 500;
 }
 
+.app-org-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.4rem;
+  background: #1e3a5f;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.app-org-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
 .app-brand {
   font-weight: 600;
   font-size: 0.95rem;
@@ -258,7 +277,22 @@ body {
   margin-left: 1rem;
 }
 
+/* Client header: center the nav links across the full header width. */
+.app-shell-client .app-topbar-inner {
+  position: relative;
+}
+
+.app-shell-client .app-nav-pills {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-left: 0;
+}
+
 .app-nav-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   padding: 0.4rem 0.85rem;
   border-radius: 999px;
   color: #6b7280;
@@ -273,13 +307,18 @@ body {
 }
 
 .app-nav-pill.active {
-  background: var(--app-purple-soft);
+  background: var(--app-staff-blue-soft);
   color: var(--app-purple);
 }
 
 .app-nav-pill.disabled {
   opacity: 0.45;
   pointer-events: none;
+}
+
+.app-nav-pill-icon {
+  font-size: 0.8em;
+  opacity: 0.85;
 }
 
 .app-nav-pill-staff {
@@ -335,72 +374,53 @@ body {
 
 /* Vault */
 
-.vault-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  flex-wrap: wrap;
+/* Vault page density — tighten padding and font sizes across the view. */
+.vault-page .app-card {
+  padding: 0.75rem;
 }
 
-.vault-header-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.vault-header-logo {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  margin-left: auto;
-  margin-right: 0px;
-  background: var(--app-medium);
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-}
-
-.vault-header-org-avatar {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.25rem;
-  height: 2.25rem;
-  border-radius: 0.5rem;
-  background: #1e3a5f;
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.7rem;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.vault-header-org-avatar img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  display: block;
-}
-
-.vault-header-org-name {
-  font-size: 0.95rem;
-  font-weight: 500;
-  color: #374151;
-}
-
-.vault-header-icon {
-  display: inline-flex;
-  align-items: center;
-  font-size: 1.25rem;
-  color: var(--app-primary);
-}
-
-.vault-header-text {
+.vault-page h2.h5 {
   font-size: 0.9rem;
-  color: var(--app-primary);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  margin-bottom: 0.1rem;
 }
+
+.vault-page .app-card > p.small {
+  font-size: 0.72rem;
+}
+
+.vault-page .vault-catalog-title {
+  font-size: 1rem;
+}
+
+.vault-page .vault-catalog-subtitle {
+  font-size: 0.75rem;
+}
+
+.vault-page .vault-catalog-rows {
+  gap: 0.35rem;
+}
+
+.vault-page .vault-source-row-wrap {
+  padding: 0.4rem 0.55rem;
+}
+
+.vault-page .vault-source-title {
+  font-size: 0.8rem;
+}
+
+.vault-page .vault-catalog-section {
+  margin-top: 0.75rem;
+}
+
+.vault-page .vault-dropzone {
+  padding: 1.25rem 1rem;
+}
+
+.vault-page .vault-dropzone-icon {
+  font-size: 1.25rem;
+  margin-bottom: 0.35rem;
+}
+
 .vault-dropzone {
   display: block;
   border: 2px dashed #d1d5db;
@@ -425,12 +445,12 @@ body {
 
 .vault-dropzone:hover:not(.vault-dropzone-busy) {
   border-color: var(--app-purple);
-  background: var(--app-purple-soft);
+  background: var(--app-staff-blue-soft);
 }
 
 .vault-dropzone-active {
   border-color: var(--app-purple);
-  background: var(--app-purple-soft);
+  background: var(--app-staff-blue-soft);
 }
 
 .vault-dropzone-busy {
@@ -581,7 +601,7 @@ body {
 }
 
 .vault-source-row-wrap:hover {
-  background: var(--app-purple-soft);
+  background: var(--app-staff-blue-soft);
 }
 
 .vault-source-row-wrap.pending {
@@ -851,13 +871,50 @@ body {
 }
 
 /* Plan */
-
+.plan-week-header {
+  background: var(--app-staff-blue);
+  color: #ffffff;
+}
+.plan-week-header p{color: #ffffff99;}
 .plan-sidebar-label {
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: #9ca3af;
+}
+
+.plan-send-btn,
+.plan-send-btn:hover,
+.plan-send-btn:focus,
+.plan-send-btn:active,
+.plan-send-btn:disabled {
+  background-color: var(--app-staff-blue);
+  border-color: var(--app-staff-blue);
+  color: #ffffff;
+}
+
+.plan-collapse-toggle {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  background: transparent;
+  color: #9ca3af;
+  padding: 0.15rem;
+  line-height: 0;
+  border-radius: 0.35rem;
+  cursor: pointer;
+}
+
+.plan-collapse-toggle:hover {
+  color: #4b5563;
+  background: #f3f4f6;
+}
+
+.plan-collapse-body {
+  margin-top: 0.5rem;
 }
 
 .plan-week-item {
@@ -868,15 +925,17 @@ body {
 }
 
 .plan-week-item.active {
-  background: var(--app-purple-soft);
+  background: var(--app-staff-blue-soft);
+  color: var(--app-staff-blue);
 }
+.plan-week-item.active .plan-week-dates, .plan-week-item.active  .plan-week-status{color: var(--app-staff-blue) !important;}
 
 .plan-week-progress {
   height: 0.35rem;
 }
 
 .plan-today-badge {
-  background: var(--app-purple-soft);
+  background: var(--app-staff-blue-soft);
   color: var(--app-purple);
   font-weight: 600;
 }
@@ -887,9 +946,10 @@ body {
 }
 
 .plan-status-tasks {
-  background: var(--app-purple-soft);
-  color: var(--app-purple);
+  background: var(--app-staff-blue-soft);
+  color: var(--app-staff-blue);
 }
+.plan-week-header .plan-status-tasks {color: #FFFFFF;}
 
 .plan-day-tabs {
   display: flex;
@@ -919,7 +979,7 @@ body {
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.25rem;
-  background: var(--app-purple-soft);
+  background: var(--app-staff-blue-soft);
   border-radius: 0.75rem;
 }
 
@@ -981,6 +1041,7 @@ body {
   align-items: flex-start;
   gap: 0.75rem;
   padding: 0.85rem 1rem;
+  background: var(--app-card);
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
   border-left-width: 3px;
@@ -1013,6 +1074,69 @@ body {
   font-size: 0.65rem;
   font-weight: 700;
   flex-shrink: 0;
+}
+
+/* Client plan view — tighter density, matching staff dashboard scale */
+
+.client-plan-view .app-card {
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.client-plan-view .plan-week-item {
+  padding: 0.35rem 0.5rem;
+}
+
+.client-plan-view .plan-week-dates {
+  font-size: 0.72rem;
+  line-height: 1.2;
+  margin-top: 0.1rem;
+}
+
+.client-plan-view .plan-week-progress {
+  margin-top: 0.3rem;
+}
+
+.client-plan-view .plan-week-status {
+  margin-top: 0.2rem;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #9ca3af;
+}
+
+.client-plan-view .plan-focus-banner {
+  padding: 0.6rem 0.8rem;
+  gap: 0.6rem;
+  border-radius: 0.5rem;
+}
+
+.client-plan-view .plan-task-row {
+  padding: 0.55rem 0.7rem;
+  gap: 0.5rem;
+}
+
+.client-plan-view .badge {
+  font-size: 0.68rem;
+}
+
+/* Task sections float their heading between the task cards */
+.plan-task-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.plan-task-section .plan-section-heading {
+  margin-top: 0.25rem;
+}
+
+/* Cap the leftmost week column so it doesn't stretch on wide screens */
+@media (min-width: 992px) {
+  .client-plan-view .plan-left-col {
+    max-width: 350px;
+  }
 }
 
 /* Plan KPI widgets */
@@ -2104,7 +2228,7 @@ body {
 }
 
 .staff-llm-width-btn.active {
-  background: var(--app-purple-soft);
+  background: var(--app-staff-blue-soft);
   color: var(--app-purple);
 }
 
@@ -2204,7 +2328,7 @@ body {
 }
 
 .staff-llm-message-user .staff-llm-message-bubble {
-  background: var(--app-purple-soft);
+  background: var(--app-staff-blue-soft);
   border-color: #ddd6fe;
 }
 
@@ -2268,6 +2392,43 @@ body {
   color: #b5bcc7;
 }
 
+.staff-msg-contact-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  align-self: flex-start;
+  max-width: 100%;
+  margin:5px auto;
+  padding: 0.2rem 0.55rem 0.2rem 0.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  background: #f9fafb;
+}
+
+.staff-msg-contact-avatar {
+  width: 1.4rem;
+  height: 1.4rem;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.staff-msg-contact-avatar-fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--app-staff-blue-soft);
+  color: var(--app-purple);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.staff-msg-contact-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+}
+
 /* Client-facing messaging card (same look, standalone card) */
 
 .client-msg-card {
@@ -2280,6 +2441,50 @@ body {
   max-height: 70vh;
   border: 0;
   border-radius: inherit;
+}
+
+/* Client 90-day plan + docked assistant rail (reuses the LLM dialogue pane) */
+
+.client-plan-shell {
+  --client-plan-assistant-width: 300px;
+  --client-plan-messages-width: 300px;
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+}
+
+.client-plan-shell-main {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.client-plan-shell .staff-llm-dialogue-sidebar {
+  flex: 0 0 auto;
+  width: var(--client-plan-assistant-width);
+  padding-right: 0.75rem;
+}
+
+.client-plan-shell .staff-msg-sidebar {
+  width: var(--client-plan-messages-width);
+}
+
+.client-plan-shell .staff-llm-dialogue-shell {
+  border-right: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+}
+
+@media (max-width: 991.98px) {
+  .client-plan-shell {
+    flex-direction: column;
+  }
+
+  .client-plan-shell .staff-llm-dialogue-sidebar {
+    position: static;
+    align-self: stretch;
+    width: auto;
+    height: 26rem;
+    padding: 0 0.75rem 0.75rem;
+  }
 }
 
 /* Slide panel (right offcanvas) */
@@ -2764,7 +2969,7 @@ body.editor-drawer-open {
   width: 4rem;
   height: 4rem;
   border-radius: 999px;
-  background: var(--app-purple-soft);
+  background: var(--app-staff-blue-soft);
   color: var(--app-purple);
   display: flex;
   align-items: center;
@@ -2833,7 +3038,7 @@ body.editor-drawer-open {
   height: 4rem;
   border-radius: 999px;
   color: var(--app-purple);
-  background: var(--app-purple-soft);
+  background: var(--app-staff-blue-soft);
   font-size: 1.5rem;
   font-weight: 700;
 }
@@ -2885,7 +3090,7 @@ body.editor-drawer-open {
   width: 2rem;
   height: 2rem;
   border-radius: 999px;
-  background: var(--app-purple-soft);
+  background: var(--app-staff-blue-soft);
   color: var(--app-purple);
   display: inline-flex;
   align-items: center;

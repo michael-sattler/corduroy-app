@@ -6,6 +6,7 @@ import {
   type ClientNavKey,
   type StaffNavKey,
 } from "@/components/layout/nav-config";
+import { FontAwesomeIcon } from "@/lib/fontawesome";
 import { withAppPath } from "@/lib/path-routing";
 
 type TopNavProps =
@@ -31,6 +32,13 @@ export function TopNav(props: TopNavProps) {
             className={navPillClass("client", item.key === props.active, item.disabled)}
             aria-current={item.key === props.active ? "page" : undefined}
           >
+            {item.icon ? (
+              <FontAwesomeIcon
+                icon={item.icon}
+                className="app-nav-pill-icon"
+                aria-hidden
+              />
+            ) : null}
             {item.label}
           </Link>
         ))}

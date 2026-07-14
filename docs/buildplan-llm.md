@@ -10,11 +10,11 @@
 
 ## Status (2026-07-13)
 
-**Shipped:** Preliminary end-to-end staff dialogue (L0) — the Zophia sidebar submits messages and renders live responses, calling **Anthropic** (phase-1 provider, client preference) directly from the Next.js server with a deterministic preview stub when no key is set.
+**Shipped:** Preliminary end-to-end dialogue (L0) on **both staff and client** surfaces — the Zophia sidebar submits messages and renders live responses, calling **Anthropic** (phase-1 provider, client preference) directly from the Next.js server with a deterministic preview stub when no key is set. Provider logic is now centralized in a shared module (`apps/web/src/lib/llm/llm-provider.ts`) used by the staff and client dialogue/status routes.
 
 | Layer | State |
 |-------|--------|
-| L0 — Preliminary in-web dialogue | **Shipped** |
+| L0 — Preliminary in-web dialogue (staff + client surfaces) | **Shipped** |
 | L1 — Web dialogue hardening (persistence, streaming, polish) | Not started |
 | L2 — API LLM gateway (provider custody + queue + proxy) | Deferred (later phase) |
 
@@ -58,6 +58,8 @@ This constraint threads into L1 (provider abstraction, persistence) and L2 (adap
 
 **Scope:** A working staff dialogue that runs entirely in `apps/web`. **Anthropic** (phase-1 provider) is called directly from the Next.js server route; the key lives in `apps/web/.env`. Falls back to a deterministic stub when unconfigured so the UI works with no provider.
 
+**Also shipped:** the same core + sidebar now power the **client** portal assistant on `/plan` — `POST /api/client/llm/dialogue`, `GET /api/client/llm/status`, grounded on the client's organization name, via the shared `lib/llm/llm-provider.ts` module.
+
 Done   | # | Step | Note
 -------|---|------|-------
 [DONE] | 1 | Message/request/response types | `apps/web/src/lib/llm/staff-llm-dialogue-types.ts` |
@@ -80,7 +82,7 @@ Done   | # | Step | Note
 
 Done   | # | Step | Note
 -------|---|------|-------
-[    ] | 1 | Provider abstraction in web (adapter interface) so L2 can lift it wholesale | prep for shared core; **retention/training controls as first-class config** |
+[PARTIAL] | 1 | Provider abstraction in web (adapter interface) so L2 can lift it wholesale | shared `lib/llm/llm-provider.ts` centralizes provider calls, error classification, sanitize + status probe (staff + client routes); still Anthropic-only, **retention/training controls not yet first-class config** |
 [    ] | 2 | Response **streaming** (SSE / ReadableStream) token-by-token | UX; biggest perceived-latency win |
 [    ] | 3 | Conversation **persistence** (Supabase table: thread + messages per staff/client) | **ours, not provider-side**; survive reloads, audit |
 [    ] | 3a | Select + configure **zero-retention (ZDR) provider tier**; BAA/DPA on file | no training, no server-side storage |

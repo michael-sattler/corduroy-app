@@ -35,8 +35,15 @@ export default async function DashboardPage() {
   const surface = await requireSurface();
 
   if (surface === "client") {
-    const { organization, displayName, user, avatarPath, avatarUpdatedAt } =
-      await requireClientSession();
+    const {
+      organization,
+      displayName,
+      user,
+      avatarPath,
+      avatarUpdatedAt,
+      organizationLogoPath,
+      organizationLogoUpdatedAt,
+    } = await requireClientSession();
     const vaultHref = await resolveAppHref("/vault", "client");
     const planHref = await resolveAppHref("/plan", "client");
 
@@ -47,6 +54,8 @@ export default async function DashboardPage() {
         email={user.email ?? ""}
         avatarPath={avatarPath}
         avatarVersion={avatarUpdatedAt}
+        orgLogoPath={organizationLogoPath}
+        orgLogoVersion={organizationLogoUpdatedAt}
         active="dashboard"
       >
         <div className="container-fluid py-4">
