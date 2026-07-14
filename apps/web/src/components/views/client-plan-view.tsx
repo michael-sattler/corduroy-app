@@ -48,6 +48,8 @@ export function ClientPlanView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedWeekId, setSelectedWeekId] = useState<string | null>(null);
+  const [completingTaskId, setCompletingTaskId] = useState<string | null>(null);
+  const [taskActionError, setTaskActionError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,7 +72,12 @@ export function ClientPlanView() {
 
         if (!cancelled) {
           setDashboard(body.plan);
-          setSelectedWeekId(body.plan ? defaultWeekId(body.plan.weeks) : null);
+          setSelectedWeekId((current) => {
+            if (current && body.plan?.weeks.some((week) => week.id === current)) {
+              return current;
+            }
+            return body.plan ? defaultWeekId(body.plan.weeks) : null;
+          });
         }
       } catch (err) {
         if (!cancelled) {
@@ -87,6 +94,48 @@ export function ClientPlanView() {
       cancelled = true;
     };
   }, []);
+
+  async function completeTask(task: ClientPlanTask) {
+    if (task.status === "done" || completingTaskId) return;
+
+    setTaskActionError(null);
+    setCompletingTaskId(task.id);
+
+    const previous = dashboard;
+    const completedAt = new Date().toISOString();
+
+    setDashboard((current) => {
+      if (!current) return current;
+      return {
+        ...current,
+        tasks: current.tasks.map((entry) =>
+          entry.id === task.id
+            ? { ...entry, status: "done", completed_at: completedAt }
+            : entry,
+        ),
+      };
+    });
+
+    try {
+      const res = await fetch("/api/client/plan/tasks", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ task_id: task.id, status: "done" }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { error?: string };
+
+      if (!res.ok) {
+        throw new Error(body.error ?? "Could not mark task done");
+      }
+    } catch (err) {
+      setDashboard(previous);
+      setTaskActionError(
+        err instanceof Error ? err.message : "Could not mark task done",
+      );
+    } finally {
+      setCompletingTaskId(null);
+    }
+  }
 
   const selectedWeek = useMemo(
     () => dashboard?.weeks.find((w) => w.id === selectedWeekId) ?? null,
@@ -244,11 +293,24 @@ export function ClientPlanView() {
               </span>
             </div>
 
+            {taskActionError ? (
+              <div className="alert alert-danger py-2 px-3 mb-0" role="alert">
+                {taskActionError}
+              </div>
+            ) : null}
+
             <TaskSection title="To do" count={todoTasks.length} icon="!" tone="danger">
               {todoTasks.length === 0 ? (
                 <EmptyTasks message="Nothing to do this week." />
               ) : (
-                todoTasks.map((task) => <TaskRow key={task.id} task={task} />)
+                todoTasks.map((task) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    busy={completingTaskId === task.id}
+                    onComplete={() => void completeTask(task)}
+                  />
+                ))
               )}
             </TaskSection>
 
@@ -261,7 +323,14 @@ export function ClientPlanView() {
               {inProgressTasks.length === 0 ? (
                 <EmptyTasks message="No tasks in progress this week." />
               ) : (
-                inProgressTasks.map((task) => <TaskRow key={task.id} task={task} />)
+                inProgressTasks.map((task) => (
+                  <TaskRow
+                    key={task.id}
+                    task={task}
+                    busy={completingTaskId === task.id}
+                    onComplete={() => void completeTask(task)}
+                  />
+                ))
               )}
             </TaskSection>
 
@@ -331,10 +400,30 @@ function TaskSection({
   );
 }
 
-function TaskRow({ task }: { task: ClientPlanTask }) {
+function TaskRow({
+  task,
+  busy,
+  onComplete,
+}: {
+  task: ClientPlanTask;
+  busy: boolean;
+  onComplete: () => void;
+}) {
   return (
     <div className={`plan-task-row ${priorityAccent(task.priority)}`}>
-      <input type="checkbox" className="form-check-input" readOnly />
+      <input
+        type="checkbox"
+        className="form-check-input"
+        checked={false}
+        disabled={busy}
+        onChange={(event) => {
+          if (event.target.checked) {
+            onComplete();
+          }
+        }}
+        aria-label={`Mark ${task.label} as done`}
+        title="Mark as done"
+      />
       <div className="flex-grow-1 min-w-0">
         <div className="fw-medium">{task.label}</div>
         <div className="d-flex gap-2 align-items-center mt-1 flex-wrap">
