@@ -54,7 +54,7 @@ export async function AppHeader({
             pathPrefix,
           )}
         />
-        {surface === "client" ? (
+        {guest ? null : surface === "client" ? (
           <TopNav surface="client" active={active as ClientNavKey} pathPrefix={pathPrefix} />
         ) : (
           <TopNav surface="staff" active={active as StaffNavKey} pathPrefix={pathPrefix} />
