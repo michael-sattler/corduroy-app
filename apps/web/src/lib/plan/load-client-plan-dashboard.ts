@@ -1,16 +1,15 @@
 import "server-only";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { computeProgressPct } from "@/lib/plan/staff-plan-dashboard-format";
 import type {
   ClientPlanDashboard,
   ClientPlanDashboardResponse,
   ClientPlanGoal,
   ClientPlanInitiative,
-  ClientPlanKpi,
   ClientPlanTask,
   ClientPlanWeek,
 } from "@/lib/plan/client-plan-dashboard-types";
+import { loadDashboardWidgets } from "@/lib/widgets/load-dashboard-widgets";
 
 type PlanRow = {
   id: string;
@@ -65,74 +64,9 @@ type TaskRow = {
   task_week_refs: { week_id: string }[] | null;
 };
 
-type KpiDefinition = {
-  id: string;
-  metric_key: string;
-  label: string;
-  unit: string;
-  kind: string;
-  stock_flow: string | null;
-};
-
-type KpiClientMetric = {
-  id: string;
-  current_value: number | null;
-  current_value_observed_on: string | null;
-  source_binding: string;
-  metric_definitions: KpiDefinition | KpiDefinition[] | null;
-};
-
-type KpiRow = {
-  kpi_id: string;
-  baseline_snapshot: number | null;
-  baseline_established: boolean;
-  target: string;
-  target_value: number | null;
-  client_metrics: KpiClientMetric | KpiClientMetric[] | null;
-};
-
-const FEATURED_KPI_IDS = [
-  "kpi-005",
-  "kpi-004",
-  "kpi-006",
-  "kpi-013",
-  "kpi-001",
-  "kpi-010",
-];
-
 function firstOrValue<T>(value: T | T[] | null): T | null {
   if (!value) return null;
   return Array.isArray(value) ? (value[0] ?? null) : value;
-}
-
-function mapKpi(row: KpiRow): ClientPlanKpi {
-  const clientMetric = firstOrValue(row.client_metrics);
-  const definition = clientMetric
-    ? firstOrValue(clientMetric.metric_definitions)
-    : null;
-  const current = clientMetric?.current_value ?? null;
-  const progress = computeProgressPct(
-    row.baseline_snapshot,
-    current,
-    row.target_value,
-  );
-
-  return {
-    kpi_id: row.kpi_id,
-    label: definition?.label ?? row.kpi_id,
-    unit: definition?.unit ?? "ratio",
-    current_value: current,
-    current_value_observed_on: clientMetric?.current_value_observed_on ?? null,
-    baseline_established: row.baseline_established,
-    target: row.target,
-    target_value: row.target_value,
-    progress_pct: progress,
-    at_risk:
-      row.baseline_established &&
-      progress !== null &&
-      progress < 40 &&
-      row.target_value !== null,
-  };
 }
 
 function weekStatus(
@@ -145,9 +79,33 @@ function weekStatus(
   return "upcoming";
 }
 
+async function resolveClientId(supabase: SupabaseClient): Promise<string | null> {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return null;
+
+  const { data, error } = await supabase
+    .from("client_users")
+    .select("client_id")
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(`Client membership query failed: ${error.message}`);
+  }
+
+  return (data?.client_id as string | undefined) ?? null;
+}
+
 export async function loadClientPlanDashboard(
   supabase: SupabaseClient,
 ): Promise<ClientPlanDashboardResponse> {
+  const clientId = await resolveClientId(supabase);
+  const widgets = clientId
+    ? await loadDashboardWidgets(supabase, clientId)
+    : [];
+
   const { data: planRow, error: planError } = await supabase
     .from("plans")
     .select("id, plan_id, status, period_start, period_end")
@@ -161,7 +119,7 @@ export async function loadClientPlanDashboard(
   }
 
   if (!planRow) {
-    return { plan: null };
+    return { plan: null, widgets };
   }
 
   const plan = planRow as PlanRow;
@@ -185,7 +143,6 @@ export async function loadClientPlanDashboard(
     { data: goalRows, error: goalsError },
     { data: initiativeRows, error: initiativesError },
     { data: taskRows, error: tasksError },
-    { data: kpiRows, error: kpiError },
   ] = await Promise.all([
     monthIds.length > 0
       ? supabase
@@ -229,33 +186,6 @@ export async function loadClientPlanDashboard(
       `,
       )
       .eq("plan_id", plan.id),
-    supabase
-      .from("plan_kpis")
-      .select(
-        `
-        kpi_id,
-        baseline_snapshot,
-        baseline_established,
-        target,
-        target_value,
-        client_metrics (
-          id,
-          current_value,
-          current_value_observed_on,
-          source_binding,
-          metric_definitions (
-            id,
-            metric_key,
-            label,
-            unit,
-            kind,
-            stock_flow
-          )
-        )
-      `,
-      )
-      .eq("plan_id", plan.id)
-      .order("kpi_id"),
   ]);
 
   for (const [label, error] of [
@@ -263,7 +193,6 @@ export async function loadClientPlanDashboard(
     ["goals", goalsError],
     ["initiatives", initiativesError],
     ["tasks", tasksError],
-    ["kpis", kpiError],
   ] as const) {
     if (error) {
       throw new Error(`${label} query failed: ${error.message}`);
@@ -345,15 +274,6 @@ export async function loadClientPlanDashboard(
     week_ids: (t.task_week_refs ?? []).map((r) => r.week_id),
   }));
 
-  const mappedKpis = ((kpiRows ?? []) as unknown as KpiRow[]).map(mapKpi);
-  const kpiById = new Map(mappedKpis.map((k) => [k.kpi_id, k]));
-  const featuredKpis = [
-    ...FEATURED_KPI_IDS.map((id) => kpiById.get(id)).filter(
-      (k): k is ClientPlanKpi => k !== undefined,
-    ),
-    ...mappedKpis.filter((k) => !FEATURED_KPI_IDS.includes(k.kpi_id)),
-  ].slice(0, 6);
-
   const currentMonth =
     months.find((m) => todayIso >= m.start_date && todayIso <= m.end_date) ??
     null;
@@ -372,8 +292,8 @@ export async function loadClientPlanDashboard(
     goals: (goalRows ?? []) as ClientPlanGoal[],
     initiatives,
     tasks: mappedTasks,
-    kpis: featuredKpis,
+    kpis: [],
   };
 
-  return { plan: dashboard };
+  return { plan: dashboard, widgets };
 }

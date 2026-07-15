@@ -14,6 +14,7 @@ import type {
   StaffPlanDashboardTaskCounts,
   StaffPlanFocusWeek,
 } from "@/lib/plan/staff-plan-dashboard-types";
+import { loadDashboardWidgets } from "@/lib/widgets/load-dashboard-widgets";
 
 type PlanRow = {
   id: string;
@@ -281,6 +282,8 @@ export async function loadStaffPlanDashboard(
   supabase: SupabaseClient,
   clientId: string,
 ): Promise<StaffPlanDashboardResponse> {
+  const widgets = await loadDashboardWidgets(supabase, clientId);
+
   const { data: planRow, error: planError } = await supabase
     .from("plans")
     .select("id, plan_id, status, period_start, period_end, schema_version")
@@ -295,7 +298,7 @@ export async function loadStaffPlanDashboard(
   }
 
   if (!planRow) {
-    return { plan: null };
+    return { plan: null, widgets };
   }
 
   const plan = planRow as PlanRow;
@@ -414,23 +417,8 @@ export async function loadStaffPlanDashboard(
     owner: row.owner,
     category: row.category,
   }));
+  // Plan KPI rows kept for plan editors / observe fallbacks; tiles use `widgets`.
   const mappedKpis = ((kpiRows ?? []) as KpiRow[]).map(mapKpi);
-
-  const featuredKpiIds = [
-    "kpi-005",
-    "kpi-004",
-    "kpi-006",
-    "kpi-013",
-    "kpi-001",
-    "kpi-010",
-  ];
-  const kpiById = new Map(mappedKpis.map((k) => [k.kpi_id, k]));
-  const featuredKpis = [
-    ...featuredKpiIds
-      .map((id) => kpiById.get(id))
-      .filter((k): k is StaffPlanDashboardKpi => k !== undefined),
-    ...mappedKpis.filter((k) => !featuredKpiIds.includes(k.kpi_id)),
-  ].slice(0, 8);
 
   const taskProgress = computeStaffTaskProgress(
     taskRows.map((row) => ({
@@ -480,7 +468,7 @@ export async function loadStaffPlanDashboard(
       ? { name: currentMonth.name, theme: currentMonth.theme }
       : null,
     goals: goals ?? [],
-    kpis: featuredKpis,
+    kpis: mappedKpis,
     initiatives: mappedInitiatives,
     task_counts: countTasks(mappedTasks),
     task_progress: taskProgress,
@@ -488,5 +476,5 @@ export async function loadStaffPlanDashboard(
     focus_weeks: focusWeeks,
   };
 
-  return { plan: dashboard };
+  return { plan: dashboard, widgets };
 }

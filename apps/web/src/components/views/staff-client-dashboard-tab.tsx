@@ -4,39 +4,28 @@ import { useEffect, useState } from "react";
 import { EditorDrawer } from "@/components/ui/editor-drawer";
 import { StaffClientKpiEditorPanel } from "@/components/plan/staff-client-kpi-editor-panel";
 import { StaffInitiativeProgressCard } from "@/components/plan/staff-initiative-progress-card";
+import { StaffKpiObservationPanel } from "@/components/plan/staff-kpi-observation-panel";
 import { StaffTaskProgressCard } from "@/components/plan/staff-task-progress-card";
+import { DashboardWidgetGrid } from "@/components/widgets/dashboard-widget-grid";
 import { FontAwesomeIcon } from "@/lib/fontawesome";
-import { faPen } from "@/lib/fontawesome-icons";
-import { formatMetricValue } from "@/lib/plan/staff-plan-dashboard-format";
+import { faPen, faPlus } from "@/lib/fontawesome-icons";
 import type {
-  StaffPlanDashboard,
   StaffPlanDashboardInitiative,
+  StaffPlanDashboardKpi,
   StaffPlanDashboardResponse,
 } from "@/lib/plan/staff-plan-dashboard-types";
 import type { StaffPlanTaskProgress } from "@/lib/plan/staff-task-progress";
 import type { StaffClientActivity } from "@/lib/staff-client-activity-types";
 import type { StaffDashboardClient } from "@/lib/staff-dashboard-types";
+import {
+  staffObserveKpiFromWidget,
+  type DashboardWidgetView,
+} from "@/lib/widgets";
 
 type StaffClientDashboardTabProps = {
   client: StaffDashboardClient;
   onOpenPlan?: () => void;
 };
-
-function kpiSubtext(kpi: StaffPlanDashboard["kpis"][number]): string {
-  if (!kpi.baseline_established) {
-    return "Baseline not yet established";
-  }
-
-  if (kpi.progress_pct !== null) {
-    return `Target ${kpi.target} · ${kpi.progress_pct}% of goal`;
-  }
-
-  if (kpi.current_value === null) {
-    return `Target ${kpi.target} · no reading yet`;
-  }
-
-  return `Target ${kpi.target}`;
-}
 
 function formatLastLogin(iso: string | null): string {
   if (!iso) {
@@ -59,7 +48,7 @@ export function StaffClientDashboardTab({
   client,
   onOpenPlan,
 }: StaffClientDashboardTabProps) {
-  const [kpis, setKpis] = useState<StaffPlanDashboard["kpis"]>([]);
+  const [widgets, setWidgets] = useState<DashboardWidgetView[]>([]);
   const [initiatives, setInitiatives] = useState<StaffPlanDashboardInitiative[]>(
     [],
   );
@@ -72,8 +61,11 @@ export function StaffClientDashboardTab({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
-  const [hasPlan, setHasPlan] = useState(true);
   const [kpiEditorOpen, setKpiEditorOpen] = useState(false);
+  const [kpiEditorDirty, setKpiEditorDirty] = useState(false);
+  const [observeKpi, setObserveKpi] = useState<StaffPlanDashboardKpi | null>(
+    null,
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -110,8 +102,7 @@ export function StaffClientDashboardTab({
         }
 
         if (!cancelled) {
-          setHasPlan(Boolean(planBody.plan));
-          setKpis(planBody.plan?.kpis ?? []);
+          setWidgets(planBody.widgets ?? []);
           setInitiatives(planBody.plan?.initiatives ?? []);
           setTaskProgress(
             planBody.plan?.task_progress ?? {
@@ -124,7 +115,7 @@ export function StaffClientDashboardTab({
         }
       } catch (err) {
         if (!cancelled) {
-          setKpis([]);
+          setWidgets([]);
           setInitiatives([]);
           setTaskProgress({ overdue: 0, pending: 0, blocked: 0 });
           setActivity(null);
@@ -173,11 +164,14 @@ export function StaffClientDashboardTab({
     <div className="staff-dashboard-grid">
       <div className="app-card staff-dashboard-panel mb-2">
         <div className="d-flex justify-content-between align-items-center mb-2">
-          <h3 className="staff-section-heading mb-0">Plan KPIs</h3>
+          <h3 className="staff-section-heading mb-0">Key metrics</h3>
           <button
             type="button"
             className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
-            onClick={() => setKpiEditorOpen(true)}
+            onClick={() => {
+              setKpiEditorDirty(false);
+              setKpiEditorOpen(true);
+            }}
             title="Edit client KPIs"
             aria-label="Edit client KPIs"
           >
@@ -185,34 +179,31 @@ export function StaffClientDashboardTab({
             Edit KPIs
           </button>
         </div>
-        {!hasPlan ? (
+        {widgets.length === 0 ? (
           <p className="staff-dashboard-muted mb-0">
-            No active plan for {client.name} yet. KPIs will appear after a plan
-            is ingested.
-          </p>
-        ) : kpis.length === 0 ? (
-          <p className="staff-dashboard-muted mb-0">
-            This plan does not have KPI metrics yet.
+            No dashboard widgets assigned for {client.name} yet. Open{" "}
+            <strong>Edit KPIs → Dashboard widgets</strong> to assign display
+            kinds to client metrics.
           </p>
         ) : (
-          <div className="row g-2 staff-kpi-grid">
-            {kpis.map((kpi) => (
-              <div key={kpi.kpi_id} className="col-6 col-xl-3">
-                <div className={`staff-kpi-card${kpi.at_risk ? " at-risk" : ""}`}>
-                  <div
-                    className="small text-body-secondary text-truncate"
-                    title={kpi.label}
-                  >
-                    {kpi.label}
-                  </div>
-                  <div className="staff-kpi-value">
-                    {formatMetricValue(kpi.current_value, kpi.unit)}
-                  </div>
-                  <div className="small text-body-secondary">{kpiSubtext(kpi)}</div>
-                </div>
-              </div>
-            ))}
-          </div>
+          <DashboardWidgetGrid
+            widgets={widgets}
+            renderActions={(widget) => {
+              const kpi = staffObserveKpiFromWidget(widget);
+              if (!kpi) return null;
+              return (
+                <button
+                  type="button"
+                  className="staff-kpi-observe"
+                  onClick={() => setObserveKpi(kpi)}
+                  title={`Record observation for ${kpi.label}`}
+                  aria-label={`Record observation for ${kpi.label}`}
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                </button>
+              );
+            }}
+          />
         )}
       </div>
 
@@ -273,13 +264,41 @@ export function StaffClientDashboardTab({
         open={kpiEditorOpen}
         onClose={() => {
           setKpiEditorOpen(false);
-          setReloadToken((token) => token + 1);
+          if (kpiEditorDirty) {
+            setKpiEditorDirty(false);
+            setReloadToken((token) => token + 1);
+          }
         }}
         title="Client KPIs"
         subtitle={client.name}
         className="editor-drawer-kpis"
       >
-        <StaffClientKpiEditorPanel clientId={client.id} active={kpiEditorOpen} />
+        <StaffClientKpiEditorPanel
+          clientId={client.id}
+          active={kpiEditorOpen}
+          onDirty={() => setKpiEditorDirty(true)}
+        />
+      </EditorDrawer>
+
+      <EditorDrawer
+        open={observeKpi !== null}
+        onClose={() => setObserveKpi(null)}
+        title="Record observation"
+        subtitle={observeKpi ? observeKpi.label : client.name}
+        width="440px"
+        className="editor-drawer-observation"
+      >
+        {observeKpi ? (
+          <StaffKpiObservationPanel
+            clientId={client.id}
+            kpi={observeKpi}
+            onRecorded={() => {
+              setObserveKpi(null);
+              setReloadToken((token) => token + 1);
+            }}
+            onCancel={() => setObserveKpi(null)}
+          />
+        ) : null}
       </EditorDrawer>
     </div>
   );

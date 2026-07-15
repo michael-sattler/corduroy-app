@@ -34,6 +34,7 @@ export const METRIC_WIDGET_TYPES = [
   "bar",
   "progress_to_goal",
   "traffic_light",
+  "donut",
 ] as const;
 export const METRIC_UPDATE_INTERVALS = [
   "daily",
@@ -102,6 +103,7 @@ const TITLE_OVERRIDES: Record<string, string> = {
   traffic_light: "Traffic light",
   trend_line: "Trend line",
   single_stat: "Single stat",
+  donut: "Donut",
 };
 
 export function humanizeMetricValue(value: string): string {

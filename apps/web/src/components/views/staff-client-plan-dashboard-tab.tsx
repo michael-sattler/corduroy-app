@@ -10,48 +10,36 @@ import { StaffFocusTasksCard } from "@/components/plan/staff-focus-tasks-card";
 import { StaffPlanGoalsCard } from "@/components/plan/staff-plan-goals-card";
 import { StaffPlanInitiativesCard } from "@/components/plan/staff-plan-initiatives-card";
 import { StaffTaskProgressCard } from "@/components/plan/staff-task-progress-card";
+import { DashboardWidgetGrid } from "@/components/widgets/dashboard-widget-grid";
 import { FontAwesomeIcon } from "@/lib/fontawesome";
 import { faPen, faPlus } from "@/lib/fontawesome-icons";
-import {
-  formatMetricValue,
-  formatPlanPeriod,
-} from "@/lib/plan/staff-plan-dashboard-format";
+import { formatPlanPeriod } from "@/lib/plan/staff-plan-dashboard-format";
 import type {
   StaffPlanDashboard,
   StaffPlanDashboardKpi,
   StaffPlanDashboardResponse,
 } from "@/lib/plan/staff-plan-dashboard-types";
+import {
+  staffObserveKpiFromWidget,
+  type DashboardWidgetView,
+} from "@/lib/widgets";
 
 type StaffClientPlanDashboardTabProps = {
   clientId: string;
   clientName: string;
 };
 
-function kpiSubtext(kpi: StaffPlanDashboard["kpis"][number]): string {
-  if (!kpi.baseline_established) {
-    return "Baseline not yet established";
-  }
-
-  if (kpi.progress_pct !== null) {
-    return `Target ${kpi.target} · ${kpi.progress_pct}% of goal`;
-  }
-
-  if (kpi.current_value === null) {
-    return `Target ${kpi.target} · no reading yet`;
-  }
-
-  return `Target ${kpi.target}`;
-}
-
 export function StaffClientPlanDashboardTab({
   clientId,
   clientName,
 }: StaffClientPlanDashboardTabProps) {
   const [dashboard, setDashboard] = useState<StaffPlanDashboard | null>(null);
+  const [widgets, setWidgets] = useState<DashboardWidgetView[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [reloadToken, setReloadToken] = useState(0);
   const [kpiEditorOpen, setKpiEditorOpen] = useState(false);
+  const [kpiEditorDirty, setKpiEditorDirty] = useState(false);
   const [initiativesEditorOpen, setInitiativesEditorOpen] = useState(false);
   const [goalsEditorOpen, setGoalsEditorOpen] = useState(false);
   const [tasksEditorOpen, setTasksEditorOpen] = useState(false);
@@ -81,10 +69,12 @@ export function StaffClientPlanDashboardTab({
 
         if (!cancelled) {
           setDashboard(body.plan);
+          setWidgets(body.widgets ?? []);
         }
       } catch (err) {
         if (!cancelled) {
           setDashboard(null);
+          setWidgets([]);
           setError(
             err instanceof Error ? err.message : "Could not load plan dashboard",
           );
@@ -128,14 +118,98 @@ export function StaffClientPlanDashboardTab({
     );
   }
 
+  const metricsPanel = (
+      <div className="app-card staff-dashboard-panel mb-2">
+        <div className="d-flex justify-content-between align-items-center mb-2">
+          <h3 className="staff-section-heading mb-0">Key metrics</h3>
+          <button
+            type="button"
+            className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
+            onClick={() => {
+              setKpiEditorDirty(false);
+              setKpiEditorOpen(true);
+            }}
+            title="Edit client KPIs"
+            aria-label="Edit client KPIs"
+          >
+            <FontAwesomeIcon icon={faPen} />
+            Edit KPIs
+          </button>
+        </div>
+        {widgets.length === 0 ? (
+          <p className="staff-dashboard-muted mb-0">
+            No dashboard widgets assigned yet. Open{" "}
+            <strong>Edit KPIs → Dashboard widgets</strong> to assign display
+            kinds.
+          </p>
+        ) : (
+          <DashboardWidgetGrid
+            widgets={widgets}
+            renderActions={(widget) => {
+              const kpi = staffObserveKpiFromWidget(widget);
+              if (!kpi) return null;
+              return (
+                <button
+                  type="button"
+                  className="staff-kpi-observe"
+                  onClick={() => setObserveKpi(kpi)}
+                  title={`Record observation for ${kpi.label}`}
+                  aria-label={`Record observation for ${kpi.label}`}
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                </button>
+              );
+            }}
+          />
+        )}
+      </div>
+  );
+
   if (!dashboard) {
     return (
       <div className="staff-plan-dashboard">
         <h3 className="staff-section-heading mb-2">No active plan</h3>
-        <p className="staff-dashboard-muted mb-0">
+        <p className="staff-dashboard-muted mb-3">
           {clientName} does not have an active plan in the database yet.
           Use <strong>Documents</strong> to upload and ingest a plan JSON.
         </p>
+        {metricsPanel}
+        <EditorDrawer
+          open={kpiEditorOpen}
+          onClose={() => {
+            setKpiEditorOpen(false);
+            if (kpiEditorDirty) {
+              setKpiEditorDirty(false);
+              setReloadToken((token) => token + 1);
+            }
+          }}
+          title="Client KPIs"
+          subtitle={clientName}
+          className="editor-drawer-kpis"
+        >
+          <StaffClientKpiEditorPanel
+            clientId={clientId}
+            active={kpiEditorOpen}
+            onDirty={() => setKpiEditorDirty(true)}
+          />
+        </EditorDrawer>
+        <EditorDrawer
+          open={observeKpi !== null}
+          onClose={() => setObserveKpi(null)}
+          title="Record observation"
+          subtitle={observeKpi ? observeKpi.label : clientName}
+          width="440px"
+          className="editor-drawer-observation"
+        >
+          {observeKpi ? (
+            <StaffKpiObservationPanel
+              clientId={clientId}
+              kpi={observeKpi}
+              onRecorded={() => setReloadToken((token) => token + 1)}
+              onCancel={() => setObserveKpi(null)}
+            />
+          ) : null}
+        </EditorDrawer>
       </div>
     );
   }
@@ -143,7 +217,6 @@ export function StaffClientPlanDashboardTab({
   const {
     plan,
     current_month,
-    kpis,
     initiatives,
     goals,
     task_progress,
@@ -167,45 +240,7 @@ export function StaffClientPlanDashboardTab({
         <span className="badge staff-badge-on-track text-capitalize">{plan.status}</span>
       </div>
 
-      <div className="app-card staff-dashboard-panel mb-2">
-        <div className="d-flex justify-content-between align-items-center mb-2">
-          <h3 className="staff-section-heading mb-0">Plan KPIs</h3>
-          <button
-            type="button"
-            className="btn btn-sm btn-outline-secondary d-inline-flex align-items-center gap-1"
-            onClick={() => setKpiEditorOpen(true)}
-            title="Edit client KPIs"
-            aria-label="Edit client KPIs"
-          >
-            <FontAwesomeIcon icon={faPen} />
-            Edit KPIs
-          </button>
-        </div>
-        <div className="row g-2 staff-kpi-grid">
-          {kpis.map((kpi) => (
-            <div key={kpi.kpi_id} className="col-6 col-xl-3">
-              <div className={`staff-kpi-card${kpi.at_risk ? " at-risk" : ""}`}>
-                <button
-                  type="button"
-                  className="staff-kpi-observe"
-                  onClick={() => setObserveKpi(kpi)}
-                  title={`Record observation for ${kpi.label}`}
-                  aria-label={`Record observation for ${kpi.label}`}
-                >
-                  <FontAwesomeIcon icon={faPlus} />
-                </button>
-                <div className="small text-body-secondary text-truncate" title={kpi.label}>
-                  {kpi.label}
-                </div>
-                <div className="staff-kpi-value">
-                  {formatMetricValue(kpi.current_value, kpi.unit)}
-                </div>
-                <div className="small text-body-secondary">{kpiSubtext(kpi)}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      {metricsPanel}
 
       <div className="row g-2 mb-2">
         <div className="col-lg-7">
@@ -237,12 +272,22 @@ export function StaffClientPlanDashboardTab({
 
       <EditorDrawer
         open={kpiEditorOpen}
-        onClose={() => setKpiEditorOpen(false)}
+        onClose={() => {
+          setKpiEditorOpen(false);
+          if (kpiEditorDirty) {
+            setKpiEditorDirty(false);
+            setReloadToken((token) => token + 1);
+          }
+        }}
         title="Client KPIs"
         subtitle={clientName}
         className="editor-drawer-kpis"
       >
-        <StaffClientKpiEditorPanel clientId={clientId} active={kpiEditorOpen} />
+        <StaffClientKpiEditorPanel
+          clientId={clientId}
+          active={kpiEditorOpen}
+          onDirty={() => setKpiEditorDirty(true)}
+        />
       </EditorDrawer>
 
       <EditorDrawer

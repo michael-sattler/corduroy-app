@@ -1,4 +1,5 @@
 import type { StaffPlanTaskProgress } from "@/lib/plan/staff-task-progress";
+import type { DashboardWidgetView } from "@/lib/widgets/types";
 
 export type { StaffPlanTaskProgress } from "@/lib/plan/staff-task-progress";
 
@@ -91,6 +92,7 @@ export type StaffPlanDashboard = {
   focus_weeks: StaffPlanFocusWeek[];
 };
 
-export type StaffPlanDashboardResponse =
-  | { plan: StaffPlanDashboard }
-  | { plan: null };
+export type StaffPlanDashboardResponse = {
+  plan: StaffPlanDashboard | null;
+  widgets: DashboardWidgetView[];
+};

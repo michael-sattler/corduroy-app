@@ -1,3 +1,5 @@
+import type { DashboardWidgetView } from "@/lib/widgets/types";
+
 export type ClientPlanWeek = {
   id: string;
   week_id: string;
@@ -77,9 +79,11 @@ export type ClientPlanDashboard = {
   goals: ClientPlanGoal[];
   initiatives: ClientPlanInitiative[];
   tasks: ClientPlanTask[];
+  /** @deprecated Prefer `widgets` — kept empty for older callers. */
   kpis: ClientPlanKpi[];
 };
 
-export type ClientPlanDashboardResponse =
-  | { plan: ClientPlanDashboard }
-  | { plan: null };
+export type ClientPlanDashboardResponse = {
+  plan: ClientPlanDashboard | null;
+  widgets: DashboardWidgetView[];
+};
