@@ -1,8 +1,8 @@
 import type { ReactNode } from "react";
 import type { DashboardWidgetView } from "@/lib/widgets";
 
-const PROGRESS_INCOMPLETE_TITLE =
-  "Progress not yet calculable — needs baseline, current value, and numeric target";
+const PROGRESS_INCOMPLETE_HINT =
+  "Needs baseline, current value, and numeric target for progress";
 
 /** Goal is implied when we have display/numeric target copy. */
 export function widgetProgressIncomplete(widget: DashboardWidgetView): boolean {
@@ -52,8 +52,8 @@ export function WidgetCard({
       {showTelltale ? (
         <span
           className="staff-kpi-progress-telltale"
-          title={PROGRESS_INCOMPLETE_TITLE}
-          aria-label={PROGRESS_INCOMPLETE_TITLE}
+          title={PROGRESS_INCOMPLETE_HINT}
+          aria-label={PROGRESS_INCOMPLETE_HINT}
           role="status"
         />
       ) : null}
