@@ -1,5 +1,6 @@
 export type StaffPlanKpiEditorItem = {
   kpi_id: string;
+  client_metric_id: string | null;
   label: string;
   unit: string;
   source_binding: string;

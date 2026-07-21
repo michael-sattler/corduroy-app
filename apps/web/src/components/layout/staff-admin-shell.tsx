@@ -34,12 +34,12 @@ export async function StaffAdminShell({
       active="admin"
       subtitle="Platform admin"
     >
-      <div className="container-fluid py-4">
-        <div className="row g-4">
-          <div className="col-lg-3">
+      <div className="container-fluid py-3">
+        <div className="row g-3">
+          <div className="col-lg-2">
             <AdminSidebar active={active} pathPrefix={pathPrefix} />
           </div>
-          <div className="col-lg-9">{children}</div>
+          <div className="col-lg-10">{children}</div>
         </div>
       </div>
     </StaffLayout>

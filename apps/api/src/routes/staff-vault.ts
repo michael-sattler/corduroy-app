@@ -7,6 +7,10 @@ import {
   type AccessBrokerUploadInput,
   type VaultPrefix,
 } from "../lib/access-broker.js";
+import {
+  ContentProcessorError,
+  invokeContentProcessorReanalysis,
+} from "../lib/content-processor.js";
 import { requireRole } from "../lib/auth.js";
 import {
   assertStaffCanAccessClient,
@@ -24,6 +28,11 @@ type PresignDownloadBody = {
   reason?: string;
 };
 
+type ReprocessBody = {
+  client_id: string;
+  vault_object_id: string;
+};
+
 function vaultError(
   reply: { code: (status: number) => { send: (body: unknown) => unknown } },
   error: unknown,
@@ -33,6 +42,9 @@ function vaultError(
   }
 
   if (error instanceof AccessBrokerError) {
+    return reply.code(error.statusCode).send({ error: error.message });
+  }
+  if (error instanceof ContentProcessorError) {
     return reply.code(error.statusCode).send({ error: error.message });
   }
 
@@ -112,6 +124,25 @@ export async function registerStaffVaultRoutes(
           }
         },
       );
+
+      staff.post<{ Body: ReprocessBody }>("/vault/reprocess", async (request, reply) => {
+        const body = request.body ?? ({} as ReprocessBody);
+        if (!body.client_id?.trim() || !body.vault_object_id?.trim()) {
+          return reply
+            .code(400)
+            .send({ error: "client_id and vault_object_id are required" });
+        }
+        try {
+          await assertStaffCanAccessClient(config, request, body.client_id);
+          await invokeContentProcessorReanalysis({
+            client_id: body.client_id.trim(),
+            vault_object_id: body.vault_object_id.trim(),
+          });
+          return { queued: true };
+        } catch (error) {
+          return vaultError(reply, error);
+        }
+      });
     },
     { prefix: "/staff" },
   );

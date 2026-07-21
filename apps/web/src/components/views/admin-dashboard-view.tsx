@@ -24,9 +24,9 @@ export async function AdminDashboardView() {
   }
 
   return (
-    <div className="d-flex flex-column gap-4">
+    <div className="admin-dashboard d-flex flex-column gap-3">
       <div>
-        <h1 className="h4 mb-1">Admin overview</h1>
+        <h1 className="h5 mb-1">Admin overview</h1>
         <p className="text-body-secondary mb-0">
           Platform-wide activity and infrastructure health. Not scoped to a single
           client.
@@ -34,8 +34,8 @@ export async function AdminDashboardView() {
       </div>
 
       <section className="app-card">
-        <h2 className="h6 mb-3">Recent activity</h2>
-        <div className="row g-3">
+        <h2 className="h6 mb-2">Recent activity</h2>
+        <div className="row g-2">
           {adminActivityStats.map((stat) => (
             <div key={stat.label} className="col-md-6 col-xl-4">
               <div className="admin-stat-card">
@@ -54,8 +54,8 @@ export async function AdminDashboardView() {
       />
 
       <section className="app-card">
-        <h2 className="h6 mb-3">Tools</h2>
-        <div className="row g-3">
+        <h2 className="h6 mb-2">Tools</h2>
+        <div className="row g-2">
           <div className="col-md-6">
             <Link href={withAppPath("/admin/clients", pathPrefix)} className="admin-tool-card">
               <div className="fw-semibold">Clients</div>

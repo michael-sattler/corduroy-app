@@ -20,6 +20,28 @@ export type StaffVaultPresignDownloadRequest = VaultPresignDownloadRequest & {
   client_id: string;
 };
 
+export async function requestStaffVaultReprocess(body: {
+  client_id: string;
+  vault_object_id: string;
+}): Promise<void> {
+  const token = await getStaffAccessToken();
+  const apiBase = getOrchestrationApiUrl();
+  const res = await fetch(`${apiBase}/staff/vault/reprocess`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    cache: "no-store",
+    signal: AbortSignal.timeout(30_000),
+  });
+  if (!res.ok) {
+    const payload = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new StaffApiHttpError(
+      res.status,
+      payload.error ?? `Staff reprocess request failed (${res.status})`,
+    );
+  }
+}
+
 export async function requestStaffVaultPresignUpload(
   body: StaffVaultPresignUploadRequest,
 ): Promise<VaultPresignUploadResponse> {

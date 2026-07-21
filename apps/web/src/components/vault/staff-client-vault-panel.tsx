@@ -3,6 +3,7 @@
 import { VaultCatalogRepository } from "@/components/vault/vault-catalog-repository";
 import { VaultFileUpload } from "@/components/vault/vault-file-upload";
 import { VaultFilesDrawer } from "@/components/vault/vault-files-drawer";
+import { VaultAnalysisLiveLog } from "@/components/vault/vault-analysis-live-log";
 import type {
   VaultCatalogGroup,
   VaultCatalogObject,
@@ -49,6 +50,9 @@ export function StaffClientVaultPanel({
   const [visibleCount, setVisibleCount] = useState(0);
   const [classificationReady, setClassificationReady] = useState(true);
   const [pendingS3Key, setPendingS3Key] = useState<string | null>(null);
+  const [analysisVaultObjectId, setAnalysisVaultObjectId] = useState<string | null>(
+    null,
+  );
   const [catalogStatus, setCatalogStatus] = useState<CatalogStatus>("loading");
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const { startProgress, stopProgress } = useAppProgress();
@@ -114,6 +118,7 @@ export function StaffClientVaultPanel({
   const handleUploaded = useCallback(
     async (result: VaultUploadResult, _filename: string) => {
       setPendingS3Key(result.s3_key);
+      setAnalysisVaultObjectId(null);
       startProgress();
 
       try {
@@ -122,7 +127,11 @@ export function StaffClientVaultPanel({
           const catalog = await fetchCatalog();
           applyCatalog(catalog);
 
-          if (catalog.objects.some((object) => object.s3_key === result.s3_key)) {
+          const uploadedObject = catalog.objects.find(
+            (object) => object.s3_key === result.s3_key,
+          );
+          if (uploadedObject) {
+            setAnalysisVaultObjectId(uploadedObject.id);
             pushToast("File added to client Vault catalog", "success");
             return;
           }
@@ -153,6 +162,30 @@ export function StaffClientVaultPanel({
       pushToast("Classification saved but catalog refresh failed.", "warning");
     }
   }, [applyCatalog, fetchCatalog, pushToast]);
+
+  const handleReprocess = useCallback(
+    async (object: VaultCatalogObject) => {
+      try {
+        const response = await fetch("/api/staff/vault/reprocess", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ client_id: clientId, vault_object_id: object.id }),
+        });
+        const body = (await response.json().catch(() => ({}))) as { error?: string };
+        if (!response.ok) {
+          throw new Error(body.error ?? "Could not start reprocessing.");
+        }
+        setAnalysisVaultObjectId(object.id);
+        pushToast("Document reprocessing queued", "success");
+      } catch (error) {
+        pushToast(
+          error instanceof Error ? error.message : "Could not start reprocessing.",
+          "danger",
+        );
+      }
+    },
+    [clientId, pushToast],
+  );
 
   return (
     <section
@@ -210,6 +243,10 @@ export function StaffClientVaultPanel({
               vaultContext={vaultContext}
               onUploaded={(result, filename) => void handleUploaded(result, filename)}
             />
+            <VaultAnalysisLiveLog
+              clientId={clientId}
+              vaultObjectId={analysisVaultObjectId}
+            />
           </div>
           <div className="col-lg-7">
             {catalogStatus === "error" ? (
@@ -240,6 +277,7 @@ export function StaffClientVaultPanel({
                 loading={catalogStatus === "loading" && count === 0}
                 vaultContext={vaultContext}
                 onObjectUpdated={() => void handleObjectUpdated()}
+                onReprocess={(object) => void handleReprocess(object)}
               />
             )}
           </div>
@@ -253,6 +291,7 @@ export function StaffClientVaultPanel({
         clientName={clientName}
         objects={objects}
         onObjectUpdated={() => void handleObjectUpdated()}
+        onAnalysisStarted={setAnalysisVaultObjectId}
       />
     </section>
   );

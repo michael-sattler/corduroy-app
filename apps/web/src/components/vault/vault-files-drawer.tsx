@@ -26,6 +26,7 @@ type VaultFilesDrawerProps = {
   clientName: string;
   objects: VaultCatalogObject[];
   onObjectUpdated: (object: VaultCatalogObject) => void;
+  onAnalysisStarted: (objectId: string) => void;
 };
 
 type LoadStatus = "idle" | "loading" | "ready" | "error";
@@ -37,6 +38,7 @@ export function VaultFilesDrawer({
   clientName,
   objects,
   onObjectUpdated,
+  onAnalysisStarted,
 }: VaultFilesDrawerProps) {
   const { pushToast } = useToast();
   const [options, setOptions] = useState<VaultSourceBindingOption[]>([]);
@@ -138,6 +140,7 @@ export function VaultFilesDrawer({
       bindingsReady={status === "ready"}
       onToggleBinding={(binding) => void toggleBinding(object.id, binding)}
       onObjectUpdated={onObjectUpdated}
+      onAnalysisStarted={onAnalysisStarted}
     />
   );
 
@@ -230,6 +233,7 @@ function VaultFileManageCard({
   bindingsReady,
   onToggleBinding,
   onObjectUpdated,
+  onAnalysisStarted,
 }: {
   object: VaultCatalogObject;
   clientId: string;
@@ -239,8 +243,30 @@ function VaultFileManageCard({
   bindingsReady: boolean;
   onToggleBinding: (binding: string) => void;
   onObjectUpdated: (object: VaultCatalogObject) => void;
+  onAnalysisStarted: (objectId: string) => void;
 }) {
   const selectedSet = useMemo(() => new Set(selected), [selected]);
+  const { pushToast } = useToast();
+  const [reprocessing, setReprocessing] = useState(false);
+
+  async function reprocess() {
+    setReprocessing(true);
+    try {
+      const response = await fetch("/api/staff/vault/reprocess", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ client_id: clientId, vault_object_id: object.id }),
+      });
+      const body = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) throw new Error(body.error ?? "Could not start reprocessing.");
+      onAnalysisStarted(object.id);
+      pushToast("Document reprocessing queued", "success");
+    } catch (error) {
+      pushToast(error instanceof Error ? error.message : "Could not start reprocessing.", "danger");
+    } finally {
+      setReprocessing(false);
+    }
+  }
 
   return (
     <div className="vault-file-manage-card">
@@ -300,6 +326,14 @@ function VaultFileManageCard({
       </div>
 
       <div className="vault-file-manage-classify">
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-primary"
+          disabled={reprocessing || saving}
+          onClick={() => void reprocess()}
+        >
+          {reprocessing ? "Queueing…" : "Reprocess"}
+        </button>
         <VaultClassificationEditor
           item={object}
           clientId={clientId}

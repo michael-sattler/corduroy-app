@@ -1,8 +1,11 @@
 import { HeadObjectCommand, S3Client } from "@aws-sdk/client-s3";
 import type { S3EventRecord } from "aws-lambda";
+import { enqueueAnalysisJob } from "./analysis-queue.js";
 import { objectTypeFromContentType } from "./object-type.js";
 import { parseVaultObjectKey } from "./parse-key.js";
 import {
+  createIngestAnalysisJob,
+  insertAnalysisEvent,
   insertIngestAuditEvent,
   resolveClientByBucket,
   upsertVaultObject,
@@ -82,4 +85,50 @@ export async function processObjectCreatedRecord(
       event_name: record.eventName,
     },
   });
+
+  const supportedForAnalysis = new Set(["pdf", "csv", "spreadsheet", "document"]);
+  const job = await createIngestAnalysisJob({
+    client_id: client.client_id,
+    vault_object_id: vaultObjectId,
+    status: supportedForAnalysis.has(objectType) ? "queued" : "unsupported",
+  });
+
+  if (!job.created) {
+    return;
+  }
+
+  if (!supportedForAnalysis.has(objectType)) {
+    await insertAnalysisEvent({
+      job_id: job.id,
+      client_id: client.client_id,
+      stage: "complete",
+      level: "warning",
+      message: "Document analysis skipped because this file type is not supported.",
+      details: { object_type: objectType, content_type: contentType ?? null },
+    });
+    return;
+  }
+
+  await insertAnalysisEvent({
+    job_id: job.id,
+    client_id: client.client_id,
+    stage: "queued",
+    message: "Document analysis queued after Vault cataloging.",
+    details: {
+      object_type: objectType,
+      content_type: contentType ?? null,
+      size_bytes: sizeBytes,
+    },
+  });
+
+  const queued = await enqueueAnalysisJob({ jobId: job.id, bucket });
+  if (!queued) {
+    await insertAnalysisEvent({
+      job_id: job.id,
+      client_id: client.client_id,
+      stage: "queued",
+      level: "warning",
+      message: "Document analysis is not enabled in this environment yet.",
+    });
+  }
 }

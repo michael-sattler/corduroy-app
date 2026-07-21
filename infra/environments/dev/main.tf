@@ -104,7 +104,9 @@ module "content_processor_lambda" {
 
   content_processor_role_arn  = module.iam.content_processor_role_arn
   content_processor_role_name = module.iam.content_processor_role_name
+  railway_invoke_user_name    = module.iam.railway_invoke_user_name
   supabase_url                = var.supabase_url
   supabase_service_role_key   = var.supabase_service_role_key
+  anthropic_api_key_secret_arn = var.anthropic_api_key_secret_arn
   source_zip_path             = data.archive_file.content_processor[0].output_path
 }

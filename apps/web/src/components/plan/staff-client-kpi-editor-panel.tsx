@@ -7,6 +7,10 @@ import type {
   StaffPlanKpiEditorItem,
   StaffPlanKpiEditorResponse,
 } from "@/lib/plan/staff-plan-kpi-editor-types";
+import type {
+  StaffMetricObservation,
+  StaffMetricObservationsByMetricResponse,
+} from "@/lib/plan/staff-metric-observations-types";
 
 type StaffClientKpiEditorPanelProps = {
   clientId: string;
@@ -15,9 +19,17 @@ type StaffClientKpiEditorPanelProps = {
   onDirty?: () => void;
 };
 
-type EditorTab = "plan_kpis" | "dashboard_widgets";
+type EditorTab = "plan_kpis" | "dashboard_widgets" | "metric_observations";
 
 const REVIEW_CADENCES = ["daily", "weekly", "monthly", "quarterly"] as const;
+
+const CHANGE_SOURCE_LABELS: Record<string, string> = {
+  manual_advisor: "Advisor",
+  manual_client: "Client",
+  agent_ingest: "AI",
+  connector_sync: "Connector",
+  reconciliation: "Reconciliation",
+};
 
 function formatDate(value: string | null): string {
   if (!value) return "—";
@@ -27,6 +39,19 @@ function formatDate(value: string | null): string {
     year: "numeric",
     month: "short",
     day: "numeric",
+  });
+}
+
+function formatTimestamp(value: string | null): string {
+  if (!value) return "—";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
   });
 }
 
@@ -555,6 +580,249 @@ function PlanKpisTab({
   );
 }
 
+function MetricObservationRow({
+  observation,
+  unit,
+}: {
+  observation: StaffMetricObservation;
+  unit: string;
+}) {
+  const isRange = observation.period_start !== observation.period_end;
+  const period = isRange
+    ? `${formatDate(observation.period_start)} – ${formatDate(observation.period_end)}`
+    : formatDate(observation.period_end);
+  const sourceLabel =
+    CHANGE_SOURCE_LABELS[observation.change_source] ?? observation.change_source;
+
+  return (
+    <li className="staff-obs-row">
+      <div className="staff-metric-observation-row">
+        <span className="text-md">
+          {formatMetricValue(observation.value, unit)}
+        </span>
+        <span className="small text-body-secondary text-capitalize">{unit}</span>
+        <span className="small text-body-secondary">PERIOD {period}</span>
+        <span className="small text-body-secondary">
+          OBSERVED {formatDate(observation.observed_on)}
+        </span>
+        <span className="small text-body-secondary">
+          RECORDED {formatTimestamp(observation.recorded_at)}
+        </span>
+        <span className="small text-body-secondary text-truncate">
+          {observation.source_document || "Manual entry"}
+        </span>
+        <span className="badge text-bg-light">SOURCE {sourceLabel}</span>
+      </div>
+    </li>
+  );
+}
+
+function MetricObservationsTab({
+  clientId,
+  active,
+}: {
+  clientId: string;
+  active: boolean;
+}) {
+  const [kpis, setKpis] = useState<StaffPlanKpiEditorItem[]>([]);
+  const [observationsByMetricId, setObservationsByMetricId] = useState<
+    Record<string, StaffMetricObservation[]>
+  >({});
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  useEffect(() => {
+    if (!active) return;
+
+    let cancelled = false;
+
+    async function loadMetricObservations() {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const kpiResponse = await fetch(
+          `/api/staff/plan/kpis?client_id=${encodeURIComponent(clientId)}`,
+          { cache: "no-store" },
+        );
+        const kpiBody = (await kpiResponse.json()) as StaffPlanKpiEditorResponse & {
+          error?: string;
+        };
+        if (!kpiResponse.ok) {
+          throw new Error(kpiBody.error ?? "Could not load client KPIs");
+        }
+
+        const clientMetricIds = kpiBody.kpis
+          .map((kpi) => kpi.client_metric_id)
+          .filter((id): id is string => Boolean(id));
+        let nextObservations: Record<string, StaffMetricObservation[]> = {};
+
+        if (clientMetricIds.length > 0) {
+          const observationsResponse = await fetch(
+            `/api/staff/plan/observations?client_id=${encodeURIComponent(
+              clientId,
+            )}&client_metric_ids=${encodeURIComponent(clientMetricIds.join(","))}`,
+            { cache: "no-store" },
+          );
+          const observationsBody =
+            (await observationsResponse.json()) as StaffMetricObservationsByMetricResponse & {
+              error?: string;
+            };
+          if (!observationsResponse.ok) {
+            throw new Error(
+              observationsBody.error ?? "Could not load metric observations",
+            );
+          }
+          nextObservations = observationsBody.observations_by_client_metric_id;
+        }
+
+        if (!cancelled) {
+          setKpis(kpiBody.kpis);
+          setObservationsByMetricId(nextObservations);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setKpis([]);
+          setObservationsByMetricId({});
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Could not load metric observations",
+          );
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+
+    void loadMetricObservations();
+    return () => {
+      cancelled = true;
+    };
+  }, [active, clientId, reloadToken]);
+
+  if (loading) {
+    return (
+      <p className="staff-dashboard-muted mb-0">
+        Loading metric observations…
+      </p>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        <div className="alert alert-danger mb-2" role="alert">
+          {error}
+        </div>
+        <button
+          type="button"
+          className="btn btn-sm btn-outline-secondary"
+          onClick={() => setReloadToken((token) => token + 1)}
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  if (kpis.length === 0) {
+    return (
+      <p className="staff-dashboard-muted mb-0">
+        No KPIs are defined for this client&apos;s active plan yet.
+      </p>
+    );
+  }
+
+  return (
+    <div className="staff-metric-observations-list">
+      {kpis.map((kpi) => {
+        const observations = [
+          ...(kpi.client_metric_id
+            ? (observationsByMetricId[kpi.client_metric_id] ?? [])
+            : []),
+        ].sort(
+          (a, b) =>
+            a.period_end.localeCompare(b.period_end) ||
+            a.recorded_at.localeCompare(b.recorded_at),
+        );
+        const hasBaseline =
+          kpi.baseline_established && kpi.baseline_snapshot !== null;
+        const hasTarget = kpi.target_value !== null || Boolean(kpi.target);
+        const lastObservation = observations.at(-1);
+        const target = kpi.target || formatMetricValue(kpi.target_value, kpi.unit);
+
+        return (
+          <details className="staff-metric-observations-kpi" key={kpi.kpi_id}>
+            <summary>
+              <div className="staff-metric-observations-summary-copy">
+                <span className="staff-metric-observations-kpi-label">
+                  {kpi.label}
+                </span>
+                <span className="staff-metric-observations-pills">
+                  <span className="badge text-bg-light">
+                    <span className="staff-metric-observations-pill-label">
+                      Observations
+                    </span>{" "}
+                    {observations.length}
+                  </span>
+                  <span className="badge text-bg-light">
+                    <span className="staff-metric-observations-pill-label">
+                      Baseline
+                    </span>{" "}
+                    {hasBaseline
+                      ? formatMetricValue(kpi.baseline_snapshot, kpi.unit)
+                      : "—"}
+                  </span>
+                  <span className="badge text-bg-light">
+                    <span className="staff-metric-observations-pill-label">
+                      Last observation
+                    </span>{" "}
+                    {lastObservation
+                      ? `${formatMetricValue(
+                          lastObservation.value,
+                          kpi.unit,
+                        )} · ${formatDate(lastObservation.period_end)}`
+                      : "—"}
+                  </span>
+                  <span className="badge text-bg-light">
+                    <span className="staff-metric-observations-pill-label">
+                      Target
+                    </span>{" "}
+                    {hasTarget ? target : "—"}
+                  </span>
+                </span>
+              </div>
+            </summary>
+            <div className="staff-metric-observations-kpi-body">
+              {!kpi.client_metric_id ? (
+                <p className="small text-body-secondary mb-0">
+                  This KPI is not linked to a tracked metric.
+                </p>
+              ) : observations.length === 0 ? (
+                <p className="small text-body-secondary mb-0">
+                  No observations recorded yet.
+                </p>
+              ) : (
+                <ul className="staff-obs-list">
+                  {observations.map((observation) => (
+                    <MetricObservationRow
+                      key={observation.id}
+                      observation={observation}
+                      unit={kpi.unit}
+                    />
+                  ))}
+                </ul>
+              )}
+            </div>
+          </details>
+        );
+      })}
+    </div>
+  );
+}
+
 export function StaffClientKpiEditorPanel({
   clientId,
   active,
@@ -592,6 +860,19 @@ export function StaffClientKpiEditorPanel({
               Dashboard widgets
             </button>
           </li>
+          <li className="nav-item" role="presentation">
+            <button
+              type="button"
+              id="staff-kpi-editor-tab-observations"
+              role="tab"
+              aria-selected={tab === "metric_observations"}
+              aria-controls="staff-kpi-editor-tabpanel-observations"
+              className={`nav-link${tab === "metric_observations" ? " active" : ""}`}
+              onClick={() => setTab("metric_observations")}
+            >
+              Metric Observations
+            </button>
+          </li>
         </ul>
       </div>
 
@@ -618,6 +899,18 @@ export function StaffClientKpiEditorPanel({
           clientId={clientId}
           active={active && tab === "dashboard_widgets"}
           onDirty={onDirty}
+        />
+      </div>
+
+      <div
+        id="staff-kpi-editor-tabpanel-observations"
+        role="tabpanel"
+        aria-labelledby="staff-kpi-editor-tab-observations"
+        hidden={tab !== "metric_observations"}
+      >
+        <MetricObservationsTab
+          clientId={clientId}
+          active={active && tab === "metric_observations"}
         />
       </div>
     </div>

@@ -12,3 +12,7 @@ export type StaffMetricObservation = {
 export type StaffMetricObservationsResponse = {
   observations: StaffMetricObservation[];
 };
+
+export type StaffMetricObservationsByMetricResponse = {
+  observations_by_client_metric_id: Record<string, StaffMetricObservation[]>;
+};

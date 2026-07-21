@@ -10,10 +10,7 @@ type AdminSidebarProps = {
 export function AdminSidebar({ active, pathPrefix }: AdminSidebarProps) {
   return (
     <nav className="admin-sidebar app-card h-100" aria-label="Admin tools">
-      <h2 className="h6 mb-1">Platform admin</h2>
-      <p className="small text-body-secondary mb-4">
-        Global tools — not tied to a client engagement.
-      </p>
+      <h2 className="admin-sidebar-title">Platform admin</h2>
       <ul className="admin-nav-list list-unstyled mb-0">
         {adminNavItems.map((item) => (
           <li key={item.key}>
@@ -23,14 +20,14 @@ export function AdminSidebar({ active, pathPrefix }: AdminSidebarProps) {
               aria-current={active === item.key ? "page" : undefined}
             >
               <span className="fw-medium">{item.label}</span>
-              <span className="small text-body-secondary d-block">
+              <span className="admin-nav-description text-body-secondary">
                 {item.description}
               </span>
             </Link>
           </li>
         ))}
       </ul>
-      <hr className="my-4" />
+      <hr className="my-2" />
       <Link href={withAppPath("/dashboard", pathPrefix)} className="small admin-back-link">
         ← Back to clients
       </Link>

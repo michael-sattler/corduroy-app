@@ -42,3 +42,10 @@ variable "supabase_service_role_key" {
   sensitive   = true
   default     = ""
 }
+
+variable "anthropic_api_key_secret_arn" {
+  description = "Secrets Manager ARN containing the raw Anthropic API key for Vault analysis."
+  type        = string
+  sensitive   = true
+  default     = ""
+}

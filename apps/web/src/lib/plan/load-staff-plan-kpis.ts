@@ -12,6 +12,7 @@ type MetricDefinition = {
 };
 
 type ClientMetric = {
+  id: string;
   source_binding: string;
   current_value: number | null;
   current_value_observed_on: string | null;
@@ -41,6 +42,7 @@ function mapKpi(row: KpiRow): StaffPlanKpiEditorItem {
 
   return {
     kpi_id: row.kpi_id,
+    client_metric_id: metric?.id ?? null,
     label: definition?.label ?? row.kpi_id,
     unit: definition?.unit ?? "ratio",
     source_binding: metric?.source_binding ?? "",
@@ -90,6 +92,7 @@ export async function loadStaffPlanKpis(
       target_value,
       review_cadence,
       client_metrics (
+        id,
         source_binding,
         current_value,
         current_value_observed_on,

@@ -29,6 +29,7 @@ type VaultCatalogRepositoryProps = {
   emptyMessage?: string;
   classificationReady?: boolean;
   onObjectUpdated?: (object: VaultCatalogObject) => void;
+  onReprocess?: (object: VaultCatalogObject) => void;
 };
 
 function VaultCatalogRow({
@@ -36,11 +37,13 @@ function VaultCatalogRow({
   pending = false,
   vaultContext = { scope: "client" },
   onObjectUpdated,
+  onReprocess,
 }: {
   item: VaultCatalogObject;
   pending?: boolean;
   vaultContext?: VaultApiContext;
   onObjectUpdated?: (object: VaultCatalogObject) => void;
+  onReprocess?: (object: VaultCatalogObject) => void;
 }) {
   const [downloading, setDownloading] = useState(false);
   const { pushToast } = useToast();
@@ -96,6 +99,16 @@ function VaultCatalogRow({
       </div>
       {isStaff ? (
         <div className="vault-source-actions">
+          {onReprocess ? (
+            <button
+              type="button"
+              className="btn btn-xs btn-outline-primary"
+              disabled={pending}
+              onClick={() => onReprocess(item)}
+            >
+              Reprocess
+            </button>
+          ) : null}
           <VaultClassificationEditor
             item={item}
             clientId={vaultContext.clientId}
@@ -112,11 +125,13 @@ function VaultCatalogSections({
   pendingS3Key,
   vaultContext,
   onObjectUpdated,
+  onReprocess,
 }: {
   groups: VaultCatalogGroup[];
   pendingS3Key?: string | null;
   vaultContext?: VaultApiContext;
   onObjectUpdated?: (object: VaultCatalogObject) => void;
+  onReprocess?: (object: VaultCatalogObject) => void;
 }) {
   if (groups.length === 0) {
     return null;
@@ -135,6 +150,7 @@ function VaultCatalogSections({
                 pending={item.s3_key === pendingS3Key}
                 vaultContext={vaultContext}
                 onObjectUpdated={onObjectUpdated}
+                onReprocess={onReprocess}
               />
             ))}
           </div>
@@ -156,6 +172,7 @@ export function VaultCatalogRepository({
   emptyMessage,
   classificationReady = true,
   onObjectUpdated,
+  onReprocess,
 }: VaultCatalogRepositoryProps) {
   const [hiddenOpen, setHiddenOpen] = useState(false);
   const sourceCount = groups.length;
@@ -206,6 +223,7 @@ export function VaultCatalogRepository({
             pendingS3Key={pendingS3Key}
             vaultContext={vaultContext}
             onObjectUpdated={onObjectUpdated}
+            onReprocess={onReprocess}
           />
 
           {hiddenCount > 0 ? (
@@ -224,6 +242,7 @@ export function VaultCatalogRepository({
                   pendingS3Key={pendingS3Key}
                   vaultContext={vaultContext}
                   onObjectUpdated={onObjectUpdated}
+                  onReprocess={onReprocess}
                 />
               ) : null}
             </section>
