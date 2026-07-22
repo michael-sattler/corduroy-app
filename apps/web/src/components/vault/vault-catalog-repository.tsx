@@ -2,6 +2,7 @@
 
 import {
   formatVaultObjectMeta,
+  groupVaultObjectsByCategory,
   vaultObjectDisplayTitle,
   vaultObjectIconDefinition,
   vaultObjectTagClass,
@@ -175,15 +176,21 @@ export function VaultCatalogRepository({
   onReprocess,
 }: VaultCatalogRepositoryProps) {
   const [hiddenOpen, setHiddenOpen] = useState(false);
-  const sourceCount = groups.length;
+  const categoryGroups = groupVaultObjectsByCategory(
+    groups.flatMap((group) => group.items),
+  );
+  const hiddenCategoryGroups = groupVaultObjectsByCategory(
+    hiddenGroups.flatMap((group) => group.items),
+  );
+  const categoryCount = categoryGroups.length;
   const visible = visibleCount ?? count - hiddenCount;
 
   const subtitle =
     count === 0
       ? "No files yet"
       : hiddenCount > 0
-        ? `${visible} file${visible === 1 ? "" : "s"} across ${sourceCount} source${sourceCount === 1 ? "" : "s"} · ${hiddenCount} hidden`
-        : `${count} file${count === 1 ? "" : "s"} across ${sourceCount} source${sourceCount === 1 ? "" : "s"}`;
+        ? `${visible} file${visible === 1 ? "" : "s"} across ${categoryCount} categor${categoryCount === 1 ? "y" : "ies"} · ${hiddenCount} hidden`
+        : `${count} file${count === 1 ? "" : "s"} across ${categoryCount} categor${categoryCount === 1 ? "y" : "ies"}`;
 
   const defaultEmptyMessage =
     vaultContext.scope === "staff"
@@ -219,7 +226,7 @@ export function VaultCatalogRepository({
       ) : (
         <>
           <VaultCatalogSections
-            groups={groups}
+            groups={categoryGroups}
             pendingS3Key={pendingS3Key}
             vaultContext={vaultContext}
             onObjectUpdated={onObjectUpdated}
@@ -238,7 +245,7 @@ export function VaultCatalogRepository({
               </button>
               {hiddenOpen ? (
                 <VaultCatalogSections
-                  groups={hiddenGroups}
+                  groups={hiddenCategoryGroups}
                   pendingS3Key={pendingS3Key}
                   vaultContext={vaultContext}
                   onObjectUpdated={onObjectUpdated}

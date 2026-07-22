@@ -7,6 +7,11 @@ export type StaffMetricObservation = {
   change_source: string;
   source_document: string;
   recorded_at: string;
+  is_ignored: boolean;
+  ignored_at: string | null;
+  ignore_note: string;
+  restored_at: string | null;
+  restore_note: string;
 };
 
 export type StaffMetricObservationsResponse = {

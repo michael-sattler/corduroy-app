@@ -1,7 +1,11 @@
 import type { ReactNode } from "react";
 import { formatMetricValue } from "@/lib/plan/staff-plan-dashboard-format";
 import type { DashboardWidgetView } from "@/lib/widgets";
-import { WidgetCard } from "@/components/widgets/widget-card";
+import {
+  WidgetCard,
+  widgetGoalPercentText,
+  WidgetTargetLine,
+} from "@/components/widgets/widget-card";
 
 export type TrafficTone = "green" | "yellow" | "red" | "unknown";
 
@@ -71,13 +75,9 @@ export function TrafficLightWidget({
             </div>
           </div>
           <div className="small text-body-secondary mt-1">
-            {toneLabel(tone)}
-            {widget.progress_pct !== null
-              ? ` · ${widget.progress_pct}% of goal`
-              : widget.target
-                ? ` · Target ${widget.target}`
-                : ""}
+            {widgetGoalPercentText(widget)}
           </div>
+          <WidgetTargetLine widget={widget} />
         </>
       }
     >

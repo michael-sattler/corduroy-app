@@ -6,6 +6,7 @@ type EditorDrawerProps = {
   open: boolean;
   onClose: () => void;
   title: string;
+  eyebrow?: string;
   subtitle?: string;
   children: React.ReactNode;
   /**
@@ -38,6 +39,7 @@ export function EditorDrawer({
   open,
   onClose,
   title,
+  eyebrow,
   subtitle,
   children,
   width,
@@ -83,6 +85,11 @@ export function EditorDrawer({
       >
         <div className="editor-drawer-header">
           <div className="min-w-0">
+            {eyebrow ? (
+              <div className="staff-section-heading text-uppercase small mb-1">
+                {eyebrow}
+              </div>
+            ) : null}
             <h2 className="h5 mb-0 text-truncate" id={titleId}>
               {title}
             </h2>

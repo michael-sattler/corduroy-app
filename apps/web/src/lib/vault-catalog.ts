@@ -12,6 +12,7 @@ import type {
   VaultCatalogObject,
   VaultCatalogResponse,
 } from "@/lib/vault-catalog-types";
+import { VAULT_CATEGORIES, vaultCategoryLabel } from "@/lib/vault-categories";
 
 const VAULT_OBJECT_COLUMNS_BASE =
   "id, s3_key, prefix, object_type, source, size_bytes, created_at";
@@ -139,31 +140,45 @@ export function humanizeVaultSource(source: string): string {
     .join(" ");
 }
 
-export function groupVaultObjectsBySource(
+export function groupVaultObjectsByCategory(
   objects: VaultCatalogObject[],
 ): VaultCatalogGroup[] {
-  const bySource = new Map<string, VaultCatalogObject[]>();
+  const byCategory = new Map<string, VaultCatalogObject[]>();
 
   for (const object of objects) {
-    const source = object.source.trim() || "other";
-    const bucket = bySource.get(source);
+    const category = object.category?.trim() || "uncategorized";
+    const bucket = byCategory.get(category);
     if (bucket) {
       bucket.push(object);
     } else {
-      bySource.set(source, [object]);
+      byCategory.set(category, [object]);
     }
   }
 
-  return [...bySource.entries()]
-    .map(([source, items]) => ({
-      source,
-      label: humanizeVaultSource(source),
+  const categoryIndex = new Map(
+    VAULT_CATEGORIES.map((category, index) => [category.id, index]),
+  );
+
+  return [...byCategory.entries()]
+    .map(([category, items]) => ({
+      source: category,
+      label:
+        category === "uncategorized"
+          ? "Uncategorized"
+          : (vaultCategoryLabel(category) ?? category),
       items: items.sort(
         (a, b) =>
-          new Date(b.created_at).getTime() - new Date(a.created_at).getTime(),
+          vaultObjectDownloadFilename(a).localeCompare(vaultObjectDownloadFilename(b), "en", {
+            sensitivity: "base",
+          }),
       ),
     }))
-    .sort((a, b) => a.label.localeCompare(b.label));
+    .sort((a, b) => {
+      const aIndex = categoryIndex.get(a.source) ?? Number.MAX_SAFE_INTEGER;
+      const bIndex = categoryIndex.get(b.source) ?? Number.MAX_SAFE_INTEGER;
+      if (aIndex !== bIndex) return aIndex - bIndex;
+      return a.label.localeCompare(b.label);
+    });
 }
 
 export async function loadVaultCatalog(
@@ -176,8 +191,8 @@ export async function loadVaultCatalog(
 
   return {
     objects,
-    groups: groupVaultObjectsBySource(visible),
-    hiddenGroups: groupVaultObjectsBySource(hidden),
+    groups: groupVaultObjectsByCategory(visible),
+    hiddenGroups: groupVaultObjectsByCategory(hidden),
     count: objects.length,
     visibleCount: visible.length,
     hiddenCount: hidden.length,

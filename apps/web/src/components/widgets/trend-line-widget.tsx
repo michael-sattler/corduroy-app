@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { formatMetricValue } from "@/lib/plan/staff-plan-dashboard-format";
 import type { DashboardWidgetView } from "@/lib/widgets";
-import { WidgetCard } from "@/components/widgets/widget-card";
+import { WidgetCard, WidgetTargetLine } from "@/components/widgets/widget-card";
 import {
   polylinePath,
   seriesToChartPoints,
@@ -69,10 +69,8 @@ export function TrendLineWidget({
             {series.length > 0
               ? `${series.length} reading${series.length === 1 ? "" : "s"}`
               : "Trend awaits observations"}
-            {widget.current_value_observed_on
-              ? ` · as of ${widget.current_value_observed_on}`
-              : ""}
           </div>
+          <WidgetTargetLine widget={widget} />
         </>
       }
     >

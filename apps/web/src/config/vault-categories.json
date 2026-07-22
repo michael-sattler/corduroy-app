@@ -1,4 +1,6 @@
 [
+  { "id": "planning", "label": "Planning" },
+  { "id": "audit", "label": "Audit" },
   { "id": "financial", "label": "Financial" },
   { "id": "legal", "label": "Legal & contracts" },
   { "id": "operations", "label": "Operations" },

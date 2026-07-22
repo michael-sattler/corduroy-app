@@ -75,6 +75,7 @@ export async function GET(request: Request) {
               .from("metric_observations")
               .select("id, client_metric_id, value, period_start, period_end, source_document")
               .in("client_metric_id", metricIds)
+              .eq("is_ignored", false)
               .like("source_document", `vault:${vaultObjectId};%`),
           ])
         : [{ data: [], error: null }, { data: [], error: null }];

@@ -1,8 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { StaffClientDashboardWidgetsPanel } from "@/components/plan/staff-client-dashboard-widgets-panel";
+import { StaffKpiObservationPanel } from "@/components/plan/staff-kpi-observation-panel";
+import { FontAwesomeIcon } from "@/lib/fontawesome";
+import { faArrowDown, faArrowUp } from "@/lib/fontawesome-icons";
+import { humanizeMetricValue, METRIC_WIDGET_TYPES } from "@/lib/metric-catalog-types";
 import { formatMetricValue } from "@/lib/plan/staff-plan-dashboard-format";
+import type { StaffPlanDashboardKpi } from "@/lib/plan/staff-plan-dashboard-types";
 import type {
   StaffPlanKpiEditorItem,
   StaffPlanKpiEditorResponse,
@@ -11,6 +15,11 @@ import type {
   StaffMetricObservation,
   StaffMetricObservationsByMetricResponse,
 } from "@/lib/plan/staff-metric-observations-types";
+import type {
+  StaffClientMetricOption,
+  StaffDashboardWidgetEditorItem,
+  StaffDashboardWidgetsResponse,
+} from "@/lib/widgets/staff-dashboard-widgets-types";
 
 type StaffClientKpiEditorPanelProps = {
   clientId: string;
@@ -18,8 +27,6 @@ type StaffClientKpiEditorPanelProps = {
   /** Raised when plan KPIs or dashboard widgets change. */
   onDirty?: () => void;
 };
-
-type EditorTab = "plan_kpis" | "dashboard_widgets" | "metric_observations";
 
 const REVIEW_CADENCES = ["daily", "weekly", "monthly", "quarterly"] as const;
 
@@ -286,7 +293,7 @@ function EditableKpiCard({
             className="staff-kpi-editor-label"
             htmlFor={`baseline-${kpi.kpi_id}`}
           >
-            Baseline snapshot
+            Baseline
           </label>
           <div className="d-flex flex-wrap gap-2 align-items-center">
             <input
@@ -823,95 +830,327 @@ function MetricObservationsTab({
   );
 }
 
+function toObservationKpi(kpi: StaffPlanKpiEditorItem): StaffPlanDashboardKpi {
+  return {
+    kpi_id: kpi.kpi_id,
+    label: kpi.label,
+    unit: kpi.unit,
+    client_metric_id: kpi.client_metric_id,
+    definition_kind: kpi.definition_kind,
+    stock_flow: kpi.stock_flow,
+    baseline_snapshot: kpi.baseline_snapshot,
+    baseline_established: kpi.baseline_established,
+    current_value: kpi.current_value,
+    current_value_observed_on: kpi.current_value_observed_on,
+    target: kpi.target,
+    target_value: kpi.target_value,
+    review_cadence: kpi.review_cadence,
+    source_binding: kpi.source_binding,
+    progress_pct: null,
+    at_risk: false,
+  };
+}
+
+function UnifiedKpiCard({
+  clientId,
+  kpi,
+  widget,
+  metric,
+  busy,
+  onPatchKpi,
+  onWidgetChanged,
+  canMoveUp,
+  canMoveDown,
+}: {
+  clientId: string;
+  kpi: StaffPlanKpiEditorItem;
+  widget: StaffDashboardWidgetEditorItem | null;
+  metric: StaffClientMetricOption | null;
+  busy: boolean;
+  onPatchKpi: Parameters<typeof EditableKpiCard>[0]["onPatch"];
+  onWidgetChanged: () => void;
+  canMoveUp: boolean;
+  canMoveDown: boolean;
+}) {
+  const [widgetBusy, setWidgetBusy] = useState(false);
+  const [widgetError, setWidgetError] = useState<string | null>(null);
+
+  async function updateWidget(patch: {
+    widget_type?: string;
+    is_visible?: boolean;
+  }) {
+    if (!widget) return;
+    setWidgetBusy(true);
+    setWidgetError(null);
+    try {
+      const response = await fetch("/api/staff/dashboard-widgets", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ client_id: clientId, id: widget.id, patch }),
+      });
+      const body = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(body.error ?? "Could not update widget");
+      onWidgetChanged();
+    } catch (err) {
+      setWidgetError(err instanceof Error ? err.message : "Could not update widget");
+    } finally {
+      setWidgetBusy(false);
+    }
+  }
+
+  async function assignWidget(widgetType: string) {
+    if (!metric) return;
+    if (widget) {
+      await updateWidget({ widget_type: widgetType, is_visible: true });
+      return;
+    }
+    setWidgetBusy(true);
+    setWidgetError(null);
+    try {
+      const response = await fetch("/api/staff/dashboard-widgets", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_id: clientId,
+          client_metric_id: metric.id,
+          widget_type: widgetType,
+        }),
+      });
+      const body = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(body.error ?? "Could not assign widget");
+      onWidgetChanged();
+    } catch (err) {
+      setWidgetError(err instanceof Error ? err.message : "Could not assign widget");
+    } finally {
+      setWidgetBusy(false);
+    }
+  }
+
+  async function moveWidget(direction: "up" | "down") {
+    if (!widget) return;
+    setWidgetBusy(true);
+    setWidgetError(null);
+    try {
+      const response = await fetch("/api/staff/dashboard-widgets", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ client_id: clientId, id: widget.id, direction }),
+      });
+      const body = (await response.json()) as { error?: string };
+      if (!response.ok) throw new Error(body.error ?? "Could not reorder widget");
+      onWidgetChanged();
+    } catch (err) {
+      setWidgetError(err instanceof Error ? err.message : "Could not reorder widget");
+    } finally {
+      setWidgetBusy(false);
+    }
+  }
+
+  return (
+    <details className="staff-metric-observations-kpi">
+      <summary>
+        <div className="staff-metric-observations-summary-copy">
+          <span className="staff-metric-observations-kpi-label">{kpi.label}</span>
+          <span className="d-flex align-items-center gap-2 flex-shrink-0">
+            <span className="staff-metric-observations-pills">
+            <span
+              className={`badge ${
+                kpi.metric_tier === "core" ? "text-bg-primary" : "text-bg-light"
+              }`}
+            >
+              {kpi.metric_tier === "core" ? "Core" : "Custom"}
+            </span>
+            <span className="badge text-bg-light">
+              {widget ? humanizeMetricValue(widget.widget_type) : "No widget"}
+            </span>
+            {widget ? (
+              <span className={`badge ${widget.is_visible ? "staff-badge-on-track" : "text-bg-secondary"}`}>
+                {widget.is_visible ? "Shown" : "Hidden"}
+              </span>
+            ) : null}
+            </span>
+            {widget ? (
+              <>
+                <span className="btn-group btn-group-sm" onClick={(event) => event.stopPropagation()}>
+                  <button type="button" className="btn btn-outline-secondary" aria-label={`Move ${kpi.label} up`} title="Move up" disabled={widgetBusy || !canMoveUp} onClick={() => void moveWidget("up")}>
+                    <FontAwesomeIcon icon={faArrowUp} />
+                  </button>
+                  <button type="button" className="btn btn-outline-secondary" aria-label={`Move ${kpi.label} down`} title="Move down" disabled={widgetBusy || !canMoveDown} onClick={() => void moveWidget("down")}>
+                    <FontAwesomeIcon icon={faArrowDown} />
+                  </button>
+                </span>
+                <label className="small text-body-secondary mb-0">SHOW</label>
+                <span className="form-check form-switch mb-0" onClick={(event) => event.stopPropagation()}>
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    role="switch"
+                    aria-label={`Show ${kpi.label} on dashboard`}
+                    checked={widget.is_visible}
+                    disabled={widgetBusy}
+                    onChange={(event) => void updateWidget({ is_visible: event.target.checked })}
+                  />
+                </span>
+              </>
+            ) : null}
+          </span>
+        </div>
+      </summary>
+      <div className="staff-metric-observations-kpi-body">
+        <section className="app-card p-3 mb-3">
+          <h3 className="staff-section-heading text-uppercase small mb-2">KPI plan settings</h3>
+          <EditableKpiCard
+            clientId={clientId}
+            kpi={kpi}
+            busy={busy}
+            onPatch={onPatchKpi}
+          />
+        </section>
+        <section className="app-card p-3 mb-3">
+          <h3 className="staff-section-heading text-uppercase small mb-3">Dashboard display</h3>
+          {metric ? (
+            <select
+              className="form-select form-select-sm"
+              value={widget?.widget_type ?? ""}
+              disabled={widgetBusy}
+              onChange={(event) => {
+                if (event.target.value) void assignWidget(event.target.value);
+              }}
+            >
+              <option value="">Not on dashboard</option>
+              {METRIC_WIDGET_TYPES.map((kind) => (
+                <option key={kind} value={kind}>{humanizeMetricValue(kind)}</option>
+              ))}
+            </select>
+          ) : (
+            <p className="small text-body-secondary mb-0">No tracked metric is linked to this KPI.</p>
+          )}
+          {widgetError ? <div className="alert alert-danger py-2 small mt-2 mb-0">{widgetError}</div> : null}
+        </section>
+        <section className="app-card p-3">
+          <h3 className="staff-section-heading text-uppercase small mb-3">Record observation</h3>
+          <StaffKpiObservationPanel
+            clientId={clientId}
+            kpi={toObservationKpi(kpi)}
+            showCloseButton={false}
+            onRecorded={onWidgetChanged}
+            onCancel={() => undefined}
+          />
+        </section>
+      </div>
+    </details>
+  );
+}
+
 export function StaffClientKpiEditorPanel({
   clientId,
   active,
   onDirty,
 }: StaffClientKpiEditorPanelProps) {
-  const [tab, setTab] = useState<EditorTab>("plan_kpis");
+  const [kpis, setKpis] = useState<StaffPlanKpiEditorItem[]>([]);
+  const [widgets, setWidgets] = useState<StaffDashboardWidgetEditorItem[]>([]);
+  const [metrics, setMetrics] = useState<StaffClientMetricOption[]>([]);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  useEffect(() => {
+    if (!active) return;
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      try {
+        const [kpiResponse, widgetResponse] = await Promise.all([
+          fetch(`/api/staff/plan/kpis?client_id=${encodeURIComponent(clientId)}`, { cache: "no-store" }),
+          fetch(`/api/staff/dashboard-widgets?client_id=${encodeURIComponent(clientId)}`, { cache: "no-store" }),
+        ]);
+        const kpiBody = (await kpiResponse.json()) as StaffPlanKpiEditorResponse & { error?: string };
+        const widgetBody = (await widgetResponse.json()) as StaffDashboardWidgetsResponse & { error?: string };
+        if (!kpiResponse.ok) throw new Error(kpiBody.error ?? "Could not load client KPIs");
+        if (!widgetResponse.ok) throw new Error(widgetBody.error ?? "Could not load dashboard widgets");
+        if (!cancelled) {
+          setKpis(kpiBody.kpis);
+          setWidgets(widgetBody.widgets);
+          setMetrics(widgetBody.client_metrics);
+          setError(null);
+        }
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Could not load client KPIs");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    void load();
+    return () => { cancelled = true; };
+  }, [active, clientId, reloadToken]);
+
+  async function patchKpi(kpiId: string, patch: Parameters<typeof EditableKpiCard>[0]["onPatch"] extends (id: string, patch: infer P) => Promise<void> ? P : never) {
+    setBusyId(kpiId);
+    try {
+      const response = await fetch("/api/staff/plan/kpis", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ client_id: clientId, kpi_id: kpiId, patch }),
+      });
+      const body = (await response.json()) as { kpi?: StaffPlanKpiEditorItem; error?: string };
+      if (!response.ok || !body.kpi) throw new Error(body.error ?? "Could not update plan KPI");
+      setKpis((current) => current.map((item) => item.kpi_id === kpiId ? body.kpi! : item));
+      onDirty?.();
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  const sortedKpis = [...kpis].sort((left, right) => {
+    const leftWidget = widgets.find(
+      (widget) => widget.client_metric_id === left.client_metric_id,
+    );
+    const rightWidget = widgets.find(
+      (widget) => widget.client_metric_id === right.client_metric_id,
+    );
+    if (leftWidget && rightWidget) return leftWidget.sort_order - rightWidget.sort_order;
+    if (leftWidget) return -1;
+    if (rightWidget) return 1;
+    return left.kpi_id.localeCompare(right.kpi_id);
+  });
+  const assignedWidgets = sortedKpis.filter((kpi) =>
+    widgets.some((widget) => widget.client_metric_id === kpi.client_metric_id),
+  );
 
   return (
     <div>
-      <div className="staff-client-detail-tabs-wrap mb-3">
-        <ul className="nav nav-tabs staff-client-detail-tabs" role="tablist">
-          <li className="nav-item" role="presentation">
-            <button
-              type="button"
-              id="staff-kpi-editor-tab-plan"
-              role="tab"
-              aria-selected={tab === "plan_kpis"}
-              aria-controls="staff-kpi-editor-tabpanel-plan"
-              className={`nav-link${tab === "plan_kpis" ? " active" : ""}`}
-              onClick={() => setTab("plan_kpis")}
-            >
-              Plan KPIs
-            </button>
-          </li>
-          <li className="nav-item" role="presentation">
-            <button
-              type="button"
-              id="staff-kpi-editor-tab-widgets"
-              role="tab"
-              aria-selected={tab === "dashboard_widgets"}
-              aria-controls="staff-kpi-editor-tabpanel-widgets"
-              className={`nav-link${tab === "dashboard_widgets" ? " active" : ""}`}
-              onClick={() => setTab("dashboard_widgets")}
-            >
-              Dashboard widgets
-            </button>
-          </li>
-          <li className="nav-item" role="presentation">
-            <button
-              type="button"
-              id="staff-kpi-editor-tab-observations"
-              role="tab"
-              aria-selected={tab === "metric_observations"}
-              aria-controls="staff-kpi-editor-tabpanel-observations"
-              className={`nav-link${tab === "metric_observations" ? " active" : ""}`}
-              onClick={() => setTab("metric_observations")}
-            >
-              Metric Observations
-            </button>
-          </li>
-        </ul>
-      </div>
-
-      <div
-        id="staff-kpi-editor-tabpanel-plan"
-        role="tabpanel"
-        aria-labelledby="staff-kpi-editor-tab-plan"
-        hidden={tab !== "plan_kpis"}
-      >
-        <PlanKpisTab
-          clientId={clientId}
-          active={active && tab === "plan_kpis"}
-          onDirty={onDirty}
-        />
-      </div>
-
-      <div
-        id="staff-kpi-editor-tabpanel-widgets"
-        role="tabpanel"
-        aria-labelledby="staff-kpi-editor-tab-widgets"
-        hidden={tab !== "dashboard_widgets"}
-      >
-        <StaffClientDashboardWidgetsPanel
-          clientId={clientId}
-          active={active && tab === "dashboard_widgets"}
-          onDirty={onDirty}
-        />
-      </div>
-
-      <div
-        id="staff-kpi-editor-tabpanel-observations"
-        role="tabpanel"
-        aria-labelledby="staff-kpi-editor-tab-observations"
-        hidden={tab !== "metric_observations"}
-      >
-        <MetricObservationsTab
-          clientId={clientId}
-          active={active && tab === "metric_observations"}
-        />
+      {loading ? <p className="staff-dashboard-muted mb-0">Loading client KPIs…</p> : null}
+      {error ? <div className="alert alert-danger">{error}</div> : null}
+      {!loading && !error && kpis.length === 0 ? <p className="staff-dashboard-muted mb-0">No KPIs are defined for this client&apos;s active plan yet.</p> : null}
+      <div className="staff-metric-observations-list">
+        {sortedKpis.map((kpi) => (
+          (() => {
+            const widget = widgets.find(
+              (candidate) => candidate.client_metric_id === kpi.client_metric_id,
+            ) ?? null;
+            const assignedIndex = assignedWidgets.findIndex(
+              (candidate) => candidate.kpi_id === kpi.kpi_id,
+            );
+            return (
+          <UnifiedKpiCard
+            key={kpi.kpi_id}
+            clientId={clientId}
+            kpi={kpi}
+            widget={widget}
+            metric={metrics.find((metric) => metric.id === kpi.client_metric_id) ?? null}
+            busy={busyId === kpi.kpi_id}
+            onPatchKpi={patchKpi}
+            canMoveUp={assignedIndex > 0}
+            canMoveDown={assignedIndex >= 0 && assignedIndex < assignedWidgets.length - 1}
+            onWidgetChanged={() => {
+              onDirty?.();
+              setReloadToken((value) => value + 1);
+            }}
+          />
+            );
+          })()
+        ))}
       </div>
     </div>
   );

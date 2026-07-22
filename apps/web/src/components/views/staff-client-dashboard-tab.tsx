@@ -4,23 +4,19 @@ import { useEffect, useState } from "react";
 import { EditorDrawer } from "@/components/ui/editor-drawer";
 import { StaffClientKpiEditorPanel } from "@/components/plan/staff-client-kpi-editor-panel";
 import { StaffInitiativeProgressCard } from "@/components/plan/staff-initiative-progress-card";
-import { StaffKpiObservationPanel } from "@/components/plan/staff-kpi-observation-panel";
+import { StaffKpiManagementDrawer } from "@/components/plan/staff-kpi-management-drawer";
 import { StaffTaskProgressCard } from "@/components/plan/staff-task-progress-card";
 import { DashboardWidgetGrid } from "@/components/widgets/dashboard-widget-grid";
 import { FontAwesomeIcon } from "@/lib/fontawesome";
-import { faPen, faPlus } from "@/lib/fontawesome-icons";
+import { faPen } from "@/lib/fontawesome-icons";
 import type {
   StaffPlanDashboardInitiative,
-  StaffPlanDashboardKpi,
   StaffPlanDashboardResponse,
 } from "@/lib/plan/staff-plan-dashboard-types";
 import type { StaffPlanTaskProgress } from "@/lib/plan/staff-task-progress";
 import type { StaffClientActivity } from "@/lib/staff-client-activity-types";
 import type { StaffDashboardClient } from "@/lib/staff-dashboard-types";
-import {
-  staffObserveKpiFromWidget,
-  type DashboardWidgetView,
-} from "@/lib/widgets";
+import type { DashboardWidgetView } from "@/lib/widgets";
 
 type StaffClientDashboardTabProps = {
   client: StaffDashboardClient;
@@ -44,11 +40,25 @@ function formatLastLogin(iso: string | null): string {
   });
 }
 
+function formatPlanPeriod(start: string, end: string): string {
+  const format = (value: string) =>
+    new Date(`${value}T00:00:00Z`).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+  return `${format(start)} – ${format(end)}`;
+}
+
 export function StaffClientDashboardTab({
   client,
   onOpenPlan,
 }: StaffClientDashboardTabProps) {
   const [widgets, setWidgets] = useState<DashboardWidgetView[]>([]);
+  const [planPeriod, setPlanPeriod] = useState<{ start: string; end: string } | null>(
+    null,
+  );
   const [initiatives, setInitiatives] = useState<StaffPlanDashboardInitiative[]>(
     [],
   );
@@ -63,9 +73,10 @@ export function StaffClientDashboardTab({
   const [reloadToken, setReloadToken] = useState(0);
   const [kpiEditorOpen, setKpiEditorOpen] = useState(false);
   const [kpiEditorDirty, setKpiEditorDirty] = useState(false);
-  const [observeKpi, setObserveKpi] = useState<StaffPlanDashboardKpi | null>(
+  const [selectedWidget, setSelectedWidget] = useState<DashboardWidgetView | null>(
     null,
   );
+  const [focusObservation, setFocusObservation] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -103,6 +114,14 @@ export function StaffClientDashboardTab({
 
         if (!cancelled) {
           setWidgets(planBody.widgets ?? []);
+          setPlanPeriod(
+            planBody.plan
+              ? {
+                  start: planBody.plan.plan.period_start,
+                  end: planBody.plan.plan.period_end,
+                }
+              : null,
+          );
           setInitiatives(planBody.plan?.initiatives ?? []);
           setTaskProgress(
             planBody.plan?.task_progress ?? {
@@ -116,6 +135,7 @@ export function StaffClientDashboardTab({
       } catch (err) {
         if (!cancelled) {
           setWidgets([]);
+          setPlanPeriod(null);
           setInitiatives([]);
           setTaskProgress({ overdue: 0, pending: 0, blocked: 0 });
           setActivity(null);
@@ -163,6 +183,11 @@ export function StaffClientDashboardTab({
   return (
     <div className="staff-dashboard-grid">
       <div className="app-card staff-dashboard-panel mb-2">
+        {planPeriod ? (
+          <p className="staff-dashboard-muted small mb-2">
+            Plan period: {formatPlanPeriod(planPeriod.start, planPeriod.end)}
+          </p>
+        ) : null}
         <div className="d-flex justify-content-between align-items-center mb-2">
           <h3 className="staff-section-heading mb-0">Key metrics</h3>
           <button
@@ -188,18 +213,24 @@ export function StaffClientDashboardTab({
         ) : (
           <DashboardWidgetGrid
             widgets={widgets}
+            onSelectWidget={(widget) => {
+              setFocusObservation(false);
+              setSelectedWidget(widget);
+            }}
             renderActions={(widget) => {
-              const kpi = staffObserveKpiFromWidget(widget);
-              if (!kpi) return null;
               return (
                 <button
                   type="button"
                   className="staff-kpi-observe"
-                  onClick={() => setObserveKpi(kpi)}
-                  title={`Record observation for ${kpi.label}`}
-                  aria-label={`Record observation for ${kpi.label}`}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setFocusObservation(true);
+                    setSelectedWidget(widget);
+                  }}
+                  title={`Manage ${widget.label}`}
+                  aria-label={`Manage ${widget.label}`}
                 >
-                  <FontAwesomeIcon icon={faPlus} />
+                  <FontAwesomeIcon icon={faPen} />
                 </button>
               );
             }}
@@ -280,26 +311,20 @@ export function StaffClientDashboardTab({
         />
       </EditorDrawer>
 
-      <EditorDrawer
-        open={observeKpi !== null}
-        onClose={() => setObserveKpi(null)}
-        title="Record observation"
-        subtitle={observeKpi ? observeKpi.label : client.name}
-        width="440px"
-        className="editor-drawer-observation"
-      >
-        {observeKpi ? (
-          <StaffKpiObservationPanel
-            clientId={client.id}
-            kpi={observeKpi}
-            onRecorded={() => {
-              setObserveKpi(null);
-              setReloadToken((token) => token + 1);
-            }}
-            onCancel={() => setObserveKpi(null)}
-          />
-        ) : null}
-      </EditorDrawer>
+      <StaffKpiManagementDrawer
+        key={selectedWidget?.id ?? "no-widget"}
+        clientId={client.id}
+        clientName={client.name}
+        widget={selectedWidget}
+        open={selectedWidget !== null}
+        focusObservation={focusObservation}
+        planPeriod={planPeriod}
+        onClose={() => {
+          setFocusObservation(false);
+          setSelectedWidget(null);
+        }}
+        onDirty={() => setReloadToken((token) => token + 1)}
+      />
     </div>
   );
 }

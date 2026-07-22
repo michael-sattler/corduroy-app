@@ -5,6 +5,7 @@ export type WidgetDataNeeds = "current" | "series" | "plan_target";
 
 export type DashboardWidgetSeriesPoint = {
   observed_on: string;
+  period_end: string;
   value: number;
 };
 
@@ -26,6 +27,7 @@ export type DashboardWidgetView = {
   /** Display string for the plan target, when known. */
   target: string | null;
   target_value: number | null;
+  baseline_snapshot?: number | null;
   baseline_established: boolean;
   progress_pct: number | null;
   at_risk: boolean;
@@ -34,6 +36,8 @@ export type DashboardWidgetView = {
   definition_kind?: string;
   stock_flow?: string | null;
   review_cadence?: string;
+  plan_period_start?: string | null;
+  plan_period_end?: string | null;
   source_binding?: string;
   plan_kpi_id?: string | null;
 };

@@ -18,7 +18,7 @@ export async function loadStaffMetricObservations(
   const { data, error } = await supabase
     .from("metric_observations")
     .select(
-      "id, value, period_start, period_end, observed_on, change_source, source_document, recorded_at",
+      "id, value, period_start, period_end, observed_on, change_source, source_document, recorded_at, is_ignored, ignored_at, ignore_note, restored_at, restore_note",
     )
     .eq("client_metric_id", clientMetricId)
     .order("period_end", { ascending: false })
@@ -48,7 +48,7 @@ export async function loadStaffMetricObservationsByClientMetricIds(
   const { data, error } = await supabase
     .from("metric_observations")
     .select(
-      "id, client_metric_id, value, period_start, period_end, observed_on, change_source, source_document, recorded_at",
+      "id, client_metric_id, value, period_start, period_end, observed_on, change_source, source_document, recorded_at, is_ignored, ignored_at, ignore_note, restored_at, restore_note",
     )
     .in("client_metric_id", ids)
     .order("period_end", { ascending: false })

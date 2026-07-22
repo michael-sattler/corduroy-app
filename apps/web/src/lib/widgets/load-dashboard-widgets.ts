@@ -51,6 +51,7 @@ type PlanKpiRow = {
 type ObservationRow = {
   client_metric_id: string;
   observed_on: string;
+  period_end: string;
   value: number;
   dimension: Record<string, unknown> | null;
 };
@@ -146,7 +147,7 @@ export async function loadDashboardWidgets(
 
   const { data: planRow, error: planError } = await supabase
     .from("plans")
-    .select("id")
+    .select("id, period_start, period_end")
     .eq("client_id", clientId)
     .in("status", ["active", "in_review", "draft"])
     .order("generated_at", { ascending: false })
@@ -185,6 +186,27 @@ export async function loadDashboardWidgets(
     }
   }
 
+  const planCurrentByMetric = new Map<string, ObservationRow>();
+  if (planRow?.id) {
+    const { data: planObservations, error: planObservationError } = await supabase
+      .from("metric_observations")
+      .select("client_metric_id, observed_on, period_end, value, dimension")
+      .in("client_metric_id", metricIds)
+      .gte("period_end", planRow.period_start)
+      .eq("is_ignored", false)
+      .order("period_end", { ascending: false });
+
+    if (planObservationError) {
+      throw new Error(`Plan observation query failed: ${planObservationError.message}`);
+    }
+
+    for (const observation of (planObservations ?? []) as ObservationRow[]) {
+      if (!planCurrentByMetric.has(observation.client_metric_id)) {
+        planCurrentByMetric.set(observation.client_metric_id, observation);
+      }
+    }
+  }
+
   const seriesMetricIds = new Set<string>();
   for (const row of rows) {
     if (resolveWidgetKind(row.widget_type).dataNeeds.includes("series")) {
@@ -196,8 +218,9 @@ export async function loadDashboardWidgets(
   if (seriesMetricIds.size > 0) {
     const { data: observations, error: obsError } = await supabase
       .from("metric_observations")
-      .select("client_metric_id, observed_on, value, dimension")
+      .select("client_metric_id, observed_on, period_end, value, dimension")
       .in("client_metric_id", [...seriesMetricIds])
+      .eq("is_ignored", false)
       .order("observed_on", { ascending: true })
       .limit(SERIES_LIMIT * seriesMetricIds.size);
 
@@ -229,7 +252,10 @@ export async function loadDashboardWidgets(
       widgetType = "single_stat";
     }
 
-    const current = metric.current_value;
+    const planCurrent = planCurrentByMetric.get(row.client_metric_id) ?? null;
+    const current = planRow?.id
+      ? (planCurrent?.value ?? planKpi?.baseline_snapshot ?? null)
+      : metric.current_value;
     const progress = planKpi
       ? computeProgressPct(
           planKpi.baseline_snapshot,
@@ -253,6 +279,7 @@ export async function loadDashboardWidgets(
         .slice(-SERIES_LIMIT)
         .map((obs) => ({
           observed_on: obs.observed_on,
+          period_end: obs.period_end,
           value: Number(obs.value),
         }));
     }
@@ -265,10 +292,15 @@ export async function loadDashboardWidgets(
       label: row.label_override?.trim() || definition.label,
       unit: definition.unit,
       current_value: current,
-      current_value_observed_on: metric.current_value_observed_on,
+      current_value_observed_on:
+        planCurrent?.period_end ??
+        (planRow?.id && planKpi?.baseline_established
+          ? planRow.period_start
+          : metric.current_value_observed_on),
       last_observed_at: metric.last_observed_at,
       target: planKpi?.target ?? null,
       target_value: planKpi?.target_value ?? null,
+      baseline_snapshot: planKpi?.baseline_snapshot ?? null,
       baseline_established: planKpi?.baseline_established ?? false,
       progress_pct: progress,
       at_risk: atRisk,
@@ -276,6 +308,8 @@ export async function loadDashboardWidgets(
       definition_kind: definition.kind,
       stock_flow: definition.stock_flow,
       review_cadence: planKpi?.review_cadence ?? "",
+      plan_period_start: planRow?.period_start ?? null,
+      plan_period_end: planRow?.period_end ?? null,
       source_binding: metric.source_binding ?? "",
       plan_kpi_id: planKpi?.kpi_id ?? null,
     });

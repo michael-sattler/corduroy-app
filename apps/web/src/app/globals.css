@@ -2035,7 +2035,7 @@ body {
 
 .staff-widget-sparkline {
   width: 100%;
-  height: 2.35rem;
+  height: 6rem;
   display: block;
 }
 
@@ -2055,6 +2055,10 @@ body {
   fill: #60a5fa;
 }
 
+.staff-widget-bar-expected {
+  fill: #eeeff1;
+}
+
 .staff-widget-delta {
   font-size: 0.72rem;
   white-space: nowrap;
@@ -2070,19 +2074,20 @@ body {
 
 .staff-widget-traffic-lights {
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.28rem;
-  padding: 0.2rem 0.35rem;
-  border-radius: 999px;
+  gap: 0.35rem;
+  padding: 0.45rem;
+  border-radius: 0.8rem;
   background: #f3f4f6;
 }
 
 .staff-widget-traffic-lamp {
-  width: 0.55rem;
-  height: 0.55rem;
+  width: 0.9rem;
+  height: 0.9rem;
   border-radius: 50%;
   background: #d1d5db;
-  opacity: 0.45;
+  opacity: 0.25;
 }
 
 .staff-widget-traffic-lights.is-red .staff-widget-traffic-lamp.is-red,
@@ -2269,6 +2274,15 @@ body {
 
 .staff-obs-row:nth-child(odd) {
   background: #f8fafc;
+}
+
+.staff-obs-row.is-in-plan-period {
+  background: #eaf4ff;
+}
+
+.staff-obs-row.is-ignored {
+  opacity: 0.58;
+  background: #f3f4f6;
 }
 
 .staff-action-row {

@@ -17,6 +17,8 @@ import type {
 type StaffKpiObservationPanelProps = {
   clientId: string;
   kpi: StaffPlanDashboardKpi;
+  planPeriod?: { start: string; end: string } | null;
+  showCloseButton?: boolean;
   onRecorded: () => void;
   onCancel: () => void;
 };
@@ -56,9 +58,13 @@ const UNIT_HINTS: Record<string, string> = {
 function ObservationRow({
   observation,
   unit,
+  planPeriod,
+  onIgnoreToggle,
 }: {
   observation: StaffMetricObservation;
   unit: string;
+  planPeriod?: { start: string; end: string } | null;
+  onIgnoreToggle: (observation: StaffMetricObservation) => void;
 }) {
   const isRange = observation.period_start !== observation.period_end;
   const period = isRange
@@ -66,9 +72,18 @@ function ObservationRow({
     : formatDate(observation.period_end);
   const sourceLabel =
     CHANGE_SOURCE_LABELS[observation.change_source] ?? observation.change_source;
+  const overlapsPlan =
+    planPeriod !== null &&
+    planPeriod !== undefined &&
+    observation.period_start <= planPeriod.end &&
+    observation.period_end >= planPeriod.start;
 
   return (
-    <li className="staff-obs-row">
+    <li
+      className={`staff-obs-row${overlapsPlan ? " is-in-plan-period" : ""}${
+        observation.is_ignored ? " is-ignored" : ""
+      }`}
+    >
       <div className="d-flex justify-content-between align-items-baseline gap-2">
         <span className="fw-medium">
           {formatMetricValue(observation.value, unit)}
@@ -81,6 +96,20 @@ function ObservationRow({
         </span>
         <span className="badge text-bg-light flex-shrink-0">{sourceLabel}</span>
       </div>
+      {observation.is_ignored ? (
+        <div className="small text-body-secondary mt-1">
+          Ignored{observation.ignore_note ? `: ${observation.ignore_note}` : ""}
+        </div>
+      ) : null}
+      <div className="mt-1">
+        <button
+          type="button"
+          className="btn btn-sm btn-link p-0"
+          onClick={() => onIgnoreToggle(observation)}
+        >
+          {observation.is_ignored ? "Restore observation" : "Ignore observation"}
+        </button>
+      </div>
     </li>
   );
 }
@@ -88,6 +117,8 @@ function ObservationRow({
 export function StaffKpiObservationPanel({
   clientId,
   kpi,
+  planPeriod,
+  showCloseButton = true,
   onRecorded,
   onCancel,
 }: StaffKpiObservationPanelProps) {
@@ -105,6 +136,9 @@ export function StaffKpiObservationPanel({
   const [observations, setObservations] = useState<StaffMetricObservation[]>([]);
   const [listLoading, setListLoading] = useState(false);
   const [listError, setListError] = useState<string | null>(null);
+  const [mutatingObservationId, setMutatingObservationId] = useState<string | null>(
+    null,
+  );
 
   const loadObservations = useCallback(async () => {
     if (!clientMetricId || !observable) return;
@@ -224,6 +258,32 @@ export function StaffKpiObservationPanel({
         );
       }
     });
+  }
+
+  async function toggleIgnored(observation: StaffMetricObservation) {
+    setMutatingObservationId(observation.id);
+    setListError(null);
+    try {
+      const res = await fetch("/api/staff/plan/observations", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          client_id: clientId,
+          observation_id: observation.id,
+          action: observation.is_ignored ? "restore" : "ignore",
+        }),
+      });
+      const body = (await res.json()) as { error?: string };
+      if (!res.ok) throw new Error(body.error ?? "Could not update observation");
+      await loadObservations();
+      onRecorded();
+    } catch (err) {
+      setListError(
+        err instanceof Error ? err.message : "Could not update observation",
+      );
+    } finally {
+      setMutatingObservationId(null);
+    }
   }
 
   return (
@@ -348,14 +408,16 @@ export function StaffKpiObservationPanel({
       ) : null}
 
       <div className="d-flex justify-content-end gap-2">
-        <button
-          type="button"
-          className="btn btn-outline-secondary"
-          onClick={onCancel}
-          disabled={pending}
-        >
-          Close
-        </button>
+        {showCloseButton ? (
+          <button
+            type="button"
+            className="btn btn-outline-secondary"
+            onClick={onCancel}
+            disabled={pending}
+          >
+            Close
+          </button>
+        ) : null}
         <button type="submit" className="btn btn-primary" disabled={!canSubmit}>
           {pending ? "Recording…" : "Record observation"}
         </button>
@@ -365,7 +427,9 @@ export function StaffKpiObservationPanel({
 
       <div>
         <div className="d-flex justify-content-between align-items-center mb-2">
-          <h3 className="h6 mb-0">Recent observations</h3>
+          <h3 className="staff-section-heading text-uppercase small mb-0">
+            Recent observations
+          </h3>
           {listLoading ? (
             <span className="small text-body-secondary">Loading…</span>
           ) : null}
@@ -386,6 +450,10 @@ export function StaffKpiObservationPanel({
                 key={observation.id}
                 observation={observation}
                 unit={kpi.unit}
+                planPeriod={planPeriod}
+                onIgnoreToggle={(item) => {
+                  if (mutatingObservationId !== item.id) void toggleIgnored(item);
+                }}
               />
             ))}
           </ul>

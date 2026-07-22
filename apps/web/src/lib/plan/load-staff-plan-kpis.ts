@@ -9,6 +9,9 @@ import type {
 type MetricDefinition = {
   label: string;
   unit: string;
+  tier: string;
+  kind: string;
+  stock_flow: string | null;
 };
 
 type ClientMetric = {
@@ -45,6 +48,9 @@ function mapKpi(row: KpiRow): StaffPlanKpiEditorItem {
     client_metric_id: metric?.id ?? null,
     label: definition?.label ?? row.kpi_id,
     unit: definition?.unit ?? "ratio",
+    metric_tier: definition?.tier ?? "bespoke",
+    definition_kind: definition?.kind ?? "observed",
+    stock_flow: definition?.stock_flow ?? null,
     source_binding: metric?.source_binding ?? "",
     current_value: metric?.current_value ?? null,
     current_value_observed_on: metric?.current_value_observed_on ?? null,
@@ -100,7 +106,10 @@ export async function loadStaffPlanKpis(
         is_active,
         metric_definitions (
           label,
-          unit
+          unit,
+          tier,
+          kind,
+          stock_flow
         )
       )
     `,

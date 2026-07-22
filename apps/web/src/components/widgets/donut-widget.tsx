@@ -1,7 +1,11 @@
 import type { ReactNode } from "react";
 import { formatMetricValue } from "@/lib/plan/staff-plan-dashboard-format";
 import type { DashboardWidgetView } from "@/lib/widgets";
-import { WidgetCard } from "@/components/widgets/widget-card";
+import {
+  WidgetCard,
+  widgetGoalPercentText,
+  WidgetTargetLine,
+} from "@/components/widgets/widget-card";
 import { SingleStatWidget } from "@/components/widgets/single-stat-widget";
 
 const SIZE = 96;
@@ -28,13 +32,6 @@ export function DonutWidget({
     : pct !== null && pct >= 100
       ? "success"
       : "info";
-
-  const subtext =
-    pct !== null
-      ? `${pct}% of goal${widget.target ? ` · Target ${widget.target}` : ""}`
-      : widget.target
-        ? `Target ${widget.target}`
-        : null;
 
   return (
     <WidgetCard
@@ -82,9 +79,8 @@ export function DonutWidget({
               </div>
             </div>
           </div>
-          {subtext ? (
-            <div className="small text-body-secondary">{subtext}</div>
-          ) : null}
+          <div className="small text-body-secondary">{widgetGoalPercentText(widget)}</div>
+          <WidgetTargetLine widget={widget} />
         </>
       }
     >

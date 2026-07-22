@@ -3,6 +3,9 @@ export type StaffPlanKpiEditorItem = {
   client_metric_id: string | null;
   label: string;
   unit: string;
+  metric_tier: string;
+  definition_kind: string;
+  stock_flow: string | null;
   source_binding: string;
   current_value: number | null;
   current_value_observed_on: string | null;

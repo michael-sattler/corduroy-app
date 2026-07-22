@@ -1,7 +1,11 @@
 import type { ReactNode } from "react";
 import { formatMetricValue } from "@/lib/plan/staff-plan-dashboard-format";
 import type { DashboardWidgetView } from "@/lib/widgets";
-import { WidgetCard } from "@/components/widgets/widget-card";
+import {
+  WidgetCard,
+  widgetGoalPercentText,
+  WidgetTargetLine,
+} from "@/components/widgets/widget-card";
 import { SingleStatWidget } from "@/components/widgets/single-stat-widget";
 
 export function ProgressToGoalWidget({
@@ -24,13 +28,6 @@ export function ProgressToGoalWidget({
       ? "success"
       : "info";
 
-  const subtext =
-    pct !== null
-      ? `${pct}% of goal${widget.target ? ` · Target ${widget.target}` : ""}`
-      : widget.target
-        ? `Target ${widget.target}`
-        : null;
-
   return (
     <WidgetCard
       widget={widget}
@@ -50,9 +47,8 @@ export function ProgressToGoalWidget({
               aria-valuemax={100}
             />
           </div>
-          {subtext ? (
-            <div className="small text-body-secondary">{subtext}</div>
-          ) : null}
+          <div className="small text-body-secondary">{widgetGoalPercentText(widget)}</div>
+          <WidgetTargetLine widget={widget} />
         </>
       }
     >

@@ -11,6 +11,18 @@ export function widgetProgressIncomplete(widget: DashboardWidgetView): boolean {
   return hasGoal && widget.progress_pct === null;
 }
 
+export function WidgetTargetLine({ widget }: { widget: DashboardWidgetView }) {
+  return widget.target ? (
+    <div className="small text-body-secondary mt-1">
+      TARGET: {widget.target}
+    </div>
+  ) : null;
+}
+
+export function widgetGoalPercentText(widget: DashboardWidgetView): string {
+  return widget.progress_pct === null ? "—% of goal" : `${widget.progress_pct}% of goal`;
+}
+
 export function WidgetCard({
   widget,
   children,
